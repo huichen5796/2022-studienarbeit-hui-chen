@@ -4,7 +4,8 @@
 - Nun: Arbeitsplatz in Github erstellen (Done)
 - Nun: Aufgabenstellung roh bestimmen
 - Nun: Relevante Kenntnisse bereichern (CNN, GCN, Convolution)
-- Beim Schreiben der Studienarbeit: Kontaktaufnahme Schreibberatung LUH 
+- Beim Schreiben der Studienarbeit: Kontaktaufnahme Schreibberatung LUH
+https://www.llc.uni-hannover.de/de/schreib-support/individuelle-schreibberatung/ und cc holger.zernetsch@gmail.com 
 - Juli/August anmelden —> 4 Monate —> Oktober/November fertig
 ## Mögliche Aufgabenstellung
 - Vorverarbeitung der Bildern
