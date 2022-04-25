@@ -1,5 +1,5 @@
 # PDFTabelle
-Hier ist der Arbeitsplatz für die Studienarbeit “Automatische Erkennung und Konvertierung von Tabellen in Bilddokumenten”
+Hier ist der Arbeitsplatz für die Studienarbeit “Automatische Erkennung und Konvertierung von Tabellen in Bilddokumenten”.
 Die gesammelte Informationen werden in "Infos darüber" gespeichert.
 
 ## TODOS
