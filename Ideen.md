@@ -41,6 +41,7 @@ Codes davon: https://github.com/saqib22/Table-Structure_Extraction-Bi-directiona
 - Einzelseitentabelle mit zusammengeführten Zellen
 - Mehrseitentabelle
 - Unvollständige Tabelle
+- weiße Linien
 ## Die öffentliche Datasets für die tabellarische Erkennung
 - Marmot
 - UW3
