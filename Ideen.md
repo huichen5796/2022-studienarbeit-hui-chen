@@ -36,6 +36,8 @@ Codes davon: https://github.com/saqib22/Table-Structure_Extraction-Bi-directiona
 - http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.74.50&rep=rep1&type=pdf
 - https://www.researchgate.net/profile/S-Mandal-3/publication/226626959_Simple_and_effective_table_detection_system_from_document_images/links/56444b4508aef646e6ca792c/Simple-and-effective-table-detection-system-from-document-images.pdf
 - Für Schwellenwertverfahren: https://blog.csdn.net/jjddss/article/details/72841141
+- Für PCA und SVD: https://blog.csdn.net/weixin_40511249/article/details/121308253 und https://www.jianshu.com/p/1adef2d6dd88 und https://blog.csdn.net/gwplovekimi/article/details/80406808
+- einige Arbeiten: https://www.catalyzex.com/s/Table%20Detection
 ## Mögliche Probleme bei Tabellen
 - Einfache Einzelseitentabelle 
 (weniger als eine Seite und enthält keine zusammengeführten Zellen)
