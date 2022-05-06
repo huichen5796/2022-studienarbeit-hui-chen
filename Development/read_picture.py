@@ -10,8 +10,8 @@ def Binatization(path):
     # img = cv2.imread(path)
     # gray_image = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-    cv2.imshow("img_gray", img_gray)
-    cv2.waitKey()
+    # cv2.imshow("img_gray", img_gray)
+    # cv2.waitKey()
 
 
     thresh1=cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY)
@@ -58,3 +58,5 @@ def GetROI(img):
 
 # def Binatization(img):
     #
+
+Binatization('../Development/imageWithTable.png')
