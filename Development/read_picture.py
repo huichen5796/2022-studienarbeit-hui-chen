@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 def Binatization(path):
 
     # load the image
-    img_gray = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    img_gray = cv2.imread(path, 0)
 
     # img = cv2.imread(path)
     # gray_image = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
