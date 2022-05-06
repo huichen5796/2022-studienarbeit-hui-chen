@@ -23,7 +23,7 @@ https://www.llc.uni-hannover.de/de/schreib-support/individuelle-schreibberatung/
   - Extraktion und Kurzspeichern tabellarischer Daten
   - Organisieren von Daten und Schreiben in die Datenbank
 ## Relevante Kenntnisse
-Python, Elasticsearch, CNN, GCN, Covolution
+Python, Elasticsearch, CNN, GCN, Covolution, PCA, SVD
 ## Wichtige Links von Stand der Technik
 - Bild-Convolution: https://blog.csdn.net/chaipp0607/article/details/72236892
 - ICDAR: international Conference on Document Analysis and Recognition
@@ -35,6 +35,7 @@ Codes davon: https://github.com/Irene323/GFTE
 Codes davon: https://github.com/saqib22/Table-Structure_Extraction-Bi-directional-GRU?utm_source=wechat_session&utm_medium=social&utm_oi=973919913925124096 
 - http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.74.50&rep=rep1&type=pdf
 - https://www.researchgate.net/profile/S-Mandal-3/publication/226626959_Simple_and_effective_table_detection_system_from_document_images/links/56444b4508aef646e6ca792c/Simple-and-effective-table-detection-system-from-document-images.pdf
+- Für Schwellenwertverfahren: https://blog.csdn.net/jjddss/article/details/72841141
 ## Mögliche Probleme bei Tabellen
 - Einfache Einzelseitentabelle 
 (weniger als eine Seite und enthält keine zusammengeführten Zellen)
@@ -42,6 +43,7 @@ Codes davon: https://github.com/saqib22/Table-Structure_Extraction-Bi-directiona
 - Mehrseitentabelle
 - Unvollständige Tabelle
 - weiße Linien
+- Bunt also BRG-Bild
 ## Die öffentliche Datasets für die tabellarische Erkennung
 - Marmot
 - UW3
