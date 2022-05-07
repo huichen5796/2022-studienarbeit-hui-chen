@@ -1,6 +1,9 @@
+## Dieses Programm dient zur horizontalen oder vertikalen Kantenerkennung durch Soble. ### 
+
+
 import cv2
 import numpy as np
-from vergl_schw import Binatization
+from Binarization import Binar
 
 
 k_soble_horizonal = np.array((
@@ -21,7 +24,7 @@ def Covonlution(img, kernel):
 
     dst = cv2.filter2D(img, -1, kernel)
     htich = np.hstack((img, dst))
-    cv2.imwrite("test_cov.jpg", htich)
+    # cv2.imwrite("test_cov.jpg", htich)
     cv2.imshow('conv', htich)
     cv2.waitKey()
 
@@ -31,6 +34,6 @@ def Covonlution(img, kernel):
 
 
 
-bina_img = Binatization('Development\imageTest\image2.png')
+bina_img = Binar('Development\imageTest\image2.png')
 
 Covonlution(bina_img, k_soble_horizonal)

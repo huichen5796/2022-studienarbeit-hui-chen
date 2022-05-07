@@ -10,12 +10,12 @@ https://www.llc.uni-hannover.de/de/schreib-support/individuelle-schreibberatung/
 ## Mögliche Aufgabenstellung
 - Vorverarbeitung der Bildern
   - Schwellenwertverfahren
+  - Rauschunterdrückung
   - Richtungskorrektur
     - Neigungskorrektur
     - Umgekehrt
     - Spiegelbild (nicht normal)
-  - Rauschunterdrückung
-  - Kantenentfernung
+  - Rauschgrenzenentfernung
 - Erkennung der Tabellen
   - Erkennung von Texten, Bildern und Tabellen
   - Zerlegung und Wiederherstellung der Tabellenstruktur
