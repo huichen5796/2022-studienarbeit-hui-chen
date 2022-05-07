@@ -62,7 +62,7 @@ def Binatization(path):
 
     ### thresh3 normalerweise besser, es ist schwer eine geeignet Parameter bie thresh4 zu finden, aber wenn gefunden, ist thresh4 best.
     
-    return img_gray
+    return thresh4
 
 
 
