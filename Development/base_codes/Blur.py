@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from Binarization import Binar
 
 def Blur(bina_img):
-    img_fil = cv2.blur(bina_img, (5,5))
+    img_fil = cv2.blur(bina_img, (3,3))
     
     # cv2.imshow('g_f', img_fil)
     # cv2.waitKey()
@@ -17,7 +17,7 @@ def Blur(bina_img):
     return img_fil
 
 def Box_Filter(bina_img):
-    img_fil = cv2.boxFilter(bina_img, -1, (5,5), normalize = 1)
+    img_fil = cv2.boxFilter(bina_img, -1, (3,3), normalize = 1)
 
     # cv2.imshow('g_f', img_fil)
     # cv2.waitKey()
@@ -25,7 +25,7 @@ def Box_Filter(bina_img):
     return img_fil
 
 def Gau_Filter(bina_img):
-    img_fil = cv2.GaussianBlur(bina_img, (5,5), 0)
+    img_fil = cv2.GaussianBlur(bina_img, (3,3), 0)
     
     # cv2.imshow('g_f', img_fil)
     # cv2.waitKey()
@@ -33,7 +33,7 @@ def Gau_Filter(bina_img):
     return img_fil
 
 def Median_Filter(bina_img):
-    img_fil = cv2.medianBlur(bina_img, 5)
+    img_fil = cv2.medianBlur(bina_img, 3)
 
     # cv2.imshow('g_f', img_fil)
     # cv2.waitKey()
@@ -41,16 +41,35 @@ def Median_Filter(bina_img):
     return img_fil
 
 
-def Show(path):
+def Show(path): # die binarisierte Bilde sind anbei blurred
     bina_img = Binar(path)
+    # print(bina_img)
     titles = ['bina_img', 'Blur', 'Box_Filter', 'Gau_Filter', 'Median_Filter']
-    images = [bina_img, Blur(bina_img), Box_Filter(bina_img), Gau_Filter(bina_img), Median_Filter(bina_img)]
-    for i in range(5):
-        plt.subplot(1,5,i+1), plt.imshow(images[i], 'gray')
-        plt.title(titles[i])
-        plt.xticks([]),plt.yticks([])
+    i = 0
+    
+    for image in bina_img:
+        images = [image, Blur(image), Box_Filter(image), Gau_Filter(image), Median_Filter(image)]
+        zeile_of_images = len(bina_img)
+
+    
+        plt.subplot(zeile_of_images, 5, 5*zeile_of_images)
+
+
+        while i < zeile_of_images:
+            for spalt in range(5):
+                plt.subplot(zeile_of_images, 5, 5*i+spalt+1), plt.imshow(images[spalt], 'gray')
+                if i == 0:
+                    plt.title(titles[spalt])
+                
+                plt.xticks([]),plt.yticks([])
+            break
+        i+=1
+
     plt.show()
 
 
-Show('Development\imageTest\image2.png')
+# Show('Development\\imageTest')
+
+
+
 
