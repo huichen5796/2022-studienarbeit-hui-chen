@@ -1,72 +1,88 @@
 import cv2
 import matplotlib.pyplot as plt
+import os
 
-def Binar(path):
-
-    # load the image
-    img_gray = cv2.imread(path, 0)
-
-    # img = cv2.imread(path)
-    # gray_image = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-    # cv2.imshow("img_gray", img_gray)
-    # cv2.waitKey()
-    # print(type(img_gray))
-
+### Quelle: https://de.wikipedia.org/wiki/Schwellenwertverfahren ###
     
-    ### thresh1 und 2###
-    # Die Hauptidee besteht darin, einen Schwellenwert festzulegen, die Pixel unterhalb des Schwellenwerts 
-    # werden auf 0 (schwarz) und die Pixel oberhalb des Schwellenwerts auf 255 (weiß) gesetzt. Sehen wir uns 
-    # den folgenden Code an.
+### thresh1 ---> globalen Schwellenwertverfahren ###
+'''
+Die Hauptidee besteht darin, einen Schwellenwert festzulegen, die Pixel unterhalb des Schwellenwerts 
+werden auf 0 (schwarz) und die Pixel oberhalb des Schwellenwerts auf 255 (weiß) gesetzt.
+'''
+### thresh2 ---> OTSU, ein verbessert globales Schwellenwertverfahren ###
+'''
+Eine Methode, die Schwellwerte basierend auf Bildpixeln automatisch berechnen kann.
+'''
+### thresh3 und thresh4 ---> lokalen Schwellenwertverfahren ###
+'''
+Beim lokalen Schwellenwertverfahren wird das Ausgangsbild in Regionen eingeteilt 
+und der Schwellenwert für jede Region getrennt festgelegt.
 
-    # Die Methode ist relativ einfach und hat eine hohe Recheneffizienz, aber es 
-    # gibt ein Problem: Wenn Sie einen Stapel von Textbildern stapelweise verarbeiten möchten, 
-    # einige Bilder dunklere Texte und einige Bilder hellere Texte haben, dann legen Sie einen 
-    # einzelnen Schwellenwert fest und dort Das Problem ist, dass bei einem kleinen Schwellenwert 
-    # der Inhalt von Text und Bildern mit heller Farbe nach der Binarisierung verloren geht.Wenn 
-    # der Schwellenwert groß ist, ist der Textinhalt nach der Binarisierung des Bildes wahrscheinlich 
-    # schwer zu unterscheiden aus dem Hintergrund.
+Anbei gibt es zwei Methode den Schwellenwert für jede Region festzustellen:
+1. Der Gaußsche gewichtete Summenalgorithmus berechnet den Abstand vom Mittelpunkt, 
+   indem er die Pixel um den Mittelpunkt (x, y) der Region gemäß der Gaußschen Funktion gewichtet. ---> thresh3
+2. Bei der Mittelwertmethode wird der Mittelwert des Grauwerts der Pixel im Bereich als Grauwert 
+   aller Pixel im Bereich berechnet. Dies ist eigentlich ein Glättungs- oder Filtereffekt. ---> thresh4
+'''
 
-    ### thresh3 ###
-    # Eine Methode, die Schwellwerte basierend auf Bildpixeln automatisch berechnen kann
 
-    # Obwohl dieser Operator die oben genannten Probleme bis zu einem gewissen Grad lösen 
-    # kann, ist die Wirkung dieses Operators für eine komplexere Bildverarbeitung, insbesondere 
-    # für einige Bilder mit großem Unterschied zwischen Hell und Dunkel, immer noch sehr unbefriedigend
+def Binar(dir):
 
-    ### thresh4 ###
-    # Um das oben erwähnte Problem zu lösen, können wir die cv2.adaptiveThreshold-Methode für die 
-    # Binarisierungsverarbeitung verwenden.Die allgemeine Bedeutung der Funktion besteht darin, jedes 
-    # Pixel im Bild als Zentrum zu nehmen und die Pixel im Bereich von n*n zu nehmen um ihn herum, und
-    # dann wird gemäß dem Pixelwert in diesem Bereich ein Schwellenwert berechnet, um zu bestimmen, ob das 
-    # aktuelle Pixel als 0 oder 255 verarbeitet wird.
+    file_list = GetFileList(dir)
+    #print(file_list)
+    i = 0
+    for image_path in file_list:
+        # load the image
+        img_gray = cv2.imread(dir+'\\'+image_path, 0)
+        ### 1 or cv2.IMREAD_COLOR : Loads a color image. Any transparency of image will be neglected. It is the default flag.
+        ### 0 or cv2.IMREAD_GRAYSCALE : Loads image in grayscale mode
+        ### -1 or cv2.IMREAD_UNCHANGED : Loads image as such including alpha channel
+        
+        ret,thresh1 = cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY)
+        ret, thresh2 = cv2.threshold(img_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        thresh3 = cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 5)
+        thresh4 = cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 5)
 
-    ret,thresh1 = cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY)
-    ret,thresh2 = cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY_INV)
-    ret, thresh3 = cv2.threshold(img_gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    thresh4 = cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 5)
-    #cv2.imshow('s', thresh1)
-    #cv2.waitKey()
-    
-    
-    titles = ['img', 'BINARY', 'BINARY_INV', 'BINARY_OTSU', 'BINARY_GAUSSIAN']
-    images = [img_gray, thresh1, thresh2, thresh3, thresh4]
-    for i in range(5):
-        plt.subplot(1,5,i+1), plt.imshow(images[i], 'gray')
-        plt.title(titles[i])
-        plt.xticks([]),plt.yticks([])
+        ## hier können die Parameter 9 und 5 vielleicht durch machine learning verbessert werden
+
+        titles = ['original','globalen Schwellenwertverfahren', 'OSTU', 'Gauss-Lokal', 'Mean-Lokal']
+        images = [img_gray, thresh1, thresh2, thresh3, thresh4]
+
+        ### folgende sind die codes dafür, alle image in einem Bild zu zeigen, um miteinander zu vergleichen.
+        zeile_of_images = len(file_list)
+        plt.subplot(zeile_of_images, 5, 5*zeile_of_images)
+
+        
+        while i < zeile_of_images:
+            for spalt in range(5):
+                plt.subplot(zeile_of_images, 5, 5*i+spalt+1), plt.imshow(images[spalt], 'gray')
+                if i == 0:
+                    plt.title(titles[spalt])
+                
+                plt.xticks([]),plt.yticks([])
+            break
+        i+=1
+
     plt.show()
 
-
-
-    ### thresh3 normalerweise besser, es ist schwer eine geeignet Parameter bie thresh4 zu finden, aber wenn gefunden, ist thresh4 best.
+    return thresh3  # return the threshmethode we want
+        
     
-    return thresh4
+    
+
+def GetFileList(dir): # get all the filename of images unter a dir
+    file_list = []
+
+    if os.path.isfile(dir):
+        file_list.append(dir) # if the input dir is a file
+
+    elif os.path.isdir(dir):
+        file_list = os.listdir(dir) # if the input is a dir then get all the name of the files unter the dir
+        print(file_list)
+    return file_list
 
 
-# Binar('Development\imageTest\image1.png')
-# Binar('Development\imageTest\image2.png')
+Binar('Development\\imageTest')
 
- 
 
 
