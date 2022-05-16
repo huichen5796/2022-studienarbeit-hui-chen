@@ -124,6 +124,7 @@ def Rotate(image, angle):
 
 def TiltCorrection(path):
     bina_image = Circle2(path, 1)
+    # bina_image = cv2.imread(path, 0)
     lines = LineSearch(bina_image)
     angle = GetAngle(lines)
     image_rotate = Rotate(bina_image, angle)
@@ -132,7 +133,7 @@ def TiltCorrection(path):
     
     
 
-TiltCorrection(r'Development\imageTest\winkel_30.png')
+TiltCorrection(r'Development\imageTest\0.png')
 
 
 # bei rotating ist Scanverzerrung ignorriert.
