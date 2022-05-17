@@ -34,10 +34,10 @@ def LineSearch(bina_image):
 
         img_line = cv2.line(color_img, (x1,y1), (x2, y2), (0, 0, 255), 2)
     
-
-    # cv2.imshow('input', bina_img)
-    cv2.imshow("output", img_line)
-    cv2.waitKey()
+    if __name__ == '__main__':
+        # cv2.imshow('input', bina_img)
+        cv2.imshow("output", img_line)
+        cv2.waitKey()
 
     return lines
 
@@ -80,9 +80,9 @@ def GetAngle(lines):
     
 
 
-
-    print(angle_average)
-    # print(angle_list)
+    if __name__ == '__main__':
+        print(angle_average)
+        # print(angle_list)
     return angle_average
     
 
@@ -127,8 +127,10 @@ def TiltCorrection(path):
     lines = LineSearch(bina_image)
     angle = GetAngle(lines)
     image_rotate_kor = Rotate(bina_image, angle)
-    cv2.imshow('korrigiertes Bild',image_rotate_kor)
-    cv2.waitKey()
+    
+    if __name__ == '__main__':
+        cv2.imshow('korrigiertes Bild',image_rotate_kor)
+        cv2.waitKey()
 
     return image_rotate_kor
     
