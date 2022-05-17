@@ -8,7 +8,7 @@ Schritte:
 import cv2
 import numpy as np
 import math
-
+from binar_gauss import BinarGauss
 
 def LineSearch(bina_image):
     ### Line makieren durch HoughLines()
@@ -121,13 +121,13 @@ def Rotate(image, angle):
 
 
 def TiltCorrection(path):
-    gray_image = cv2.imread(path, 0)
-    bina_image = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 5)
+    
+    bina_image = BinarGauss(path)
     # bina_image = cv2.imread(path, 0)
     lines = LineSearch(bina_image)
     angle = GetAngle(lines)
     image_rotate_kor = Rotate(bina_image, angle)
-    cv2.imshow('',image_rotate_kor)
+    cv2.imshow('korrigiertes Bild',image_rotate_kor)
     cv2.waitKey()
 
     return image_rotate_kor
