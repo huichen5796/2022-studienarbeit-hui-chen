@@ -81,16 +81,22 @@ def Binar(dir):
 
 
 def GetFileList(dir): # get all the filename of images unter a dir
-    file_list = []
-
+    file_list = os.listdir(dir)
     
-    file_list = os.listdir(dir) # if the input is a dir then get all the name of the files unter the dir
-        # print(file_list)
+    for name in file_list:
+        print(name)
+        if os.path.isfile(name) is True:
+            print(12)
+            continue
+        if os.path.isdir(name):
+            GetFileList(name)
 
+    print(file_list)
     return file_list
 
 if __name__ =='__main__':
-    Binar('Development\imageTest')
+    #Binar('Development\imageTest')
+    GetFileList('Development\imageTest')
 
 
 
