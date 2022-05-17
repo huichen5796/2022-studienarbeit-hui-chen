@@ -1,3 +1,4 @@
+
 ### folgende Codes stehen für Vergleich zwischen den vier Schwellenwertmethden zur Verfügung.
 
 import cv2
@@ -7,6 +8,7 @@ import os
 ### Quelle: https://de.wikipedia.org/wiki/Schwellenwertverfahren ###
     
 ### thresh1 ---> globalen Schwellenwertverfahren ###
+# https://blog.csdn.net/a19990412/article/details/81172426
 '''
 Die Hauptidee besteht darin, einen Schwellenwert festzulegen, die Pixel unterhalb des Schwellenwerts 
 werden auf 0 (schwarz) und die Pixel oberhalb des Schwellenwerts auf 255 (weiß) gesetzt.
@@ -16,6 +18,8 @@ werden auf 0 (schwarz) und die Pixel oberhalb des Schwellenwerts auf 255 (weiß)
 Eine Methode, die Schwellwerte basierend auf Bildpixeln automatisch berechnen kann.
 '''
 ### thresh3 und thresh4 ---> lokalen Schwellenwertverfahren ###
+# https://blog.csdn.net/weixin_42272768/article/details/110817275
+# https://blog.csdn.net/laoyezha/article/details/106445437
 '''
 Beim lokalen Schwellenwertverfahren wird das Ausgangsbild in Regionen eingeteilt 
 und der Schwellenwert für jede Region getrennt festgelegt.
@@ -25,6 +29,10 @@ Anbei gibt es zwei Methode den Schwellenwert für jede Region festzustellen:
    indem er die Pixel um den Mittelpunkt (x, y) der Region gemäß der Gaußschen Funktion gewichtet. ---> thresh3
 2. Bei der Mittelwertmethode wird der Mittelwert des Grauwerts der Pixel im Bereich als Grauwert 
    aller Pixel im Bereich berechnet. Dies ist eigentlich ein Glättungs- oder Filtereffekt. ---> thresh4
+
+
+   - Niblack's method
+   - Sauvola's method
 '''
 
 
@@ -95,8 +103,8 @@ def GetFileList(dir): # get all the filename of images unter a dir
     return file_list
 
 if __name__ =='__main__':
-    #Binar('Development\imageTest')
-    GetFileList('Development\imageTest')
+    Binar('Development\imageTest')
+    #GetFileList('Development\imageTest')
 
 
 

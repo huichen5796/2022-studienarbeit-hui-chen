@@ -3,7 +3,6 @@
 
 import cv2
 import numpy as np
-from Binarization import Binar
 
 
 k_soble_horizonal = np.array((
@@ -22,18 +21,15 @@ k_soble_vertical = np.array((
 
 def Covonlution(img, kernel):
 
-    dst = cv2.filter2D(img, -1, kernel)
-    htich = np.hstack((img, dst))
+    dst = ~cv2.filter2D(img, -1, kernel)
+    # htich = np.hstack((img, dst))
     # cv2.imwrite("test_cov.jpg", htich)
-    cv2.imshow('conv', htich)
+    cv2.imshow('conv', dst)
     cv2.waitKey()
 
 
 
+if __name__ == '__main__':
+    bina_img = cv2.imread(r'Development\imageTest\rotate_table.png',0)
 
-
-
-
-bina_img = Binar('Development\imageTest\image2.png')
-
-Covonlution(bina_img, k_soble_horizonal)
+    Covonlution(bina_img, k_soble_horizonal)

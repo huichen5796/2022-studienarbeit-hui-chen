@@ -7,8 +7,6 @@ Schritte:
 
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-from pro_processing import Circle2
 import math
 
 
@@ -123,17 +121,20 @@ def Rotate(image, angle):
 
 
 def TiltCorrection(path):
-    bina_image = Circle2(path, 1)
+    gray_image = cv2.imread(path, 0)
+    bina_image = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 5)
     # bina_image = cv2.imread(path, 0)
     lines = LineSearch(bina_image)
     angle = GetAngle(lines)
-    image_rotate = Rotate(bina_image, angle)
-    cv2.imshow('',image_rotate)
+    image_rotate_kor = Rotate(bina_image, angle)
+    cv2.imshow('',image_rotate_kor)
     cv2.waitKey()
-    
-    
 
-TiltCorrection(r'Development\imageTest\0.png')
+    return image_rotate_kor
+    
+    
+if __name__ == '__main__':
+    TiltCorrection(r'Development\imageTest\rotate_table.png')
 
 
 # bei rotating ist Scanverzerrung ignorriert.

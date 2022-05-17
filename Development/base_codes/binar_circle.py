@@ -37,11 +37,14 @@ def Circle2(path, circle_time): # Rauschunterdrückung
         i += 1
     
     
-    # cv2.imshow('',bina_image)
-    # cv2.waitKey()
+    cv2.imshow('',bina_image)
+    cv2.waitKey()
     return bina_image
 
-# Circle2('Development\imageTest\image1.png', 1) # erhöhen das Parameter wird die Leistung verbessert.
+
+if __name__ == '__main__':
+    # Circle1('Development\imageTest\image1.png', 2)
+    Circle2(r'Development\imageTest\rotate_table.png', 5) # erhöhen das Parameter wird die Leistung verbessert.
 
 # Jede Schleife erhöht die Anzahl der weißen Pixel und konvergiert schließlich zu einem Wert.
 

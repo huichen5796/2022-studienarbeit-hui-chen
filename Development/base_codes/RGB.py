@@ -2,11 +2,12 @@
 import cv2
 import numpy as np
 
-img = cv2.imread('test.jpg')
-b,g,r = cv2.split(img)
+img = cv2.imread(r'Development\imageTest\rotate_table.png')
+
+b, g, r = cv2.split(img)
 merged = cv2.merge([b,g,r])
 zeros = np.zeros(img.shape[:2], dtype="uint8")
-merged_r = cv2.merge([zeros, zeros,r])
+merged_r = cv2.merge([zeros, zeros, r])
 
 cv2.imshow('imgage',img)
 cv2.imshow('Blue', b)
