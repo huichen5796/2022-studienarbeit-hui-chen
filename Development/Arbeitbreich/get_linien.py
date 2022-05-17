@@ -55,7 +55,7 @@ def Thicken(img): # LinienVerdickung durch Dilate
     img_t = ~thresh1
 
     if __name__ == '__main__':
-        cv2.imshow('verdickte Linien', img_t)
+        cv2.imshow('verdickte Linien - einfach Binar', img_t)
         cv2.waitKey()
 
     return img_t
@@ -129,7 +129,9 @@ def GetLine(path):
 
 
 if __name__ == '__main__':
+    # GetLine(r'Development\imageTest\einfach_table.jpg')
     GetLine(r'Development\imageTest\rotate_table.png')
+
 
 
 ##########################################################################

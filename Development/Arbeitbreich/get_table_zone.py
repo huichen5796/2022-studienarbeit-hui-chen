@@ -1,6 +1,7 @@
 '''
 - markieren linien durch HoughLinesP
 - get location of table --- not done
+# https://wenku.baidu.com/view/8bdffcf175a20029bd64783e0912a21614797fd3.html
 
 '''
 import cv2
@@ -31,5 +32,9 @@ def LineMark(bina_image):
 
 
 def Main():
-    bina_image = GetLine(r'Development\imageTest\rotate_table.png')
+    # bina_image = GetLine(r'Development\imageTest\einfach_table.jpg')  # einfache Tabelle
+    bina_image = GetLine(r'Development\imageTest\rotate_table.png')  # komplexe Tabelle
     LineMark(bina_image)
+    
+if __name__ == '__main__':
+    Main()
