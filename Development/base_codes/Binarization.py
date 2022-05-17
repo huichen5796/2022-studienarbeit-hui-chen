@@ -1,3 +1,5 @@
+### folgende Codes stehen für Vergleich zwischen den vier Schwellenwertmethden zur Verfügung.
+
 import cv2
 import matplotlib.pyplot as plt
 import os
@@ -44,48 +46,51 @@ def Binar(dir):
         thresh3 = cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 5)
         thresh4 = cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 5)
 
-        list_bina_images.append(thresh3)
-    return list_bina_images  # return the threshmethode we want
 
         ## hier können die Parameter 9 und 5 vielleicht durch machine learning verbessert werden
 
-        
-
         ### folgende sind die codes dafür, alle image in einem Bild zu zeigen, um miteinander zu vergleichen.
 
-'''
-        titles = ['original','globalen Schwellenwertverfahren', 'OSTU', 'Gauss-Lokal', 'Mean-Lokal']
-        images = [img_gray, thresh1, thresh2, thresh3, thresh4]
-        zeile_of_images = len(file_list)
-        plt.subplot(zeile_of_images, 5, 5*zeile_of_images)
+        if __name__ == '__main__':
+            titles = ['original','globalen Schwellenwertverfahren', 'OSTU', 'Gauss-Lokal', 'Mean-Lokal']
+            images = [img_gray, thresh1, thresh2, thresh3, thresh4]
+            zeile_of_images = len(file_list)
+            plt.subplot(zeile_of_images, 5, 5*zeile_of_images)
 
 
-        while i < zeile_of_images:
-            for spalt in range(5):
-                plt.subplot(zeile_of_images, 5, 5*i+spalt+1), plt.imshow(images[spalt], 'gray')
-                if i == 0:
-                    plt.title(titles[spalt])
-                
-                plt.xticks([]),plt.yticks([])
-            break
-        i+=1
+            while i < zeile_of_images:
+                for spalt in range(5):
+                    plt.subplot(zeile_of_images, 5, 5*i+spalt+1), plt.imshow(images[spalt], 'gray')
+                    if i == 0:
+                        plt.title(titles[spalt])
+                    
+                    plt.xticks([]),plt.yticks([])
+                break
+            i+=1
+        else:
+            list_bina_images.append(thresh3)
 
-    plt.show()
-'''
+    if __name__ == '__main__':
+        plt.show()
+
+    else:
+        return list_bina_images  # return the threshmethode we want
+
     
+
+
+
 def GetFileList(dir): # get all the filename of images unter a dir
     file_list = []
 
-    if os.path.isfile(dir):
-        file_list.append(dir) # if the input dir is a file
-
-    elif os.path.isdir(dir):
-        file_list = os.listdir(dir) # if the input is a dir then get all the name of the files unter the dir
+    
+    file_list = os.listdir(dir) # if the input is a dir then get all the name of the files unter the dir
         # print(file_list)
+
     return file_list
 
-
-# Binar('Development\\imageTest')
+if __name__ =='__main__':
+    Binar('Development\imageTest')
 
 
 

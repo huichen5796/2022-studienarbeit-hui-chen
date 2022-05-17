@@ -67,8 +67,8 @@ def Show(path): # die binarisierte Bilde sind anbei blurred
 
     plt.show()
 
-
-# Show('Development\\imageTest')
+if __name__ == '__main__':
+    Show('Development\\imageTest')
 
 
 
