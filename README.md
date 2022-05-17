@@ -1,4 +1,4 @@
-## PDFTabelle
+# 2022-projektarbeit-hui-chen
 Hier ist der Arbeitsplatz für die Studienarbeit “Automatische Erkennung und Konvertierung von Tabellen in Bilddokumenten”.
 
 ## TODOS
