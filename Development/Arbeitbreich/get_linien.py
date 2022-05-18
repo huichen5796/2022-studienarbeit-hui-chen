@@ -27,6 +27,7 @@ import numpy as np
 
 def GetLine(path, p):  # Entfernen Text und Vertikalen
     bina_image = TiltCorrection(path)
+    #bina_image = cv2.adaptiveThreshold(bina_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
     
     if p == 'horizonal':
         h, w = bina_image.shape
@@ -42,14 +43,7 @@ def GetLine(path, p):  # Entfernen Text und Vertikalen
         if __name__ == '__main__':
             cv2.imshow('Horizonale', img_hors)
             cv2.waitKey()
-        
-        ret,thresh1 = cv2.threshold(img_hors, 1, 255, cv2.THRESH_BINARY) # all pixel bigger than 1 will be 255
-        img_hors = thresh1
-        
 
-        if __name__ == '__main__':
-            cv2.imshow('Horizonale - after Binarization', img_hors)
-            cv2.waitKey()
         return img_hors
 
     elif p == 'vertikal':
@@ -64,13 +58,7 @@ def GetLine(path, p):  # Entfernen Text und Vertikalen
             cv2.imshow('Vertikale', img_vert)
             cv2.waitKey()
 
-        ret,thresh1 = cv2.threshold(img_vert, 1, 255, cv2.THRESH_BINARY) # all pixel bigger than 1 will be 255
-        img_vert = thresh1
-
-
-        if __name__ == '__main__':
-            cv2.imshow('Vertikale - after Binarization', img_vert)
-            cv2.waitKey()
+       
         return img_vert
 
 
@@ -108,7 +96,7 @@ def LinienRestore(img_t, p): # restore line length
         
 
         if __name__ == '__main__':
-            cv2.imshow('Horizonale', img_r)
+            cv2.imshow('Horizonale restore', img_r)
             cv2.waitKey()
         return img_r
 
@@ -121,7 +109,7 @@ def LinienRestore(img_t, p): # restore line length
         img_r = cv2.dilate(img_t, kernel1, iterations=1)
 
         if __name__ == '__main__':
-            cv2.imshow('Horizonale', img_r)
+            cv2.imshow('Vertikale restore', img_r)
             cv2.waitKey()
         return img_r
 
@@ -165,9 +153,9 @@ def GetTable(path):
 
 
 if __name__ == '__main__':
-    GetTable(r'Development\imageTest\einfach_table.jpg')
-    #GetTable(r'Development\imageTest\rotate_table.png')
+    # GetTable(r'Development\imageTest\einfach_table.jpg')
+    GetTable(r'Development\imageTest\rotate_table.png')
 
 
 
-##########################################################################
+#########################################################################
