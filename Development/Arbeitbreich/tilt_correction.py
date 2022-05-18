@@ -32,14 +32,14 @@ def LineSearch(bina_image):
     for line in lines:
         x1, y1, x2, y2 = line[0]
 
-        img_line = cv2.line(color_img, (x1,y1), (x2, y2), (0, 0, 255), 2)
+        img_line = cv2.line(color_img, (x1,y1), (x2, y2), (0, 0, 255), 1)
     
     if __name__ == '__main__':
         # cv2.imshow('input', bina_img)
         cv2.imshow("output", img_line)
         cv2.waitKey()
 
-    return lines
+    return img_line, lines
 
 
 
@@ -113,7 +113,7 @@ def Rotate(image, angle):
 
     # perform the actual rotation and return the image
     # borderValue 
-    image_rotate = cv2.warpAffine(image, M, (new_w, new_h),borderValue=(255,255,255))
+    image_rotate = cv2.warpAffine(image, M, (new_w, new_h), borderValue=(255,255,255))
     return image_rotate
     # borderValue default（0, 0 , 0）
     # return cv2.warpAffine(image, M, (nW, nH))
@@ -124,9 +124,11 @@ def TiltCorrection(path):
     
     bina_image = GaussBE(path)
     # bina_image = cv2.imread(path, 0)
-    lines = LineSearch(bina_image)
+    img_line, lines = LineSearch(bina_image)
+    b, gray_img, r = cv2.split(img_line)
     angle = GetAngle(lines)
-    image_rotate_kor = Rotate(bina_image, angle)
+    image_rotate_kor = Rotate(gray_img, angle)
+    ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
     if __name__ == '__main__':
         cv2.imshow('korrigiertes Bild',image_rotate_kor)
@@ -137,10 +139,10 @@ def TiltCorrection(path):
     
 if __name__ == '__main__':
     TiltCorrection(r'Development\imageTest\rotate_table.png')
-    TiltCorrection(r'Development\imageTest\winkel_-30.png')
-    TiltCorrection(r'Development\imageTest\winkel_30.png')
-    TiltCorrection(r'Development\imageTest\winkel_-60.png')
-    TiltCorrection(r'Development\imageTest\winkel_60.png')
+    #TiltCorrection(r'Development\imageTest\winkel_-30.png')
+    #TiltCorrection(r'Development\imageTest\winkel_30.png')
+    #TiltCorrection(r'Development\imageTest\winkel_-60.png')
+    #TiltCorrection(r'Development\imageTest\winkel_60.png')
     
 
 
