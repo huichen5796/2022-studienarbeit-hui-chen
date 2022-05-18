@@ -43,6 +43,12 @@ Matr.-Nr.: 10048521
 
 ### Programmierung
 
+### Test
+
+#### Binarization
+
+![binarization](/2022-projektarbeit-hui-chen/Schriftliche%20Ausarbeitung/_images/binarization_test.png)
+
 ## Diskussion
 
 ## Zusammenfassung
