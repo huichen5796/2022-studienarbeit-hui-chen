@@ -1,18 +1,31 @@
+
 '''
-- binarization
+- tilt correction
 - enhancement
-- mark Linien
+  - get horizonals 
+    - white zone horizonal dilate ---> remove words and vertikals
+      ## kernelsize ---> (hors_k, 1)
+    - black and white inversion then white vertikal dilate ---> thicken the horizonal lines
+    - restore line length ---> dilate by kernelsize ---> (hors_k, 1)
+  - get vertikals 
+    - white zone vertikal dilate ---> remove words and horizonals
+      ## kernelsize ---> (1, vert_k)
+    - black and white inversion then white horizonal dilate ---> thicken the horizonal lines
+    - restore line length ---> dialte by kernelsize ---> (1, vert_k)
+    
+- get Linien
 
 '''
 
 import cv2
 from tilt_correction import TiltCorrection
 import math
+import numpy as np
 
 
 
 
-def GetHorizonale(path, p):  # Entfernen Text und Vertikalen
+def GetLine(path, p):  # Entfernen Text und Vertikalen
     bina_image = TiltCorrection(path)
     
     if p == 'horizonal':
@@ -21,46 +34,69 @@ def GetHorizonale(path, p):  # Entfernen Text und Vertikalen
                                         # hier für die Kernsize 
                                         # https://blog.csdn.net/weixin_41189525/article/details/121889157
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (hors_k, 1))
-        img_hors = ~cv2.dilate(bina_image, kernel1, iterations=1)
+        # kernel1 = np.ones((1, hors_k))
+        img_hors = ~cv2.dilate(bina_image, kernel1, iterations=1)  # white zone horizonal dilate then inversion
+                                                                   # white lines on black background now
+                                                                   # img_hors is gray image?
 
         if __name__ == '__main__':
             cv2.imshow('Horizonale', img_hors)
+            cv2.waitKey()
+        
+        ret,thresh1 = cv2.threshold(img_hors, 1, 255, cv2.THRESH_BINARY) # all pixel bigger than 1 will be 255
+        img_hors = thresh1
+        
+
+        if __name__ == '__main__':
+            cv2.imshow('Horizonale - after Binarization', img_hors)
             cv2.waitKey()
         return img_hors
 
     elif p == 'vertikal':
         h, w = bina_image.shape
         
-        vert_k = int(math.sqrt(h)*1.2)  # hier für die Kernsize 
-                                        # https://blog.csdn.net/weixin_41189525/article/details/121889157
+        vert_k = int(math.sqrt(h)*1.2)  
+
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vert_k))
         img_vert = ~cv2.dilate(bina_image, kernel1, iterations=1)
 
         if __name__ == '__main__':
-            cv2.imshow('Horizonale', img_vert)
+            cv2.imshow('Vertikale', img_vert)
+            cv2.waitKey()
+
+        ret,thresh1 = cv2.threshold(img_vert, 1, 255, cv2.THRESH_BINARY) # all pixel bigger than 1 will be 255
+        img_vert = thresh1
+
+
+        if __name__ == '__main__':
+            cv2.imshow('Vertikale - after Binarization', img_vert)
             cv2.waitKey()
         return img_vert
 
 
-def Thicken(img): # LinienVerdickung durch Dilate
+def Thicken(img_l, p): # LinienVerdickung durch Dilate
+    if p == 'horizonal':
+        kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 2))
+        # kernel1 = np.ones((2,1))
+        img_t = cv2.dilate(img_l, kernel1, iterations=1)
 
-    kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    img_t = ~cv2.dilate(img, kernel1, iterations=1)
+        if __name__ == '__main__':
+            cv2.imshow('verdickte Linien', img_t)
+            cv2.waitKey()
 
-    if __name__ == '__main__':
-        cv2.imshow('verdickte Linien', img_t)
-        cv2.waitKey()
+    elif p == 'vertikal':
+        kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1))
+        img_t = cv2.dilate(img_l, kernel1, iterations=1)
 
-    ret,thresh1 = cv2.threshold(img_t, 254, 255, cv2.THRESH_BINARY)
-    img_t = ~thresh1
+        if __name__ == '__main__':
+            cv2.imshow('verdickte Linien', img_t)
+            cv2.waitKey()
+    
 
-    if __name__ == '__main__':
-        cv2.imshow('verdickte Linien - einfach Binar', img_t)
-        cv2.waitKey()
 
     return img_t
 
-def LinienReparat(img_t, p): # die Linie horizontal verlängern
+def LinienRestore(img_t, p): # restore line length
     if p == 'horizonal':
         h, w = img_t.shape
         hors_k = int(math.sqrt(w)*1.2)
@@ -69,6 +105,7 @@ def LinienReparat(img_t, p): # die Linie horizontal verlängern
 
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (hors_k, 1))
         img_r = cv2.dilate(img_t, kernel1, iterations=1)
+        
 
         if __name__ == '__main__':
             cv2.imshow('Horizonale', img_r)
@@ -78,8 +115,7 @@ def LinienReparat(img_t, p): # die Linie horizontal verlängern
     elif p == 'vertikal':
         h, w = img_t.shape
         
-        vert_k = int(math.sqrt(h)*1.2)  # hier für die Kernsize 
-                                        # https://blog.csdn.net/weixin_41189525/article/details/121889157
+        vert_k = int(math.sqrt(h)*1.2)  
 
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vert_k))
         img_r = cv2.dilate(img_t, kernel1, iterations=1)
@@ -88,7 +124,6 @@ def LinienReparat(img_t, p): # die Linie horizontal verlängern
             cv2.imshow('Horizonale', img_r)
             cv2.waitKey()
         return img_r
-
 
 
 ########################### Main Funktion ################################
@@ -101,9 +136,10 @@ def LinienMakieren(path,p):
     - return img_r --- the image only with 'Horizonalen' or 'Vertikalen'
 
     '''
-    img = GetHorizonale(path, p)
-    img_t = Thicken(img)
-    img_r = LinienReparat(img_t, p)
+    img = GetLine(path, p)
+    img_t = Thicken(img, p)
+    img_r = LinienRestore(img_t, p)
+    
 
     return img_r
 
@@ -121,7 +157,7 @@ def Border(img1, img2):
 
     return borders
 
-def GetLine(path):
+def GetTable(path):
     img1 = LinienMakieren(path, 'horizonal')
     img2 = LinienMakieren(path, 'vertikal')
     borders_image = Border(img1, img2)
@@ -129,8 +165,8 @@ def GetLine(path):
 
 
 if __name__ == '__main__':
-    # GetLine(r'Development\imageTest\einfach_table.jpg')
-    GetLine(r'Development\imageTest\rotate_table.png')
+    GetTable(r'Development\imageTest\einfach_table.jpg')
+    #GetTable(r'Development\imageTest\rotate_table.png')
 
 
 
