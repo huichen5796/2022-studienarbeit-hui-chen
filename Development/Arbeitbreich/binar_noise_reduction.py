@@ -21,5 +21,5 @@ def GaussBE(path):
 
 if __name__ == '__main__':
     GaussBE(r'Development\imageTest\einfach_table.jpg')
-    GaussBE(r'Development\imageTest\rotate_table.png')
+    # GaussBE(r'Development\imageTest\rotate_table.png')
 
