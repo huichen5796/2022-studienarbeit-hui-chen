@@ -6,14 +6,14 @@
 '''
 import cv2
 import numpy as np
-from get_linien import GetLine
+from get_linien import GetTable
 
 
 def LineMark(bina_image):
     ### Line makieren durch HoughLines()
-    edges = cv2.Canny(~bina_image, 50, 250, apertureSize= 3) ## apertureSize is the size of kernel, also soble
+    edges = cv2.Canny(bina_image, 50, 250, apertureSize= 7) ## apertureSize is the size of kernel, also soble
 
-    lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50, minLineLength=30, maxLineGap=10) 
+    lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50, minLineLength=20, maxLineGap=10) 
 
     ### show the line
     color_img = cv2.merge((bina_image, bina_image, bina_image))
@@ -32,8 +32,8 @@ def LineMark(bina_image):
 
 
 def Main():
-    # bina_image = GetLine(r'Development\imageTest\einfach_table.jpg')  # einfache Tabelle
-    bina_image = GetLine(r'Development\imageTest\rotate_table.png')  # komplexe Tabelle
+    bina_image = GetTable(r'Development\imageTest\einfach_table.jpg')  # einfache Tabelle
+    # bina_image = GetTable(r'Development\imageTest\rotate_table.png')  # komplexe Tabelle
     LineMark(bina_image)
     
 if __name__ == '__main__':

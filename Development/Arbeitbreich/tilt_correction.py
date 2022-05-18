@@ -137,6 +137,11 @@ def TiltCorrection(path):
     
 if __name__ == '__main__':
     TiltCorrection(r'Development\imageTest\rotate_table.png')
+    TiltCorrection(r'Development\imageTest\winkel_-30.png')
+    TiltCorrection(r'Development\imageTest\winkel_30.png')
+    TiltCorrection(r'Development\imageTest\winkel_-60.png')
+    TiltCorrection(r'Development\imageTest\winkel_60.png')
+    
 
 
 # bei rotating ist Scanverzerrung ignorriert.

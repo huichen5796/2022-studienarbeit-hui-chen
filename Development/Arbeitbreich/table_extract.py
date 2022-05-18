@@ -1,6 +1,6 @@
 '''
-- ROI of Zelle
-- erode to reduce the noise
+- ROI of Zelle in table
+- erode then dilate ---> reduce the noise
    
     ----------------
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))
