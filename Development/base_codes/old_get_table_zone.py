@@ -7,6 +7,7 @@ noch nicht fertig hier
 '''
 import cv2
 import numpy as np
+from get_linien import GetTable
 import math
 from distutils.command.config import LANG_EXT
 
@@ -60,3 +61,13 @@ def PointMerge(lines):
         x1, y1, x2, y2 = lines[i][0]
         x11, y11, x22, y22 = lines[i+1][0]
 
+
+
+
+def Main():
+    bina_image = ~GetTable(r'Development\imageTest\einfach_table.jpg')  # einfache Tabelle
+    # bina_image = GetTable(r'Development\imageTest\rotate_table.png')  # komplexe Tabelle
+    PointAndLineMark(bina_image)
+    
+if __name__ == '__main__':
+    Main()

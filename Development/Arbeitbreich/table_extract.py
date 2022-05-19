@@ -21,6 +21,7 @@ noch nicht fertig hier
 import pytesseract
 import cv2
 import pandas as pd
+from binar_noise_reduction import GaussBED
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 

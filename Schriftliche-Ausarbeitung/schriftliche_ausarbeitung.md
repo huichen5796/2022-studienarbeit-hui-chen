@@ -17,7 +17,7 @@ Matr.-Nr.: 10048521
 - Tabellen
 - Python
 
-![Pyramide](/2022-projektarbeit-hui-chen/Schriftliche%20Ausarbeitung/_images/wissenspyramide_derwirtschaftsinformatiker.png)
+![Pyramide](./_images/wissenspyramide_derwirtschaftsinformatiker.png)
 
 ## Stand der Technik
 
@@ -47,7 +47,7 @@ Matr.-Nr.: 10048521
 
 #### Binarization
 
-![binarization](/2022-projektarbeit-hui-chen/Schriftliche%20Ausarbeitung/_images/binarization_test.png)
+![binarization](./_images/binarization_test.png)
 
 ## Diskussion
 
