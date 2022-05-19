@@ -25,7 +25,7 @@ import numpy as np
 
 
 
-def GetLine(path, p):  # Entfernen Text und Vertikalen
+def RemoveLine(path, p):  # Entfernen Text und Vertikalen
     bina_image = TiltCorrection(path)
     #bina_image = cv2.adaptiveThreshold(bina_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
     
@@ -114,9 +114,8 @@ def LinienRestore(img_t, p): # restore line length
         return img_r
 
 
-########################### Main Funktion ################################
 
-def LinienMakieren(path,p):
+def GetLine(path,p):
     '''
     - path --- the path of image, must after titel correction
     - p --- parameter for (Horizonalen makieren) or (Vertikalen makieren)
@@ -124,7 +123,7 @@ def LinienMakieren(path,p):
     - return img_r --- the image only with 'Horizonalen' or 'Vertikalen'
 
     '''
-    img = GetLine(path, p)
+    img = RemoveLine(path, p)
     img_t = Thicken(img, p)
     img_r = LinienRestore(img_t, p)
     
@@ -146,16 +145,16 @@ def Border(img1, img2):
     return borders
 
 def GetTable(path):
-    img1 = LinienMakieren(path, 'horizonal')
-    img2 = LinienMakieren(path, 'vertikal')
+    img1 = GetLine(path, 'horizonal')
+    img2 = GetLine(path, 'vertikal')
     borders_image = Border(img1, img2)
     return borders_image
 
 
 if __name__ == '__main__':
-    # GetTable(r'Development\imageTest\einfach_table.jpg')
-    GetTable(r'Development\imageTest\rotate_table.png')
+    GetTable(r'Development\imageTest\einfach_table.jpg')
+    #GetTable(r'Development\imageTest\rotate_table.png')
 
 
 
-#########################################################################
+

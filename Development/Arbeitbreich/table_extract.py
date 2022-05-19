@@ -1,4 +1,5 @@
 '''
+noch nicht fertig hier
 - ROI of Zelle in table
 - erode then dilate ---> reduce the noise
    

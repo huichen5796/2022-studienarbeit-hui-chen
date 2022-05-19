@@ -8,7 +8,7 @@ Schritte:
 import cv2
 import numpy as np
 import math
-from binar_noise_reduction import GaussBE
+from binar_noise_reduction import GaussB
 
 def LineSearch(bina_image):
     ### Line makieren durch HoughLines()
@@ -122,7 +122,7 @@ def Rotate(image, angle):
 
 def TiltCorrection(path):
     
-    bina_image = GaussBE(path)
+    bina_image = GaussB(path)
     # bina_image = cv2.imread(path, 0)
     img_line, lines = LineSearch(bina_image)
     b, gray_img, r = cv2.split(img_line)
