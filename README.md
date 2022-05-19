@@ -13,7 +13,7 @@
 - Tesseract für Windows:
   - Information für [Download](<https://github.com/tesseract-ocr/tessdoc/blob/main/Downloads.md>)
   - auf [UB-Mannheim](https://github.com/UB-Mannheim/tesseract/wiki) klicken
-  - Laden Sie die entsprechende Version herunter
+  - die entsprechende Version herunterladen
   - Tesseract-OCR installieren
 
     ![install](Schriftliche-Ausarbeitung\\_images\\install0.jpg)
