@@ -125,16 +125,22 @@ def TiltCorrection(path):
     bina_image = GaussB(path)
     # bina_image = cv2.imread(path, 0)
     img_line, lines = LineSearch(bina_image)
-    b, gray_img, r = cv2.split(img_line)
+    # b, gray_img, r = cv2.split(img_line)
     angle = GetAngle(lines)
-    image_rotate_kor = Rotate(gray_img, angle)
-    ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    image_rotate_kor = Rotate(img_line, angle)
+    # ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    image_rotate_kor = cv2.cvtColor(image_rotate_kor,cv2.COLOR_BGR2GRAY)
+    # information to cv2.cvtColor
+    # RGB[A] --> Gray: Y <-- 0.299 R + 0.587 G + 0.114 B
     
+    ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    # gray_image to bina_image
+
     if __name__ == '__main__':
         cv2.imshow('korrigiertes Bild',image_rotate_kor)
         cv2.waitKey()
 
-    return image_rotate_kor
+    return image_rotate_kor # is a bina_image
     
     
 if __name__ == '__main__':
@@ -147,5 +153,3 @@ if __name__ == '__main__':
 
 
 # bei rotating ist Scanverzerrung ignorriert.
-
-#rotating: https://blog.csdn.net/LZH2912/article/details/78712881?spm=1001.2101.3001.6650.1&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7Edefault-1-78712881-blog-122815255.pc_relevant_default&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7Edefault-1-78712881-blog-122815255.pc_relevant_default&utm_relevant_index=2

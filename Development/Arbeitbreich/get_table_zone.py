@@ -8,6 +8,7 @@ noch nicht fertig hier
 import cv2
 import numpy as np
 from get_linien import GetTable
+import math
 
 
 def PointAndLineMark(bina_image):
@@ -17,10 +18,41 @@ def PointAndLineMark(bina_image):
 
     lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50, minLineLength=20, maxLineGap=10) 
 
+    # bis here get the locations of lines, but notice, 
+    # If the line is too thick, a line will be detected as two lines that are very close together, 
+    # which means that the line be [split], so they must be [merge] again.
+    
+    # merge the nearby line
+    lines_merge = []
+    for i in range(len(lines)-1): 
+        # here must be len(lines)-1, cause the last line can not be merge with the next(the last has not the next)
+        line1_x1, line1_y1, line1_x2, line1_y2 = lines[i]
+        line2_x1, line2_y1, line2_x2, line2_y2 = lines[i+1]
+        
+        distance1 = math.sqrt((line2_x1-line1_x1)(line2_x1-line1_x1)+(line2_y1-line1_y1)(line2_y1-line1_y1))
+        distance2 = math.sqrt((line2_x2-line1_x2)(line2_x2-line1_x2)+(line2_y2-line1_y2)(line2_y2-line1_y2))
+
+        # 换个方法， 求一条直线的中点到另一条的距离
+        
+        if distance1 and distance2 < 3: # This value should be determined by the text size, temporarily set 3 for now
+            x1_new = int((line1_x1 + line2_x1) / 2)
+            y1_new = int((line1_y1 + line2_y1) / 2)
+            x2_new = int((line1_x2 + line2_x2) / 2)
+            y2_new = int((line1_y2 + line2_y2) / 2)
+            lines_merge.append([x1_new, y1_new, x2_new, y2_new])
+        
+        else:
+            lines_merge.append()
+
+
+
+
+
+
     ### show the line
     color_img = cv2.merge((bina_image, bina_image, bina_image))
     point_list = []
-    for line in lines:
+    for line in lines_merge:
         x1, y1, x2, y2 = line[0]
         
         point_list.append((x1, y1))
@@ -33,7 +65,8 @@ def PointAndLineMark(bina_image):
     cv2.imshow("output", img_line_point)
     cv2.waitKey()
 
-    return lines
+    return lines_merge
+
 
 
 

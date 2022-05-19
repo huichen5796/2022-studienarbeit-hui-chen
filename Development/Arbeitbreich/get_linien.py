@@ -39,10 +39,11 @@ def RemoveLine(path, p):  # Entfernen Text und Vertikalen
         img_hors = ~cv2.dilate(bina_image, kernel1, iterations=1)  # white zone horizonal dilate then inversion
                                                                    # white lines on black background now
                                                                    # img_hors is gray image?
-
+        '''
         if __name__ == '__main__':
             cv2.imshow('Horizonale', img_hors)
             cv2.waitKey()
+        '''
 
         return img_hors
 
@@ -53,11 +54,12 @@ def RemoveLine(path, p):  # Entfernen Text und Vertikalen
 
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vert_k))
         img_vert = ~cv2.dilate(bina_image, kernel1, iterations=1)
-
+        
+        '''
         if __name__ == '__main__':
             cv2.imshow('Vertikale', img_vert)
             cv2.waitKey()
-
+        '''
        
         return img_vert
 
@@ -67,19 +69,22 @@ def Thicken(img_l, p): # LinienVerdickung durch Dilate
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 2))
         # kernel1 = np.ones((2,1))
         img_t = cv2.dilate(img_l, kernel1, iterations=1)
-
+        
+        '''
         if __name__ == '__main__':
             cv2.imshow('verdickte Linien', img_t)
             cv2.waitKey()
-
+        '''
+    
     elif p == 'vertikal':
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1))
         img_t = cv2.dilate(img_l, kernel1, iterations=1)
-
+        
+        '''
         if __name__ == '__main__':
             cv2.imshow('verdickte Linien', img_t)
             cv2.waitKey()
-    
+        '''
 
 
     return img_t
@@ -94,10 +99,11 @@ def LinienRestore(img_t, p): # restore line length
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (hors_k, 1))
         img_r = cv2.dilate(img_t, kernel1, iterations=1)
         
-
+        '''
         if __name__ == '__main__':
             cv2.imshow('Horizonale restore', img_r)
             cv2.waitKey()
+        '''
         return img_r
 
     elif p == 'vertikal':
@@ -107,10 +113,12 @@ def LinienRestore(img_t, p): # restore line length
 
         kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vert_k))
         img_r = cv2.dilate(img_t, kernel1, iterations=1)
-
+        
+        '''
         if __name__ == '__main__':
             cv2.imshow('Vertikale restore', img_r)
             cv2.waitKey()
+        '''
         return img_r
 
 
@@ -153,7 +161,7 @@ def GetTable(path):
 
 if __name__ == '__main__':
     GetTable(r'Development\imageTest\einfach_table.jpg')
-    #GetTable(r'Development\imageTest\rotate_table.png')
+    # GetTable(r'Development\imageTest\rotate_table.png')
 
 
 
