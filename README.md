@@ -22,7 +22,7 @@
     ![install1](Schriftliche-Ausarbeitung\\_images\install1.jpg)
   - zu den Systemvariablen (PATH) der Umgebungsvariablen hinzufügen
 
-    ![zu PATH](Schriftliche-Ausarbeitung\_images\zupath.jpg)
+    ![zu PATH](Schriftliche-Ausarbeitung\\_images\zupath.jpg)
     
   - eine neue Systemvariable erstellen
     - Variablename: TESSDATA_PREFIX-Variablennamen 
