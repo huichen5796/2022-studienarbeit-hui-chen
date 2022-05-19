@@ -1,4 +1,5 @@
-### how to install: https://www.jianshu.com/p/93ab58dea50f ### 
+### how to install: https://www.jianshu.com/p/93ab58dea50f ###
+### https://github.com/tesseract-ocr/tessdoc/blob/main/Downloads.md 
 import pytesseract
 from pro_processing import Circle2
 import cv2
