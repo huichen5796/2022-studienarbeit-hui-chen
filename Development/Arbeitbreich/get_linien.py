@@ -6,12 +6,13 @@
 '''
 
 import cv2
-from tilt_correction import TiltCorrection
+from binar_noise_reduction import GaussB
 import numpy as np
+
 
 def LSDGetLines(img, long_size):
     '''
-    img        --- the image we want to get line
+    img        --- the image we want to get line, must be gray image, not bina image
     long_size  --- min-long of the line
     return     --- dlines_long ---> a list for long lines in the image
     
@@ -41,5 +42,9 @@ def LSDGetLines(img, long_size):
     return dlines_long
 
 if __name__ == '__main__':
-    img = TiltCorrection(r'Development\imageTest\rotate_table.png')
+    # img = GaussB(r'Development\imageTest\rotate_table.png')
+    img = cv2.imread(r'Development\imageTest\rotate_table.png', 0)
+    cv2.imshow('', img)
+    cv2.waitKey()
+    # img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     LSDGetLines(img, 20)

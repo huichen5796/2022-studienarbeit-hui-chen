@@ -32,6 +32,6 @@ def GaussBED(path):
     return bina_image
 
 if __name__ == '__main__':
-    GaussBED(r'Development\imageTest\einfach_table.jpg')
-    # GaussBED(r'Development\imageTest\rotate_table.png')
+    # GaussBED(r'Development\imageTest\einfach_table.jpg')
+    GaussBED(r'Development\imageTest\rotate_table.png')
 

@@ -1,8 +1,8 @@
 ### Neigungskorrektur durch Horizonalenerkennung
 '''
 Schritte:
- 1. LineSerch() --- markieren alle Linien
- 2. TiltCorrection() --- korrigieren Schiefe Bilder Durch Berechnung des Winkels der ungefähren horizontalen Linie
+ 1. LineSerch() --- markieren alle Horizonalen
+ 2. TiltCorrection() --- korrigieren Schiefe Bilder
 ''' 
 
 import cv2
