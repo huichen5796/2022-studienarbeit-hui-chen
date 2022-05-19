@@ -13,7 +13,7 @@ from binar_noise_reduction import GaussB
 def LineSearch(bina_image):
     ### Line makieren durch HoughLines()
     edges = cv2.Canny(bina_image, 50, 250, apertureSize= 3) ## apertureSize is the size of kernel, also soble
-    long_size = bina_image.shape[1]/5 # minlinelength
+    long_size = 5 # minlinelength
 
     lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50, minLineLength=long_size, maxLineGap=5) 
     # https://blog.csdn.net/dcrmg/article/details/78880046 # 
@@ -129,11 +129,11 @@ def TiltCorrection(path):
     angle = GetAngle(lines)
     image_rotate_kor = Rotate(img_line, angle)
     # ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    image_rotate_kor = cv2.cvtColor(image_rotate_kor,cv2.COLOR_BGR2GRAY)
+    # image_rotate_kor = cv2.cvtColor(image_rotate_kor,cv2.COLOR_BGR2GRAY)
     # information to cv2.cvtColor
     # RGB[A] --> Gray: Y <-- 0.299 R + 0.587 G + 0.114 B
     
-    ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    # ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     # gray_image to bina_image
 
     if __name__ == '__main__':
