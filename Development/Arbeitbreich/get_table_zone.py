@@ -9,54 +9,106 @@ import cv2
 import numpy as np
 import math
 from distutils.command.config import LANG_EXT
+from tilt_correction import TiltCorrection
+from get_linien import LSDGetLines
 
 
-def PointAndLineMark(bina_image):
-    # https://blog.csdn.net/qq_33004317/article/details/100079230 #
-    ### Line makieren durch HoughLines()
-    edges = cv2.Canny(bina_image, 50, 250, apertureSize= 7) ## apertureSize is the size of kernel, also soble
+def LineRow(bina_image):  # get image only with row lines - get horizonal lines
 
-    lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50, minLineLength=20, maxLineGap=10) 
-
-    # bis here get the locations of lines, but notice, 
-    # If the line is too thick, a line will be detected as two lines that are very close together, 
-    # which means that the line be [split], so they must be [merge] again.
     
-    return lines
+    h, w = bina_image.shape
+    hori_k = int(math.sqrt(w)*1.2)
+                                        # hier für die Kernsize 
+                                        # https://blog.csdn.net/weixin_41189525/article/details/121889157
+    kernel_hori = cv2.getStructuringElement(cv2.MORPH_RECT, (hori_k, 1))
 
+    image_row = ~cv2.dilate(~bina_image, kernel_hori, iterations=1)  # white zone horizonal dilate then inversion
+                                                                     # white lines on black background now
+    image_row = cv2.dilate(image_row, kernel_hori, iterations=1)  # restore the line long
+                                                                    
+    
+    if __name__ == '__main__':
+        cv2.imshow('Horizonale', image_row)
+        cv2.waitKey()
+    
 
-def DrawLine(bina_image, lines):
-    ### show the line
-    color_img = cv2.merge((bina_image, bina_image, bina_image))
-    point_list = []
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
+    return image_row
+
+def LineCol(bina_image):  # get image only with col lines - get vertikal lines
+    
+    h, w = bina_image.shape
         
-        point_list.append((x1, y1))
-        point_list.append((x2, y2))
-        img_line = cv2.line(color_img, (x1,y1), (x2, y2), (0, 0, 255), 1)
+    vert_k = int(math.sqrt(h)*1.2)  
+
+    kernel_vert = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vert_k))
+    image_col = ~cv2.dilate(~bina_image, kernel_vert, iterations=1)
+
+    image_col = cv2.dilate(image_col, kernel_vert, iterations=1)
+        
     
     if __name__ == '__main__':
-        cv2.imshow("output", img_line)
+        cv2.imshow('Vertikale', image_col)
         cv2.waitKey()
-
-    return img_line
-
-def DrawPoint(img, point_list):
-
-    for point in point_list:
-        img_point = cv2.circle(img, point, 5, (0, 255, 0), 5)
     
+       
+    return image_col
+
+
+def Or_Border(img1, img2): # useless function, just to show the table
+    '''
+    merge two images
+
+    '''
+    borders = cv2.bitwise_or(img1, img2)
+
     if __name__ == '__main__':
-        cv2.imshow("output", img_point)
+        cv2.imshow('Border', borders)
         cv2.waitKey()
 
-    return img_point
+    return borders
 
-def PointMerge(lines):
-    # want to merge the nearby points in point_list by x value
-    
-    for i in range(len(lines)):
-        x1, y1, x2, y2 = lines[i][0]
-        x11, y11, x22, y22 = lines[i+1][0]
+
+def And_Border(img1, img2): # useless function, just to show the table
+    '''
+    merge two images
+
+    '''
+    points = cv2.bitwise_and(img1, img2)
+
+    if __name__ == '__main__':
+        cv2.imshow('Border', points)
+        cv2.waitKey()
+
+    return points
+
+
+def GetPoint(path):
+
+    image_rotate_cor = TiltCorrection(path)
+    white_image = LSDGetLines(image_rotate_cor, 20)[1]
+
+    white_image = white_image.astype(np.uint8)
+
+    ret, bina_image = cv2.threshold(~white_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    if __name__ == '__main__':
+        cv2.imshow('', bina_image) 
+        cv2.waitKey()
+        
+    image_row = LineRow(bina_image)
+    image_col = LineCol(bina_image)
+
+    #Border(image_row, image_col)
+    And_Border(image_row, image_col)
+
+
+if __name__ == '__main__':
+    GetPoint(r'Development\imageTest\einfach_table.jpg')
+
+
+
+
+
+
+
 
