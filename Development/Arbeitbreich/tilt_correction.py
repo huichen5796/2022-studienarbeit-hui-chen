@@ -8,8 +8,9 @@
   - then call the function GetAngle()
   - then call the function ImageRotate()
 
-  - input   ---  the path of the image we want to tilt correct
-  - return  ---  the tilt corrected image ---> is gray image 
+  - input    ---  the path of the image we want to tilt correct
+  - return1  ---  the tilt corrected image ---> is used for ROI and Tesseract
+  - return2  ---  the tilt corrected white image ---> is uesd for get ROI location
 
 
 
@@ -56,16 +57,21 @@ def GetAngle(lines):
             '''
 
             # dabei können nur die Bilder mit Neigungswinkeln innerhalb von +-45 Grad korrigiert werden.
-            if abs(rotate_angle) < 45:
-                angle_list.append(rotate_angle)
+            
+            angle_list.append(rotate_angle)
             
     if len(angle_list) == 0:
         # print('Das Bild ist korrekt.')
         angle_average = 0
     else:
-        angle_average = sum(angle_list)/len(angle_list)
-        # bis hier bekommen wir die Neigungswinkel vom Bild
-        # print('Der Neigungswinkel ist: ' + angle_average)
+        angle_list_45 = [angle_list[i] for i in range(len(angle_list)) if abs(angle_list[i])< 45] # list for angle < +-45
+        #print(angle_list_45)
+        #print(angle_list)
+
+        if len(angle_list_45) == 0: # if no abs(anlge) < 45 
+            angle_average = sum(angle_list)/len(angle_list)  # in this way can correct the table when only vertikal line get
+        else: 
+            angle_average = sum(angle_list_45)/len(angle_list_45)
  
 
     if __name__ == '__main__':
@@ -128,23 +134,25 @@ def TiltCorrection(path):
         cv2.imshow('original',gray_image)
         cv2.waitKey()
     
-    lines = LSDGetLines(gray_image, 20)[0]
+    lines, white_image = LSDGetLines(gray_image, 20)
     
     angle = GetAngle(lines)
     image_rotate_cor = ImageRotate(gray_image, angle)
+    white_image_cor = ImageRotate(white_image, angle)
     
 
     if __name__ == '__main__':
-        cv2.imshow('korrigiertes Bild',image_rotate_cor)
+        cv2.imshow('white_cor',white_image_cor)
+        cv2.imshow('orig_cor', image_rotate_cor)
         cv2.waitKey()
 
-    return image_rotate_cor # is a gray image
+    return image_rotate_cor, white_image_cor 
     
     
 if __name__ == '__main__':
     TiltCorrection(r'Development\imageTest\rotate_table.png')
-    TiltCorrection(r'Development\imageTest\winkel_-30.png')
-    TiltCorrection(r'Development\imageTest\winkel_30.png')
-    TiltCorrection(r'Development\imageTest\winkel_-60.png')
-    TiltCorrection(r'Development\imageTest\winkel_60.png')
+    #TiltCorrection(r'Development\imageTest\einfach_table.jpg')
+    #TiltCorrection(r'Development\imageTest\winkel_30.png')
+    #TiltCorrection(r'Development\imageTest\winkel_-60.png')
+    #TiltCorrection(r'Development\imageTest\winkel_60.png')
     
