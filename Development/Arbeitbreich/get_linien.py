@@ -5,10 +5,9 @@
   - color image to gray image
   - lines mark by LSD 
 
-- input is a color image
-- output is the lines on it
-- show is a new white image, on it is the lines of color image, location to location
-  (useless for next step, just to see the lines)
+- input is a gray image
+- output1 is the lines on it
+- output2 is a new white image, on it is the lines of color image, location to location
 
 '''
 
@@ -25,7 +24,8 @@ def LSDGetLines(img, long_size):
     
     '''
     
-    white_image = np.ones((img.shape[0], img.shape[1], 1))
+    white_image = np.ones((img.shape[0], img.shape[1], 1))*255
+    
     lsd = cv2.createLineSegmentDetector(0, scale=1)
     dlines = lsd.detect(img)
 
