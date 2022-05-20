@@ -54,9 +54,9 @@ def Or_Border(img1, img2): # useless function, just to show the table
     '''
     borders = cv2.bitwise_or(img1, img2)
 
-    if __name__ == '__main__':
-        cv2.imshow('Border', borders)
-        cv2.waitKey()
+    #if __name__ == '__main__':
+    #    cv2.imshow('Border', borders)
+    #    cv2.waitKey()
 
     return borders
 
@@ -68,9 +68,9 @@ def And_Border(img1, img2): # useless function, just to show the table
     '''
     image_points = cv2.bitwise_and(img1, img2)
 
-    if __name__ == '__main__':
-        cv2.imshow('Border', image_points)
-        cv2.waitKey()
+    #if __name__ == '__main__':
+    #    cv2.imshow('Border', image_points)
+    #    cv2.waitKey()
 
     return image_points
 
@@ -135,12 +135,12 @@ def Concentrate(img):
     location = np.argwhere(img > 127)
     
 
-    if __name__ == '__main__':
-        print(location)
-        cv2.imshow('concentrate', img)
-        cv2.waitKey()
+    #if __name__ == '__main__':
+    #    print(location)
+    #    cv2.imshow('concentrate', img)
+    #    cv2.waitKey()
 
-    return location # is the location of white pixel
+    return location, img # is the location of white pixel
 
 
 def GetPoint(white_image):
@@ -150,16 +150,23 @@ def GetPoint(white_image):
 
     '''
     img = GetNode(white_image)
-    location = Concentrate(img)
-
-    return location
+    location, img_point = Concentrate(img)
+    
+    
+    return location, img_point
 
 
 if __name__ == '__main__':
-    white_image_cor = TiltCorrection(r'Development\imageTest\einfach_table.jpg')[1]
-    cv2.imshow('', white_image_cor)
+    image_rotate_cor, white_image_cor = TiltCorrection(r'Development\imageTest\textandtable_0.png')
+    
+    location, img_point = GetPoint(white_image_cor)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+    img_point = cv2.dilate(img_point, kernel, iterations=1)  
+
+    merge_image = cv2.merge((And_Border(image_rotate_cor, ~img_point), And_Border(image_rotate_cor, ~img_point), image_rotate_cor))
+    cv2.imshow('POINT_MARK', merge_image)
     cv2.waitKey()
-    GetPoint(white_image_cor)
 
 
 
