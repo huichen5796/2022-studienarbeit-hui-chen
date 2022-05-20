@@ -33,14 +33,17 @@ def GetAngle(lines):
     output    ---    angle_average of horizonal lines    
 
     '''
-
+   
     angle_list = []
     
     for line in lines:
         x1, y1, x2, y2 = line[0]
         
-        if x1 == x2 or y1 == y2:
-            continue
+        if x1 == x2:
+            angle_list.append(90)
+        elif y1 == y2:
+            angle_list.append(0)
+
         else:
             t = float(y2-y1)/(x2-x1)
             rotate_angle = math.degrees(math.atan(t))
@@ -60,23 +63,20 @@ def GetAngle(lines):
             
             angle_list.append(rotate_angle)
             
-    if len(angle_list) == 0:
-        # print('Das Bild ist korrekt.')
-        angle_average = 0
-    else:
-        angle_list_45 = [angle_list[i] for i in range(len(angle_list)) if abs(angle_list[i])< 45] # list for angle < +-45
-        #print(angle_list_45)
-        #print(angle_list)
+    
+    angle_list_45 = [angle_list[i] for i in range(len(angle_list)) if abs(angle_list[i])< 45] # list for angle < +-45
+    #print(angle_list_45)
+    #print(angle_list)
 
-        if len(angle_list_45) == 0: # if no abs(anlge) < 45 
-            angle_average = sum(angle_list)/len(angle_list)  # in this way can correct the table when only vertikal line get
-        else: 
-            angle_average = sum(angle_list_45)/len(angle_list_45)
+    if len(angle_list_45) == 0: # if no abs(anlge) < 45 
+        angle_average = 0
+    else: 
+        angle_average = sum(angle_list_45)/len(angle_list_45)
  
 
     if __name__ == '__main__':
         print(angle_average)
-        # print(angle_list)
+        #print(angle_list)
     return angle_average
     
 
@@ -150,7 +150,7 @@ def TiltCorrection(path):
     
     
 if __name__ == '__main__':
-    TiltCorrection(r'Development\imageTest\rotate_table.png')
+    TiltCorrection(r'Development\imageTest\textandtable_0.png')
     #TiltCorrection(r'Development\imageTest\einfach_table.jpg')
     #TiltCorrection(r'Development\imageTest\winkel_30.png')
     #TiltCorrection(r'Development\imageTest\winkel_-60.png')

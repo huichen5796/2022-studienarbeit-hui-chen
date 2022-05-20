@@ -9,9 +9,7 @@ noch nicht fertig hier
     # erode should after ROI before Tesseract
     ----------------
     
-- Get Words in Zelle
-    - Methode 1. Textfokus: https://wenku.baidu.com/view/8bdffcf175a20029bd64783e0912a21614797fd3.html
-    - Methode 2. Tesseract
+- Get Words in Zelle ---> Tesseract
 - write Words in JISON
 - JISON in Excal
 
@@ -26,34 +24,34 @@ from tilt_correction import TiltCorrection
 from get_ROI_location import GetPoint
 
 
-image_rotate_cor, white_image_cor = TiltCorrection(r'Development\imageTest\einfach_table.jpg')
-location = GetPoint(white_image_cor)
-
-
-
+image_rotate_cor, white_image_cor = TiltCorrection(r'Development\imageTest\textandtable_0.png')
+#image_rotate_cor, white_image_cor = TiltCorrection(r'Development\imageTest\einfach_table.jpg')
+location = GetPoint(white_image_cor)[0]
 
 
 
 def GetTable(img, location, edge_thickness):
     sum_row = list(np.sum(location, axis = 1)) # sum the x-axis and y-axis of point
-    # print(location)
+    print(location)
     # print(sum_row)
-    max_loca = sum_row.index(max(sum_row))
-    min_loca = sum_row.index(min(sum_row))
+    max_loca = sum_row.index(max(sum_row)) # The point in the lower right corner has the largest sum
+    min_loca = sum_row.index(min(sum_row)) # The point in the lower right corner has the largest sum
     max_point = location[max_loca]
     min_point = location[min_loca]
+    #print(max_point)
+    #print(min_point)
 
-    edge_thickness = 2
-    width = max_point[1]-min_point[1] + 2 * edge_thickness
-    high = max_point[0]-min_point[0] + 2 * edge_thickness
+    
+    width = max_point[1]-min_point[1] + 2 * edge_thickness  # x2-x1+2e
+    high = max_point[0]-min_point[0] + 2 * edge_thickness  # y2-y1+2e
     zone = np.ones((high, width, 1))
 
-    zone = img[(min_point[1]-edge_thickness):(min_point[1]+high), (min_point[0]-edge_thickness):(min_point[0]+width)]
+    zone = img[(min_point[0]-edge_thickness):(min_point[0]+high), (min_point[1]-edge_thickness):(min_point[1]+width)]
     cv2.imshow('TABLE', zone)
     cv2.waitKey()
 
 
-GetTable(image_rotate_cor, location, 2)
+GetTable(image_rotate_cor, location, 5)
 
 '''
 def GetCell(img, location):
@@ -63,35 +61,29 @@ def GetCell(img, location):
     # dot1----dot2-----dot3-----dot4 #
     #  |        |       |         |  #
     # dot5----dot6-----dot7-----dot8 #
-    ##################################
+    ##################################                        [[ 17  19]
+                                                               [ 17 375]
+                                                               [ 17 641]
+                                                               [ 17 907]
+                                                               [ 65 375]
+                                                               [ 65 641]
+                                                               [ 65 907]
+                                                               [ 66  19]  <------- bug !!!
+                                                               # Disrupted the ordering and caused the region to not be closed
     
     for dot in 
-    zone = np.ones((200, 100, 1)) # define a 200*100 matrix, 1 mains 1 channel
+    zone = np.ones(( , , 1)) 
 
-    zone = img[200:400, 200:300] # write grayscale values into matrix, long from 200 to 400, hight from 200 to 300
+    zone = img[] 
 
     cv2.imshow("Zone", zone)
     cv2.waitKey(0)
-
-    # fusion
-    img[0:200, 0:100] = zone
-
-
-
-
-
-pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
-
-
-gray_image = cv2.imread(r'Development\imageTest\einfach_table.jpg', 0)
-bina_image = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 5)
-
-cv2.imshow('', bina_image)
-cv2.waitKey()
-
-result = pytesseract.image_to_string(bina_image)
-print(type(result))
-result.replace(' ', '\n')
-re = result.split(' ')
-print(re)
 '''
+
+
+def ExtrakText(image_cell):
+
+    pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+    result = pytesseract.image_to_string(image_cell)
+    
+    return result
