@@ -1,49 +1,38 @@
+
 ### Neigungskorrektur durch Horizonalenerkennung
+### bei rotating ist Scanverzerrung ignorriert.
+
 '''
-Schritte:
- 1. LineSerch() --- markieren alle Linien
- 2. TiltCorrection() --- korrigieren Schiefe Bilder Durch Berechnung des Winkels der ungefähren horizontalen Linie
+- main function ---> TiltCorrection(path)
+  - in this function at first call the function LSDGetLines in get_linien to mark the lines
+  - then call the function GetAngle()
+  - then call the function ImageRotate()
+
+  - input   ---  the path of the image we want to tilt correct
+  - return  ---  the tilt corrected image ---> is gray image 
+
+
+
+- Schritte:
+  - get the locations of lines
+  - correct the picture by calculating the average deflection angle of all lines with deflection angles within +-45 degrees
 ''' 
 
 import cv2
 import numpy as np
 import math
-from binar_noise_reduction import GaussB
-
-def LineSearch(bina_image):
-    ### Line makieren durch HoughLines()
-    edges = cv2.Canny(bina_image, 50, 250, apertureSize= 3) ## apertureSize is the size of kernel, also soble
-    long_size = 400 # minlinelength
-
-    lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50, minLineLength=long_size, maxLineGap=5) 
-    # https://blog.csdn.net/dcrmg/article/details/78880046 # 
-
-    ### show the line
-    # img_color = cv2.imread(path, -1)
-    '''
-    color_img = np.expand_dims(bina_img, axis=2)
-    color_img = np.concatenate((color_img, color_img, color_img), axis=-1) 
-    
-    # change the gray image to color image
-    '''
-    ### oder: ###
-    color_img = cv2.merge((bina_image, bina_image, bina_image))
-
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-
-        img_line = cv2.line(color_img, (x1,y1), (x2, y2), (0, 0, 255), 1)
-    
-    if __name__ == '__main__':
-        # cv2.imshow('input', bina_img)
-        cv2.imshow("output", img_line)
-        cv2.waitKey()
-
-    return img_line, lines
+from get_linien import LSDGetLines
 
 
 
 def GetAngle(lines):
+
+    '''
+    input     ---    list of the locations of lines, form [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...] 
+    output    ---    angle_average of horizonal lines    
+
+    '''
+
     angle_list = []
     
     for line in lines:
@@ -65,7 +54,8 @@ def GetAngle(lines):
                 rotate_angle1 = -(90 - rotate_angle)
                 angle_list.append(rotate_angle1)     
             '''
-            # dabei können nur die Bilder mit Neigungswinkeln innerhalb von 45 Grad korrigiert werden.
+
+            # dabei können nur die Bilder mit Neigungswinkeln innerhalb von +-45 Grad korrigiert werden.
             if abs(rotate_angle) < 45:
                 angle_list.append(rotate_angle)
             
@@ -76,9 +66,7 @@ def GetAngle(lines):
         angle_average = sum(angle_list)/len(angle_list)
         # bis hier bekommen wir die Neigungswinkel vom Bild
         # print('Der Neigungswinkel ist: ' + angle_average)
-
-    
-
+ 
 
     if __name__ == '__main__':
         print(angle_average)
@@ -87,10 +75,16 @@ def GetAngle(lines):
     
 
 
-def Rotate(image, angle):
+def ImageRotate(image, angle):
 
-    # get the shape of the image and then determine the center
-    # https://blog.csdn.net/qq_44109682/article/details/117434461
+    '''
+    input   ---  image: the image we want to rotate
+    input   ---  angle: rotate anglel
+    return  ---  the rotated image
+    
+    '''
+
+    # get the shape of the image and then determine the rotate center
 
     h, w = image.shape[0:2]
     center_X, center_Y = w // 2, h // 2
@@ -121,35 +115,36 @@ def Rotate(image, angle):
 
 
 def TiltCorrection(path):
+
+    '''
+    input  --- the path of the image we want to tilt correct
+    return --- the tilt corrected image
+
+    '''
     
-    bina_image = GaussB(path)
-    # bina_image = cv2.imread(path, 0)
-    img_line, lines = LineSearch(bina_image)
-    # b, gray_img, r = cv2.split(img_line)
-    angle = GetAngle(lines)
-    image_rotate_kor = Rotate(img_line, angle)
-    # ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    image_rotate_kor = cv2.cvtColor(image_rotate_kor,cv2.COLOR_BGR2GRAY)
-    # information to cv2.cvtColor
-    # RGB[A] --> Gray: Y <-- 0.299 R + 0.587 G + 0.114 B
-    
-    ret, image_rotate_kor = cv2.threshold(image_rotate_kor, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    # gray_image to bina_image
+    gray_image = cv2.imread(path, 0)
 
     if __name__ == '__main__':
-        cv2.imshow('korrigiertes Bild',image_rotate_kor)
+        cv2.imshow('original',gray_image)
+        cv2.waitKey()
+    
+    lines = LSDGetLines(gray_image, 20)[0]
+    
+    angle = GetAngle(lines)
+    image_rotate_cor = ImageRotate(gray_image, angle)
+    
+
+    if __name__ == '__main__':
+        cv2.imshow('korrigiertes Bild',image_rotate_cor)
         cv2.waitKey()
 
-    return image_rotate_kor # is a bina_image
+    return image_rotate_cor # is a gray image
     
     
 if __name__ == '__main__':
     TiltCorrection(r'Development\imageTest\rotate_table.png')
-    #TiltCorrection(r'Development\imageTest\winkel_-30.png')
-    #TiltCorrection(r'Development\imageTest\winkel_30.png')
-    #TiltCorrection(r'Development\imageTest\winkel_-60.png')
-    #TiltCorrection(r'Development\imageTest\winkel_60.png')
+    TiltCorrection(r'Development\imageTest\winkel_-30.png')
+    TiltCorrection(r'Development\imageTest\winkel_30.png')
+    TiltCorrection(r'Development\imageTest\winkel_-60.png')
+    TiltCorrection(r'Development\imageTest\winkel_60.png')
     
-
-
-# bei rotating ist Scanverzerrung ignorriert.
