@@ -70,6 +70,8 @@ def GetCell(img, location):
                                                                [ 65 907]
                                                                [ 66  19]  <------- bug !!!
                                                                # Disrupted the ordering and caused the region to not be closed
+    # need to correction
+     - 
     
     for dot in 
     zone = np.ones(( , , 1)) 
