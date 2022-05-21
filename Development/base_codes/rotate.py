@@ -56,7 +56,7 @@ def Rotate(path, angle):
     return image_rotate
 
 if __name__ == '__main__':
-    Rotate(r'Development\imageTest\winkel_0.png', 60)
+    Rotate(r'Development\imageTest\textandtable_0.png', 30)
 
     # 60 means rotate sixty degrees clockwise
     # -60 means rotate sixty degrees counterclockwise
