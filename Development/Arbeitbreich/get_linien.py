@@ -39,11 +39,12 @@ def LSDGetLines(img, long_size):
 
         long = (y1-y0)*(y1-y0)+(x1-x0)*(x1-x0)
         if long >= long_size*long_size:
-            cv2.line(white_image, (x0, y0), (x1, y1), color = 0, thickness = 2, lineType = cv2.LINE_AA)
-            # the reason of big thickness:
+            cv2.line(white_image, (x0, y0), (x1, y1), color = 0, thickness = 3, lineType = cv2.LINE_AA)
+            # the vorteil big thickness:
             # Draw a thick line to make two adjacent lines merge into one. 
             # It can be seen here that there may be black dot noise in the center of the line when thickness small
             # which should be removed
+            # But it will cause the intersection point to shift
             dlines_long.append(dline)
     
     if __name__ == '__main__':
@@ -56,8 +57,8 @@ def LSDGetLines(img, long_size):
     return dlines_long, white_image
 
 if __name__ == '__main__':
-    # img = GaussB(r'Development\imageTest\rotate_table.png')
-    img = cv2.imread(r'Development\imageTest\textandtable_0.png', 0)
+    img = cv2.imread(r'Development\imageTest\einfach_table.jpg',0)
+    # img = cv2.imread(r'Development\imageTest\textandtablewinkel.png', 0)
     cv2.imshow('', img)
     cv2.waitKey()
     # img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)

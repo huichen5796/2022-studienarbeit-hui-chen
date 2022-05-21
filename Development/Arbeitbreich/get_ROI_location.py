@@ -1,7 +1,8 @@
 '''
 - main function ---> GetPoint()
    - input white_rotate_cor ---> black lines white backgrund
-   - output location of intersection point
+   - output1 --- location of intersection points
+   - output2 --- image with only points
 
 '''
 import cv2
@@ -66,6 +67,9 @@ def And_Border(img1, img2): # useless function, just to show the table
     merge two images
 
     '''
+    img1 = np.array(img1,np.uint8)
+    img2 = np.array(img2,np.uint8)
+
     image_points = cv2.bitwise_and(img1, img2)
 
     #if __name__ == '__main__':
@@ -92,20 +96,21 @@ def GetNode(white_image):
 
     return image_points
     
-def Concentrate(img): 
+def Concentrate1(img): 
     
     # Go through each white point and turn the eight points around the point into black.
     # https://wenku.baidu.com/view/8bdffcf175a20029bd64783e0912a21614797fd3.html
+    # position will be shifted !!!
 
     white = np.argwhere(img > 127) # img is a bina image so 0 is black, 255 is white
     
-    # print(white)
-    # print(white.shape[0])
+    #print(white)
+    #print(white.shape[0])
     # print(white.shape)
     # print(white[1][1])
     
     for i in range(white.shape[0]): # Iterate over the coordinates of all white points
-        c_row = white[i, 0] # get the number on i row 0 col ---> same as white[i][0] ----> x-axis
+        c_row = white[i, 0] # get the number on i row 0 col ---> same as white[i][0] ----> y-axis
         c_col = white[i, 1] # ----> y-axis
         ###############
         ### 7 8 9 a ###
@@ -142,16 +147,40 @@ def Concentrate(img):
 
     return location, img # is the location of white pixel
 
+def Concentrate(img):
+    black_image = np.zeros((img.shape[0], img.shape[1]))
+    contours, h = cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    for i in range(len(contours)):
+        cnt = contours[i]
+        x = int(np.average(cnt, axis = 0)[0][0])
+        y = int(np.average(cnt, axis = 0)[0][1])
+        #print(np.average(cnt, axis = 0))
+        black_image[y,x] = 255
+
+    location = np.argwhere(black_image > 127)
+    
+    #cv2.imshow('',black_image)
+    #cv2.waitKey()
+    return location, black_image
+
+    
+        
+    
+
+
 
 def GetPoint(white_image):
-
+    
     '''
-    input  --- the path of the image 
 
     '''
     img = GetNode(white_image)
     location, img_point = Concentrate(img)
-    
+
+    #print(location)
+    #cv2.imshow('',img_point)
+    #cv2.waitKey()
+   
     
     return location, img_point
 
@@ -160,11 +189,13 @@ if __name__ == '__main__':
     image_rotate_cor, white_image_cor = TiltCorrection(r'Development\imageTest\textandtable_0.png')
     
     location, img_point = GetPoint(white_image_cor)
+    
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(7,7))
+    img_point = cv2.dilate(img_point,kernel,iterations = 1)
+    ret, img_point  = cv2.threshold(img_point, 127, 255, cv2.THRESH_BINARY_INV)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-    img_point = cv2.dilate(img_point, kernel, iterations=1)  
 
-    merge_image = cv2.merge((And_Border(image_rotate_cor, ~img_point), And_Border(image_rotate_cor, ~img_point), image_rotate_cor))
+    merge_image = cv2.merge((And_Border(image_rotate_cor, img_point), And_Border(image_rotate_cor, img_point), image_rotate_cor))
     cv2.imshow('POINT_MARK', merge_image)
     cv2.waitKey()
 
