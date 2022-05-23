@@ -18,12 +18,13 @@ main function: ---> GetInfoList(path, thickness, size):
 
 '''
 
-import pytesseract
+
 import cv2
 import numpy as np
 from tilt_correction import TiltCorrection
 from get_ROI_location import GetPoint
 from binar_noise_reduction import NoiseReducter
+from extrakt import Extrakt_Tesseract, Extrakt_Esayocr
 
 def GetTable(img, location, edge_thickness):
     sum_row = list(np.sum(location, axis = 1)) # sum the x-axis and y-axis of point
@@ -143,7 +144,8 @@ def GetCell(location, image_table, size):
             #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
             cell_zone = NoiseReducter(cell_zone)
 
-            result = ExtrakText(cell_zone)
+            result = Extrakt_Tesseract(cell_zone)
+            #result = Extrakt_Esayocr(cell_zone)
             list_info[-1].append(result)
 
             if __name__ == '__main__':
@@ -164,17 +166,6 @@ def GetCell(location, image_table, size):
 
     return list_info
 
-
-
-def ExtrakText(image_cell):
-
-    pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
-    result = pytesseract.image_to_string(image_cell)
-    # print(result)
-
-    if '\n' in result:
-        result = result.replace('\n', '')
-    return result
 
 
 def GetInfoList(path, thickness, size):
