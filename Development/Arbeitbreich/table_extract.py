@@ -21,6 +21,7 @@ main function: ---> GetInfoList(path, thickness, size):
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 from tilt_correction import TiltCorrection
 from get_ROI_location import GetPoint
 from binar_noise_reduction import NoiseReducter
@@ -192,9 +193,12 @@ def GetInfoList(path, thickness, size):
     location = PointCorrection(location)
     # print(location)
 
-    cv2.imshow('TABLE', image_table)
+    #cv2.imshow('TABLE', image_table)
     #cv2.imshow('TABLE_POINT', table_point)
-    cv2.waitKey()
+    #cv2.waitKey()
+    plt.imshow(image_table, cmap = 'gray')
+    plt.xticks([]),plt.yticks([])
+    plt.show()
 
     list_info = GetCell(location, image_table, size)
 
