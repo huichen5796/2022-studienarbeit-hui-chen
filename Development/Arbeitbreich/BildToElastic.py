@@ -7,6 +7,11 @@
 '''
 
 from table_extract import GetInfoList
-
-
-GetInfoList(r'Development\imageTest\textandtablewinkel.png', 5, 3)
+import time
+print('------------start--------------')
+print(time.ctime(time.time()))
+GetInfoList(r'Development\imageTest\textandtablewinkel.png', 5, 3, 1)
+print(time.ctime(time.time()))
+GetInfoList(r'Development\imageTest\textandtablewinkel.png', 5, 3, 2)
+print(time.ctime(time.time()))
+print('------------finish-------------')

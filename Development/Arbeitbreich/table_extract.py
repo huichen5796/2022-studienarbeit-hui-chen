@@ -111,13 +111,16 @@ location = np.array(location)
 max = location[:,0]
 print(max)
 '''
-def GetCell(location, image_table, size):
+def GetCell(location, image_table, size, method):
 
     '''
     input:
      - img
      - location
      - size, is a parameter for: the size of the image to be cropped inward, thereby removing the border
+     - method 
+       - can be 1 ---> use Extrakt_Tesseract()
+       - can be 2 ---> use Extrakt_Easyocr()
     
     '''
     
@@ -144,15 +147,17 @@ def GetCell(location, image_table, size):
             cell_zone = image_table[(y0+size):(y1-size), (x0+size):(x1-size)]
             #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
             cell_zone = NoiseReducter(cell_zone)
-
-            result = Extrakt_Tesseract(cell_zone)
-            #result = Extrakt_Esayocr(cell_zone)
+            
+            if method == 1:
+                result = Extrakt_Tesseract(cell_zone)
+            elif method == 2:
+                result = Extrakt_Esayocr(cell_zone)
             list_info[-1].append(result)
 
-            if __name__ == '__main__':
-                print(result)
-                cv2.imshow('cell %s' %cell_number, cell_zone)
-                cv2.waitKey()
+            #if __name__ == '__main__':
+            #    print(result)
+            #    cv2.imshow('cell %s' %cell_number, cell_zone)
+            #    cv2.waitKey()
                 
             cell_number += 1
             
@@ -169,7 +174,7 @@ def GetCell(location, image_table, size):
 
 
 
-def GetInfoList(path, thickness, size):
+def GetInfoList(path, thickness, size, method):
     '''
     input
      - path
@@ -196,11 +201,12 @@ def GetInfoList(path, thickness, size):
     #cv2.imshow('TABLE', image_table)
     #cv2.imshow('TABLE_POINT', table_point)
     #cv2.waitKey()
-    plt.imshow(image_table, cmap = 'gray')
-    plt.xticks([]),plt.yticks([])
-    plt.show()
+    if __name__ == '__main__':
+        plt.imshow(image_table, cmap = 'gray')
+        plt.xticks([]),plt.yticks([])
+        plt.show()
 
-    list_info = GetCell(location, image_table, size)
+    list_info = GetCell(location, image_table, size, method)
 
     print(list_info)
 
@@ -208,5 +214,5 @@ def GetInfoList(path, thickness, size):
 
 
 if __name__ == '__main__':
-    GetInfoList(r'Development\imageTest\textandtablewinkel.png', 5, 3)
+    GetInfoList(r'Development\imageTest\textandtablewinkel.png', 5, 3, 1)
 
