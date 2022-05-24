@@ -11,7 +11,7 @@ main function: ---> GetInfoList(path, thickness, size):
      - size ----> should be cut more inwards to remove cell borders
 
     return
-     - list_info ----> Each element in the list is the content of the corresponding cell
+     - dict_info ----> Each element in the dict is the content of the corresponding cell
                        the order is from left to right and from top to bottom
     
     
@@ -174,7 +174,7 @@ def GetCell(location, image_table, size, method):
 
 
 
-def GetInfoList(path, thickness, size, method):
+def GetInfoDict(path, thickness, size, method):
     '''
     input
      - path
@@ -182,7 +182,7 @@ def GetInfoList(path, thickness, size, method):
      - size ----> should be cut more inwards to remove cell borders
 
     return
-     - list_info ----> Each element in the list is the content of the corresponding cell
+     - dict_info // JSON ----> Each element in the dict is the content of the corresponding cell
                        the order is from left to right and from top to bottom
     
     '''
@@ -207,12 +207,18 @@ def GetInfoList(path, thickness, size, method):
         plt.show()
 
     list_info = GetCell(location, image_table, size, method)
+    
+    key_list = []
+    for i in range(len(list_info)):
+        key_list.append('row%s' %(i+1))
+    dict_info = dict(zip(key_list, list_info))
+    
+    if __name__ =='__main__':
+        print(dict_info)
 
-    print(list_info)
-
-    return list_info
+    return dict_info
 
 
 if __name__ == '__main__':
-    GetInfoList(r'Development\imageTest\textandtablewinkel.png', 5, 3, 1)
+    GetInfoDict(r'Development\imageTest\textandtablewinkel.png', 5, 3, 1)
 
