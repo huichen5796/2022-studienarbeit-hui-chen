@@ -17,9 +17,17 @@ def Extrakt_Tesseract(image_cell):
 def Extrakt_Esayocr(image_cell): # for this function can image_cell auch path is
 
     reader = easyocr.Reader(['en'])
-    result = reader.readtext(image_cell)[0][1]
     
-    return result
+    result = reader.readtext(image_cell)
+    for res in result:
+        if res == []:
+            text = ' '
+            return text
+
+        else:
+            text = res[1]
+    
+            return text
 
 if __name__ == '__main__':
     
