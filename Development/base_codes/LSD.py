@@ -29,14 +29,13 @@ def LSD(img):
     plt.xticks([]),plt.yticks([])
     plt.show()
 
-def LineSearch(image):
+def LineSearch(image, long_size):
     ### Line makieren durch HoughLines()
     image = cv2.imread(img, 0)
     bina_image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 9, 5)
     edges = cv2.Canny(bina_image, 50, 250, apertureSize= 3) ## apertureSize is the size of kernel, also soble
-    long_size = 400 # minlinelength
 
-    lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50, minLineLength=20, maxLineGap=5) 
+    lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50, minLineLength = long_size, maxLineGap=5) 
     # https://blog.csdn.net/dcrmg/article/details/78880046 # 
 
     ### show the line
@@ -63,4 +62,4 @@ def LineSearch(image):
 
     return img_line, lines
 
-LineSearch(img)
+LineSearch(img, 400)
