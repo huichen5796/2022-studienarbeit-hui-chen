@@ -43,7 +43,17 @@ Matr.-Nr.: 10048521
 
 ### Programmierung
 
+#### Prozess
+
+![komplexe Tabelle](./_images/prozess_zur_extraktion_von_tabellen.drawio.svg)
+
 ### Test
+
+#### Tabellentypen
+
+![einfache Tabelle](./_images/tabellentypen-einfach.drawio.svg)
+
+![komplexe Tabelle](./_images/tabellentypen-komplex.drawio.svg)
 
 #### Binarization
 
