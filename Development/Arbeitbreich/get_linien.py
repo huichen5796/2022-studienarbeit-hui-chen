@@ -13,6 +13,7 @@
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def LSDGetLines(img, long_size):
@@ -48,8 +49,11 @@ def LSDGetLines(img, long_size):
             dlines_long.append(dline)
     
     if __name__ == '__main__':
-        cv2.imshow('', white_image)
-        cv2.waitKey()
+        #cv2.imshow('', white_image)
+        #cv2.waitKey()
+        plt.imshow(white_image, cmap = 'gray')
+        plt.xticks([]),plt.yticks([])
+        plt.show()
 
     if len(dlines_long) == 0:
         print('no table here')
@@ -59,7 +63,10 @@ def LSDGetLines(img, long_size):
 if __name__ == '__main__':
     img = cv2.imread(r'Development\imageTest\einfach_table.jpg',0)
     # img = cv2.imread(r'Development\imageTest\textandtablewinkel.png', 0)
-    cv2.imshow('', img)
-    cv2.waitKey()
+    #cv2.imshow('', img)
+    #cv2.waitKey()
+    plt.imshow(img, cmap = 'gray')
+    plt.xticks([]),plt.yticks([])
+    plt.show()
     # img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     LSDGetLines(img, 20)
