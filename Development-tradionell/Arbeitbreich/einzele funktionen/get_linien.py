@@ -25,7 +25,7 @@ def LSDGetLines(img, long_size):
     
     '''
     
-    white_image = np.ones((img.shape[0], img.shape[1], 1))*255
+    white_image = np.ones((img.shape[0], img.shape[1], 1))
     
     lsd = cv2.createLineSegmentDetector(0, scale=1)
     dlines = lsd.detect(img)
