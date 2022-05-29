@@ -105,6 +105,8 @@ Das neuronale Netzwerk ist es, eine oder mehrere versteckte Schichten auf der Gr
 3. Fully Connected layer - FC
     - ReLU
     - Softmax
+4. Dropout
+    dazu: https://blog.csdn.net/qq_52302919/article/details/122796577
     
     ![FC](../Bilder/FC.png)
     Die letzten beiden Spalten kleiner Kugeln stellen zwei vollständig verbundene Schichten dar. Nachdem die letzte Faltungsschicht abgeschlossen ist, wird das letzte Pooling durchgeführt, 20 12*12-Bilder werden ausgegeben, und dann wird eine vollständig verbundene Schicht zu einem 1*100-Vektor.
