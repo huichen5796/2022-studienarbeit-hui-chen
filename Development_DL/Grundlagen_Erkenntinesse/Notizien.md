@@ -116,6 +116,15 @@ Das neuronale Netzwerk ist es, eine oder mehrere versteckte Schichten auf der Gr
 
 Tatsächlich unterscheidet sich CNN nicht sehr von dem zuvor erlernten neuronalen Netzwerk. Das herkömmliche neuronale Netzwerk ist eigentlich ein Stapel aus mehreren FC-Schichten. CNN ist nichts anderes als die Änderung von FC in CONV und POOL, wodurch die traditionelle Schicht aus Neuronen in eine Schicht aus Filtern umgewandelt wird.
 
+# Ⅳ Transfer Learning
+- Verwenden werden die Modelle, die von anderen für das Verständnis von Bildinhalten trainiert wurden.
+- Ersetzen wird die letzte Schicht
+- Nur die letzte Schicht muss trainiert werden
+- Kann aber auch alle Parameter trainiert werden - Pretraining
+
+Durch die Verwendung von Gewichtungen, die von anderen vortrainiert wurden, ist es möglich, auch mit einem kleinen Datensatz eine gute Leistung zu erzielen.
+
+https://nanonets.com/documentation/
 
 
 

@@ -312,11 +312,14 @@ def GetNode(copy_image):
 def Concentrate(img):
     '''
     to concentrate the point to a point with only one pixel
+    by calculating the coordinates of the midpoint of the square
 
     '''
     black_image = np.zeros((img.shape[0], img.shape[1]))
     contours, h = cv2.findContours(
         img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+
+    #print(contours)
     for i in range(len(contours)):
         cnt = contours[i]
         x = int(np.average(cnt, axis=0)[0][0])
@@ -549,6 +552,6 @@ def TableExtract(path):
 if __name__ == '__main__':
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    TableExtract('Development-tradionell\\imageTest\\textandtablewinkel.png')
+    TableExtract('Development_tradionell\\imageTest\\textandtablewinkel.png')
     time.sleep(1)
     print(Search('table'))
