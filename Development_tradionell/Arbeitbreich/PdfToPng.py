@@ -34,12 +34,12 @@ def PDFRemover(dir_name):
     for i in range(len(file_list)):
         file1 = file_list[i]
         if os.path.splitext(file1)[1] in ['.pdf', '.PDF']:
-            shutil.copy(dir_name +'\\'+ file1, 'Development\PDF')
+            shutil.copy(dir_name +'\\'+ file1, 'Development_tradionell\PDF')
             os.remove(dir_name +'\\'+ file1) 
             n += 1
         else:
             continue
-    print("darunter gibt es %s PDFs, entfernt zu 'Development\PDF'." %n)
+    print("darunter gibt es %s PDFs, entfernt zu 'Development_tradionell\PDF'." %n)
 
 
 def GetImageList(dir_name): 
@@ -55,10 +55,10 @@ def GetImageList(dir_name):
 def ImageReformat(dir):
     print('---------------------------')
     PDFRemover(dir)
-    pdf_list = GetImageList('Development\PDF')
+    pdf_list = GetImageList('Development_tradionell\PDF')
     for pdf in pdf_list:
-        pdf_path = 'Development\PDF' + '\\' + pdf
-        save_path = 'Development\imageTest'
+        pdf_path = 'Development_tradionell\PDF' + '\\' + pdf
+        save_path = 'Development_tradionell\imageTest'
         PdfToPng(pdf_path, save_path)
 
     image_list = GetImageList(dir)
@@ -68,4 +68,4 @@ def ImageReformat(dir):
     return image_list
 
 if __name__ == '__main__':
-    ImageReformat('Development\imageTest')
+    ImageReformat('Development_tradionell\imageTest')
