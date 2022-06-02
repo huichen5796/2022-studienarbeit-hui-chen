@@ -9,30 +9,40 @@ dilate the words, then find contours to get ROI then infos in the cell
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from TableExtract import NoiseReducter, Extrakt_Tesseract
+from TableExtract import NoiseReducter, Extrakt_Tesseract, DeletLines
 
-gray_image = cv2.imread('Development_tradionell\imageTest\\tabelle_ohne_linien.png', 0)
-bina_image = ~cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+gray_image = cv2.imread('Development_tradionell\imageTest\einfach_table.jpg', 0)
 
+
+bina_image = DeletLines(gray_image)
+
+plt.imshow(bina_image, cmap='gray')
+plt.xticks([]), plt.yticks([])
+plt.show()
+bina_image = cv2.bitwise_not(bina_image)
+plt.imshow(bina_image, cmap='gray')
+plt.xticks([]), plt.yticks([])
+plt.show()
+
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))
+bina_image = cv2.erode(bina_image,kernel,iterations = 1)
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
 bina_image = cv2.dilate(bina_image,kernel,iterations = 1)
 #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
 #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
 
-plt.subplot(1,3,1)
-plt.imshow(gray_image, cmap='gray')
-plt.xticks([]), plt.yticks([])
+ret, bina_image = cv2.threshold(bina_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-plt.subplot(1,3,2)
 plt.imshow(bina_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
+plt.show()
 
 
-img = bina_image
-contours, h = cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+contours, h = cv2.findContours(bina_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
 list_contours = []
 for cnt in contours:
+    print(cnt)
     x,y,w,h = cv2.boundingRect(cnt)
     if w>20 and h>20:
         
@@ -68,7 +78,6 @@ for cnt in arr_contours:
     
     cv2.rectangle(gray_image, (x,y), (x+w,y+h), 0, 2)
 
-plt.subplot(1,3,3)
 plt.imshow(gray_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
 plt.show()

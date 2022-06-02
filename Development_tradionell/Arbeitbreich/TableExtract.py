@@ -18,55 +18,10 @@ es = Elasticsearch()
     - output binar image
 
 2. TiltCorrection(image)
-    - in this function at first call the function LSDGetLines to mark the lines
-    - then call the function GetAngle() to get the average angle
-    - then call the function ImageRotate() to correct the tilt
-
-    - input    ---  the gray image we want to tilt correct
-    - return1  ---  the tilt corrected image ---> is used for ROI and Tesseract
-    - return2  ---  the tilt corrected white image ---> is uesd for get ROI location
-
-    - Schritte:
-    - get the locations of lines by copy image
-    - correct the gray image by calculating the average deflection angle of all lines with deflection angles within +-45 degrees
-
-5. GetPoint(copy_image)
-    - in this function will at first call GetNode(), in GetNode() will call LineRow() to get horizonal lines by dilate und LineCol() to vertikal lines
-      then call And_Border() to get image with big intersection point - Node
-    - then call Concentrate() to concentrate the point to a point with only one pixel
-
-    - input copy_rotate_cor
-    - output1 --- location of intersection points
-    - output2 --- image with only points
-
-4. PointCorrection(location)
-    # location = [dot1, dot2, dot3, dot4, ...]
-
-    #   --------------> x-axis
-    # : ##################################
-    # : # dot1----dot2-----dot3-----dot4 #
-    # ; #  |        |       |         |  #
-    # y # dot5----dot6-----dot7-----dot8 #                         y   x
-    #   ##################################                      [[ 16  18]
-    #                                                            [ 16 374]
-    #                                                            [ 16 640]
-    #                                                            [ 16 906]
-    #                                                            [ 64 374]
-    #                                                            [ 64 640]
-    #                                                            [ 64 906]
-    #                                                            [ 65  18]  <------- bug !!!
-    # Disrupted the ordering and caused the region to not be closed
-    # Can't get correct cells with intersections that are not aligned, need to correction
     
-    - Intersections with offsets within five pixels can be corrected.
 
-5. GetTable(img, location, edge_thickness)
-    - In fact, this is an extra step for the computer to extract the area where the table is located.
-    - edge_thickness is the is the number of pixels we want to cut out, that is, the white space around the border.
+3. DeletLines()
 
-6. ReadCell(location, image_rotate_cor, size)
-    - read the info in the cell one by one from left to right from top to down
-    - store the info in a list, list[0] is the info of the first row, ...
 
 7. GetInfoDict(list_info)
     input
@@ -99,99 +54,36 @@ def NoiseReducter(img):
 
     return bina_image
 
-
-def LSDGetLines(img, long_size):
+def GetAngle(img):
     '''
-    - lines mark by LSD 
-    - input is a gray image
-    - output1 is the lines on it
-    - output2 is a new white image with same shape of input image, on it is the lines of color image, location to location
-
-    input - img             --- binar image
-    input - long_size       --- min-long of the line
-    return - dlines_long    --- dlines_long ---> a list for lines long than long_size in the image
-    return - white_image    --- is a gray image
+    input     ---    img
+    output    ---    angle   
 
     '''
+    bina_image = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+    bina_image1 = cv2.bitwise_not(bina_image)
+    coords = np.column_stack(np.where(bina_image1 > 0))
+    angle = -cv2.minAreaRect(coords)[2]   # this function has three return
+                                        # [0] -- center point of recttangle
+                                        # [1] -- (Length, width) of rectangle
+                                        # [2] -- The rotation angle of the rectangle, 
+                                        # from the x-axis counterclockwise to the W (width) angle, the range is (-90,0]   
 
-    copy_image = np.ones((img.shape[0], img.shape[1], 1))*255
-
-    lsd = cv2.createLineSegmentDetector(0, scale=1)
-    dlines = lsd.detect(img)
-
-    dlines_long = []
-
-    for dline in dlines[0]:
-        x0 = int(round(dline[0][0]))
-        y0 = int(round(dline[0][1]))
-        x1 = int(round(dline[0][2]))
-        y1 = int(round(dline[0][3]))
-
-        long = (y1-y0)*(y1-y0)+(x1-x0)*(x1-x0)
-        if long >= long_size*long_size:
-            cv2.line(copy_image, (x0, y0), (x1, y1), color=0,
-                     thickness=3, lineType=cv2.LINE_AA)
-            # the vorteil big thickness:
-            # Draw a thick line to make two adjacent lines merge into one.
-            # It can be seen here that there may be black dot noise in the center of the line when thickness small
-            # which should be removed
-            # But it will cause the intersection point to shift
-            dlines_long.append(dline)
-
-    if len(dlines_long) == 0:
-        print('no table here')
-
-    return dlines_long, copy_image
-
-
-def GetAngle(lines):
-    '''
-    input     ---    list of the locations of lines, form [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...] 
-    output    ---    angle_average of horizonal lines    
-
-    '''
-
-    angle_list = []
-
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-
-        if x1 == x2:
-            angle_list.append(90)
-        elif y1 == y2:
-            angle_list.append(0)
-
-        else:
-            t = float(y2-y1)/(x2-x1)
-            rotate_angle = math.degrees(math.atan(t))
-            # angle_list.append(rotate_angle)
-            # print(angle_list)
-
-            '''
-            # dabei können nur die gegen den Uhrzeigersinn geneigte Bilder korrigiert werden.
-            if rotate_angle < 0:
-                angle_list.append(rotate_angle)
-            else:             
-                rotate_angle1 = -(90 - rotate_angle)
-                angle_list.append(rotate_angle1)     
-            '''
-
-            # dabei können nur die Bilder mit Neigungswinkeln innerhalb von +-45 Grad korrigiert werden.
-
-            angle_list.append(rotate_angle)
-
-    angle_list_45 = [angle_list[i] for i in range(len(angle_list)) if abs(
-        angle_list[i]) < 45]  # list for angle < +-45
-    # print(angle_list_45)
-    # print(angle_list)
-
-    if len(angle_list_45) == 0:  # if no abs(anlge) < 45
-        angle_average = 0
+    # the `cv2.minAreaRect` function returns values in the
+    # range [-90, 0); as the rectangle rotates clockwise the
+    # returned angle trends to 0 -- in this special case we
+    # need to add 90 degrees to the angle
+    if angle == 0:
+        angle = angle
     else:
-        angle_average = sum(angle_list_45)/len(angle_list_45)
+        if angle < -45:
+            angle = (90 + angle)
+        # otherwise, just take the inverse of the angle to make
+        # it positive
+        else:
+            angle = angle
 
-    return angle_average
-
+    return angle
 
 def ImageRotate(image, angle):
     '''
@@ -227,199 +119,113 @@ def ImageRotate(image, angle):
         image, M, (new_w, new_h), borderValue=(255, 255, 255))
     return image_rotate
 
-
-def TiltCorrection(image):
+def TiltCorrection(img):
     '''
     input  --- the image we want to tilt correct, must be gray image
     return --- the tilt corrected image
 
     '''
 
-    lines, copy_image = LSDGetLines(image, 20)
+    angle = GetAngle(img)
+    print(angle)
+    image_rotate = ImageRotate(img, angle)
+    
 
-    angle = GetAngle(lines)
-    image_rotate_cor = ImageRotate(image, angle)
-    copy_image_cor = ImageRotate(copy_image, angle)
+    return image_rotate
 
-    return image_rotate_cor, copy_image_cor
-
-
-def LineRow(bina_image):  # get image only with row lines - get horizonal lines by dilate
-
-    h, w = bina_image.shape
-    hori_k = int(math.sqrt(w)*1.2)
-    # hier für die Kernsize
-    # https://blog.csdn.net/weixin_41189525/article/details/121889157
-    kernel_hori = cv2.getStructuringElement(cv2.MORPH_RECT, (hori_k, 1))
-
-    # white zone horizonal dilate then inversion
-    image_row = ~cv2.dilate(~bina_image, kernel_hori, iterations=1)
-    # white lines on black background now
-    # Iterate twice, the first to restore the line length
-    image_row = cv2.dilate(image_row, kernel_hori, iterations=3)
-    # and the second to make the line longer
-    # Make sure the resulting intersection shape is square
-    return image_row
-
-
-def LineCol(bina_image):  # get image only with col lines - get vertikal lines by dilate
-
-    h, w = bina_image.shape
-
-    vert_k = 20  # this parameter is difficult to find
-
-    kernel_vert = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vert_k))
-    image_col = cv2.dilate(~bina_image, kernel_vert, iterations=1)
-
-    image_col = ~image_col
-    image_col = cv2.dilate(image_col, kernel_vert, iterations=3)
-
-    return image_col
-
-
-def And_Border(img1, img2):  
+def LSDGetLines(img):
     '''
-    merge two images
+    - lines mark by LSD 
+    - input is a gray image
+    - output is a new white image with same shape of input image, on it is the lines of image, location to location
+
+    input - img             --- binar image
+    return - white_image    --- is a bina image
+
+    '''
+    long_size = 20
+    copy_image = np.zeros((img.shape[0], img.shape[1]))
+
+    lsd = cv2.createLineSegmentDetector(0, scale=1)
+    dlines = lsd.detect(img)
+
+    for dline in dlines[0]:
+        x0 = int(round(dline[0][0]))
+        y0 = int(round(dline[0][1]))
+        x1 = int(round(dline[0][2]))
+        y1 = int(round(dline[0][3]))
+        long = (y1-y0)*(y1-y0)+(x1-x0)*(x1-x0)
+        if long >= long_size*long_size:
+            cv2.line(copy_image, (x0, y0), (x1, y1), color=255,
+                        thickness=3, lineType=cv2.LINE_AA)
+            
+    return  copy_image
+
+def OrImage(img1, img2):  
+    '''
+    add two images, weiss + weiss = weiss, weiss + schwarz = weiss, schwarz +schwarz = schwarz
 
     '''
     img1 = np.array(img1, np.uint8)
     img2 = np.array(img2, np.uint8)
 
-    image_points = cv2.bitwise_and(img1, img2)
+    image = cv2.bitwise_or(img1, img2)
 
-    return image_points
+    return image
 
-
-def GetNode(copy_image):
-    '''
-    call funtions LineRow(), LineCol(), And_Border()
+def DeletLines(img):
+    img1 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+    img2 = LSDGetLines(img)
+    img_deletline = OrImage(img1, img2)
     
-    '''
 
-    copy_image = copy_image.astype(np.uint8)
+    return img_deletline
 
-    ret, bina_image = cv2.threshold(~copy_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+def GetCell(img_deletline):
+    img_deletline_inv = cv2.bitwise_not(img_deletline)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))
+    bina_image = cv2.erode(img_deletline_inv,kernel,iterations = 1)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
+    bina_image = cv2.dilate(img_deletline_inv,kernel,iterations = 1)
+    #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
+    #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
 
-    image_row = LineRow(bina_image)
-    image_col = LineCol(bina_image)
+    ret, bina_image = cv2.threshold(bina_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    contours, h = cv2.findContours(bina_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
-    #Border(image_row, image_col)
-    image_points = And_Border(image_row, image_col)
+    list_contours = []
+    for cnt in contours:
+        x,y,w,h = cv2.boundingRect(cnt)
+        if w>20 and h>20:
+            
+            list_contours.append((x,y,w,h))
+            cv2.rectangle(img_deletline, (x,y), (x+w,y+h), 0, 2)
+    plt.subplot(2, 2, 4), plt.imshow(img_deletline, cmap='gray')
+    plt.xticks([]), plt.yticks([])
+    plt.show()
 
-    return image_points
+    arr_contours = np.array(list_contours)
 
+    return arr_contours
 
-def Concentrate(img):
-    '''
-    to concentrate the point to a point with only one pixel
-    by calculating the coordinates of the midpoint of the square
-
-    '''
-    black_image = np.zeros((img.shape[0], img.shape[1]))
-    contours, h = cv2.findContours(
-        img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-
-    #print(contours)
-    for i in range(len(contours)):
-        cnt = contours[i]
-        x = int(np.average(cnt, axis=0)[0][0])
-        y = int(np.average(cnt, axis=0)[0][1])
-        #print(np.average(cnt, axis = 0))
-        black_image[y, x] = 255
-
-    location = np.argwhere(black_image > 127)
-
-    # cv2.imshow('',black_image)
-    # cv2.waitKey()
-    return location, black_image
-
-
-def GetPoint(copy_image):
-    '''
-
-    '''
-    img = GetNode(copy_image)
-
-    location, img_point = Concentrate(img)
-
-    # cv2.imshow('',img_point)
-    # cv2.waitKey()
-
-    return location, img_point
-
-
-def PointCorrection(location):
-    # location = [dot1, dot2, dot3, dot4, ...]
-
-    #   --------------> x-axis
-    # : ##################################
-    # : # dot1----dot2-----dot3-----dot4 #
-    # ; #  |        |       |         |  #
-    # y # dot5----dot6-----dot7-----dot8 #                         y   x
-    #   ##################################                      [[ 16  18]
-    #                                                            [ 16 374]
-    #                                                            [ 16 640]
-    #                                                            [ 16 906]
-    #                                                            [ 64 374]
-    #                                                            [ 64 640]
-    #                                                            [ 64 906]
-    #                                                            [ 65  18]  <------- bug !!!
-    # Disrupted the ordering and caused the region to not be closed
-    # Can't get correct cells with intersections that are not aligned, need to correction
-
-    location = sorted(location, key=lambda x: x[0])
-
-    for i in range(len(location)-1):
-        if location[i+1][0] == location[i][0]:
-            continue
-        else:
-            # suppose there are no cells with height less than 10
-            if abs(location[i+1][0]-location[i][0]) < 10:
-                location[i+1][0] = location[i][0]
-            else:
-                continue
-
-    location = sorted(location, key=lambda x: (x[1], x[0]))
+def HorizonalAlignment(location):
+    
+    location = sorted(location, key=lambda x: x[1])
 
     for i in range(len(location)-1):
         if location[i+1][1] == location[i][1]:
             continue
         else:
-            # suppose there are no cells with width less than 10
+            # suppose there are no cells with height less than 10
             if abs(location[i+1][1]-location[i][1]) < 10:
                 location[i+1][1] = location[i][1]
             else:
                 continue
 
-    location = sorted(location, key=lambda x: (x[0], x[1]))
+
+    location = sorted(location, key=lambda x: (x[1], x[0]))
 
     return location
-
-
-def GetTable(img, location, edge_thickness):
-    '''
-    # Method 1
-    # sum the x-axis and y-axis of point
-    sum_row = list(np.sum(location, axis=1))
-    # The point in the lower right corner has the largest sum
-    max_loca = sum_row.index(max(sum_row))
-    # The point in the lower right corner has the largest sum
-    min_loca = sum_row.index(min(sum_row))
-    max_point = location[max_loca]
-    min_point = location[min_loca]
-    '''
-    # Method 2
-    max_point = location[-1]
-    min_point = location[0]
-
-    width = max_point[1]-min_point[1] + 2 * edge_thickness  # x2-x1+2e
-    high = max_point[0]-min_point[0] + 2 * edge_thickness  # y2-y1+2e
-    table_zone = np.ones((high, width, 1))
-
-    table_zone = img[(min_point[0]-edge_thickness):(min_point[0]+high),
-                     (min_point[1]-edge_thickness):(min_point[1]+width)]
-
-    return table_zone
 
 
 def Extrakt_Tesseract(image_cell):
@@ -433,37 +239,27 @@ def Extrakt_Tesseract(image_cell):
     return result
 
 
-def ReadCell(location, image_rotate_cor, size):
-    '''
-    input:
-     - location
-     - img
-     - size, is a parameter for: the size of the image to be cropped inward, thereby removing the border
-
-    '''
-
+def ReadCell(location, image_rotate_cor):
+    
     list_info = [[]]
-    # get max of every col, for example: max_col[0] --> y max
-    max_col = np.amax(location, axis=0)
-    location_arr = np.array(location)[:, 0]
-    #location_arr = location_arr.tolist()
-    cell_number = 1
-    for i in range(len(location)):
-        x0 = location[i][1]
-        # print(x0)
-        y0 = location[i][0]
-        if x0 < max_col[1] and y0 < max_col[0]:
-            y1 = y0 + 1
-            while y1 not in location_arr:
-                y1 += 1
+    x1,y1,w1,h1 = location[0]
+    cell_zone = np.ones((h1, w1, 1))
+    cell_zone = image_rotate_cor[(y1):(y1+h1), (x1):(x1+w1)]
+    #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+    cell_zone = NoiseReducter(cell_zone)
 
-            x1 = location[i+1][1]
+    result = Extrakt_Tesseract(cell_zone)
 
-            width = x1-x0
-            high = y1-y0
+    list_info[-1].append(result)
 
-            cell_zone = np.ones((high-2*size, width-2*size, 1))
-            cell_zone = image_rotate_cor[(y0+size):(y1-size), (x0+size):(x1-size)]
+    cell_number = 2
+    for i in range(1, len(location)):
+        if location[i][1] == location[i-1][1]:
+            
+            x,y,w,h = location[i]
+
+            cell_zone = np.ones((h, w, 1))
+            cell_zone = image_rotate_cor[(y):(y+h), (x):(x+w)]
             #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
             cell_zone = NoiseReducter(cell_zone)
 
@@ -473,11 +269,21 @@ def ReadCell(location, image_rotate_cor, size):
 
             cell_number += 1
 
-        elif x0 == max_col[1] and y0 < max_col[0]:
+        else:
             list_info.append([])
-        elif y0 == max_col[0]:
-            del list_info[-1]
-            break
+            x,y,w,h = location[i]
+
+            cell_zone = np.ones((h, w, 1))
+            cell_zone = image_rotate_cor[(y):(y+h), (x):(x+w)]
+            #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+            cell_zone = NoiseReducter(cell_zone)
+
+            result = Extrakt_Tesseract(cell_zone)
+
+            list_info[-1].append(result)
+
+            cell_number += 1
+        
 
     return list_info
 
@@ -533,18 +339,21 @@ def Search(index):
 def TableExtract(path):
 
     image = cv2.imread(path, 0)
-    plt.subplot(1, 3, 1), plt.imshow(image, 'gray')
+    plt.subplot(2, 2, 1), plt.imshow(image, 'gray')
     plt.xticks([]), plt.yticks([])
-    image_rotate_cor, copy_image_cor = TiltCorrection(image)
-    plt.subplot(1, 3, 2), plt.imshow(copy_image_cor, cmap='gray')
+    image_rotate = TiltCorrection(image)
+    plt.subplot(2, 2, 2), plt.imshow(image_rotate, cmap='gray')
     plt.xticks([]), plt.yticks([])
-    location = GetPoint(copy_image_cor)[0]
-    location = PointCorrection(location)
-    table_zone = GetTable(image_rotate_cor, location, 2)
-    plt.subplot(1, 3, 3), plt.imshow(table_zone, cmap='gray')
+
+
+    image_rotate = DeletLines(image_rotate)
+    plt.subplot(2, 2, 3), plt.imshow(image_rotate, cmap='gray')
     plt.xticks([]), plt.yticks([])
-    plt.show()
-    list_info = ReadCell(location, image_rotate_cor, 3)
+    
+    location = GetCell(image_rotate)
+    location = HorizonalAlignment(location)
+    
+    list_info = ReadCell(location, image_rotate)
     dict_info = GetInfoDict(list_info)
     WriteData(dict_info)
 
@@ -552,6 +361,6 @@ def TableExtract(path):
 if __name__ == '__main__':
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    TableExtract('Development_tradionell\\imageTest\\textandtablewinkel.png')
+    TableExtract('Development_tradionell\\imageTest\\tabelle_ohne_linien.png')
     time.sleep(1)
     print(Search('table'))
