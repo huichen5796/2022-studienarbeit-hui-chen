@@ -18,12 +18,30 @@ es = Elasticsearch()
     - output binar image
 
 2. TiltCorrection(image)
+    - input  --- the image we want to tilt correct, must be gray image
+    - return --- the tilt corrected image
     
+    at first call the function GetAngle(),witch basic of cv2.minAreaRect(), to get the tilt angle
+    then call ImageRotate() to correct the tilt of image
 
-3. DeletLines()
+3. DeletLines(img)
+    - input gray image
+    - output gray image without lines
 
+    at first call the function LSDGetLines() to mark all lines on image
+    then in function OrImage() mit cv2.bitwise_or to delet all the lines
+
+4. ReadCell(img_deletline)
+    - input the image without any lines
+    - output the infos of the image
+
+    at first call GetCell() to get the zones of text on bild
+    then by function HorizonalAlignment() to alignment the zones of the Cells in same row
+    then read the info in every ROI by tesseract and write the infos in list
 
 7. GetInfoDict(list_info)
+    change list to dict
+
     input
     - list_info
 
@@ -37,7 +55,6 @@ es = Elasticsearch()
 9. Search(index)
     - search the data in elasticsearch
     
-
 '''
 
 
@@ -50,9 +67,11 @@ def NoiseReducter(img):
     '''
 
     # Gauss Binar
-    bina_image = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+    bina_image = cv2.adaptiveThreshold(
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
 
     return bina_image
+
 
 def GetAngle(img):
     '''
@@ -60,14 +79,16 @@ def GetAngle(img):
     output    ---    angle   
 
     '''
-    bina_image = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
-    bina_image1 = cv2.bitwise_not(bina_image)
-    coords = np.column_stack(np.where(bina_image1 > 0))
-    angle = -cv2.minAreaRect(coords)[2]   # this function has three return
-                                        # [0] -- center point of recttangle
-                                        # [1] -- (Length, width) of rectangle
-                                        # [2] -- The rotation angle of the rectangle, 
-                                        # from the x-axis counterclockwise to the W (width) angle, the range is (-90,0]   
+    bina_image = cv2.adaptiveThreshold(
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5) # Gaussian binar
+    bina_image1 = cv2.bitwise_not(bina_image) # invert the image
+    coords = np.column_stack(np.where(bina_image1 > 0)) # get the location of white pixel
+    angle = -cv2.minAreaRect(coords)[2] # round all the white pixel by a rect
+    # this function has three return
+    # [0] -- center point of recttangle
+    # [1] -- (Length, width) of rectangle
+    # [2] -- The rotation angle of the rectangle,
+    # from the x-axis counterclockwise to the W (width) angle, the range is (-90,0]
 
     # the `cv2.minAreaRect` function returns values in the
     # range [-90, 0); as the rectangle rotates clockwise the
@@ -84,6 +105,7 @@ def GetAngle(img):
             angle = angle
 
     return angle
+
 
 def ImageRotate(image, angle):
     '''
@@ -119,6 +141,7 @@ def ImageRotate(image, angle):
         image, M, (new_w, new_h), borderValue=(255, 255, 255))
     return image_rotate
 
+
 def TiltCorrection(img):
     '''
     input  --- the image we want to tilt correct, must be gray image
@@ -127,11 +150,11 @@ def TiltCorrection(img):
     '''
 
     angle = GetAngle(img)
-    print(angle)
-    image_rotate = ImageRotate(img, angle)
     
+    image_rotate = ImageRotate(img, angle)
 
     return image_rotate
+
 
 def LSDGetLines(img):
     '''
@@ -144,10 +167,10 @@ def LSDGetLines(img):
 
     '''
     long_size = 20
-    copy_image = np.zeros((img.shape[0], img.shape[1]))
+    copy_image = np.zeros((img.shape[0], img.shape[1])) # make a new black image with the same shape of input img
 
-    lsd = cv2.createLineSegmentDetector(0, scale=1)
-    dlines = lsd.detect(img)
+    lsd = cv2.createLineSegmentDetector(0, scale=1) 
+    dlines = lsd.detect(img) # get all the location of lines by LSD
 
     for dline in dlines[0]:
         x0 = int(round(dline[0][0]))
@@ -156,50 +179,63 @@ def LSDGetLines(img):
         y1 = int(round(dline[0][3]))
         long = (y1-y0)*(y1-y0)+(x1-x0)*(x1-x0)
         if long >= long_size*long_size:
+            # It is possible that the shorter lines are part of the letter, so filter out the longer lines.
             cv2.line(copy_image, (x0, y0), (x1, y1), color=255,
-                        thickness=3, lineType=cv2.LINE_AA)
-            
-    return  copy_image
+                     thickness=3, lineType=cv2.LINE_AA) # draw the white line on black image
 
-def OrImage(img1, img2):  
+    return copy_image
+
+
+def OrImage(img1, img2):
     '''
-    add two images, weiss + weiss = weiss, weiss + schwarz = weiss, schwarz +schwarz = schwarz
+    add two images, weiss + weiss = weiss, weiss + schwarz = weiss, schwarz + schwarz = schwarz
 
     '''
     img1 = np.array(img1, np.uint8)
     img2 = np.array(img2, np.uint8)
 
-    image = cv2.bitwise_or(img1, img2)
+    image = cv2.bitwise_or(img1, img2) 
+    # bitwise_or the original img and the copy img with black lines
+    # so can the lines on image be deleted
 
     return image
 
+
 def DeletLines(img):
-    img1 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+    '''
+    delet all the lines on image
+    '''
+    img1 = cv2.adaptiveThreshold(
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
     img2 = LSDGetLines(img)
     img_deletline = OrImage(img1, img2)
-    
 
     return img_deletline
 
+
 def GetCell(img_deletline):
     img_deletline_inv = cv2.bitwise_not(img_deletline)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))
-    bina_image = cv2.erode(img_deletline_inv,kernel,iterations = 1)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
-    bina_image = cv2.dilate(img_deletline_inv,kernel,iterations = 1)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+    bina_image = cv2.erode(img_deletline_inv, kernel, iterations=1) 
+    # reduce the noise
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=4)
     #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
     #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
 
-    ret, bina_image = cv2.threshold(bina_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    contours, h = cv2.findContours(bina_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    ret, bina_image = cv2.threshold(
+        bina_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    contours, h = cv2.findContours(
+        bina_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE) # round the text zone by rect
 
     list_contours = []
     for cnt in contours:
-        x,y,w,h = cv2.boundingRect(cnt)
-        if w>20 and h>20:
-            
-            list_contours.append((x,y,w,h))
-            cv2.rectangle(img_deletline, (x,y), (x+w,y+h), 0, 2)
+        x, y, w, h = cv2.boundingRect(cnt)
+        if w > 20 and h > 20:
+
+            list_contours.append((x, y, w, h))
+            cv2.rectangle(img_deletline, (x, y), (x+w, y+h), 0, 2) # round the text zone by rect
     plt.subplot(2, 2, 4), plt.imshow(img_deletline, cmap='gray')
     plt.xticks([]), plt.yticks([])
     plt.show()
@@ -208,20 +244,23 @@ def GetCell(img_deletline):
 
     return arr_contours
 
+
 def HorizonalAlignment(location):
-    
+    '''
+    alignment the zones of the Cells in same row
+
+    '''
     location = sorted(location, key=lambda x: x[1])
 
     for i in range(len(location)-1):
         if location[i+1][1] == location[i][1]:
             continue
         else:
-            # suppose there are no cells with height less than 10
-            if abs(location[i+1][1]-location[i][1]) < 10:
+            # suppose there are no cells with height less than 5
+            if abs(location[i+1][1]-location[i][1]) < 5:
                 location[i+1][1] = location[i][1]
             else:
                 continue
-
 
     location = sorted(location, key=lambda x: (x[1], x[0]))
 
@@ -240,9 +279,11 @@ def Extrakt_Tesseract(image_cell):
 
 
 def ReadCell(location, image_rotate_cor):
-    
+    '''
+    get the info in cell by tesseract
+    '''
     list_info = [[]]
-    x1,y1,w1,h1 = location[0]
+    x1, y1, w1, h1 = location[0]
     cell_zone = np.ones((h1, w1, 1))
     cell_zone = image_rotate_cor[(y1):(y1+h1), (x1):(x1+w1)]
     #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
@@ -253,14 +294,14 @@ def ReadCell(location, image_rotate_cor):
     list_info[-1].append(result)
 
     cell_number = 2
-    for i in range(1, len(location)):
+    for i in range(1, len(location)): # iterate over each cell
         if location[i][1] == location[i-1][1]:
-            
-            x,y,w,h = location[i]
+
+            x, y, w, h = location[i]
 
             cell_zone = np.ones((h, w, 1))
             cell_zone = image_rotate_cor[(y):(y+h), (x):(x+w)]
-            #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+            
             cell_zone = NoiseReducter(cell_zone)
 
             result = Extrakt_Tesseract(cell_zone)
@@ -271,11 +312,11 @@ def ReadCell(location, image_rotate_cor):
 
         else:
             list_info.append([])
-            x,y,w,h = location[i]
+            x, y, w, h = location[i]
 
             cell_zone = np.ones((h, w, 1))
             cell_zone = image_rotate_cor[(y):(y+h), (x):(x+w)]
-            #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+            
             cell_zone = NoiseReducter(cell_zone)
 
             result = Extrakt_Tesseract(cell_zone)
@@ -283,7 +324,6 @@ def ReadCell(location, image_rotate_cor):
             list_info[-1].append(result)
 
             cell_number += 1
-        
 
     return list_info
 
@@ -345,14 +385,13 @@ def TableExtract(path):
     plt.subplot(2, 2, 2), plt.imshow(image_rotate, cmap='gray')
     plt.xticks([]), plt.yticks([])
 
-
     image_rotate = DeletLines(image_rotate)
     plt.subplot(2, 2, 3), plt.imshow(image_rotate, cmap='gray')
     plt.xticks([]), plt.yticks([])
-    
+
     location = GetCell(image_rotate)
     location = HorizonalAlignment(location)
-    
+
     list_info = ReadCell(location, image_rotate)
     dict_info = GetInfoDict(list_info)
     WriteData(dict_info)
@@ -362,5 +401,6 @@ if __name__ == '__main__':
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     TableExtract('Development_tradionell\\imageTest\\tabelle_ohne_linien.png')
+    #TableExtract('Development_tradionell\\imageTest\\rotate_table.png')
     time.sleep(1)
     print(Search('table'))
