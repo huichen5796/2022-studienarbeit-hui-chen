@@ -219,8 +219,8 @@ def GetCell(img_deletline):
     bina_image = cv2.erode(img_deletline_inv, kernel, iterations=1) 
     # reduce the noise
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=4)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=1)
     #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
     #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
 
@@ -232,7 +232,7 @@ def GetCell(img_deletline):
     list_contours = []
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 20 and h > 20:
+        if w > 10 and h > 10:
 
             list_contours.append((x, y, w, h))
             cv2.rectangle(img_deletline, (x, y), (x+w, y+h), 0, 2) # round the text zone by rect
@@ -282,12 +282,16 @@ def ReadCell(location, image_rotate_cor):
     '''
     get the info in cell by tesseract
     '''
+
+    size = 5
+
+    # table the earst cell at first, in this way can interact the other cells by ,,if location[i][1] == location[i-1][1]:"
     list_info = [[]]
     x1, y1, w1, h1 = location[0]
-    cell_zone = np.ones((h1, w1, 1))
-    cell_zone = image_rotate_cor[(y1):(y1+h1), (x1):(x1+w1)]
+    cell_zone = np.ones((h1+2*size, w1+2*size, 1))
+    cell_zone = image_rotate_cor[(y1-size):(y1+h1), (x1-size):(x1+w1)]
     #cell_zone = cv2.adaptiveThreshold(cell_zone, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
-    cell_zone = NoiseReducter(cell_zone)
+    #cell_zone = NoiseReducter(cell_zone)
 
     result = Extrakt_Tesseract(cell_zone)
 
@@ -299,8 +303,8 @@ def ReadCell(location, image_rotate_cor):
 
             x, y, w, h = location[i]
 
-            cell_zone = np.ones((h, w, 1))
-            cell_zone = image_rotate_cor[(y):(y+h), (x):(x+w)]
+            cell_zone = np.ones((h+2*size, w+2*size, 1))
+            cell_zone = image_rotate_cor[(y-size):(y+h), (x-size):(x+w)]
             
             cell_zone = NoiseReducter(cell_zone)
 
@@ -400,7 +404,7 @@ def TableExtract(path):
 if __name__ == '__main__':
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    TableExtract('Development_tradionell\\imageTest\\tabelle_ohne_linien.png')
-    #TableExtract('Development_tradionell\\imageTest\\rotate_table.png')
+    #TableExtract('Development_tradionell\\imageTest\\tabelle_ohne_linien.png')
+    TableExtract('Development_tradionell\\imageTest\\rotate_table.png')
     time.sleep(1)
     print(Search('table'))

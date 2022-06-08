@@ -9,10 +9,10 @@ dilate the words, then find contours to get ROI then infos in the cell
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from TableExtract import NoiseReducter, Extrakt_Tesseract, DeletLines
+from TableExtract import NoiseReducter, Extrakt_Tesseract, DeletLines, TiltCorrection
 
-gray_image = cv2.imread('Development_tradionell\imageTest\einfach_table.jpg', 0)
-
+gray_image = cv2.imread('Development_tradionell\\imageTest\\rotate_table.png', 0)
+gray_image = TiltCorrection(gray_image)
 
 bina_image = DeletLines(gray_image)
 
@@ -26,7 +26,7 @@ plt.show()
 
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))
 bina_image = cv2.erode(bina_image,kernel,iterations = 1)
-kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
 bina_image = cv2.dilate(bina_image,kernel,iterations = 1)
 #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
 #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
@@ -44,7 +44,7 @@ list_contours = []
 for cnt in contours:
     print(cnt)
     x,y,w,h = cv2.boundingRect(cnt)
-    if w>20 and h>20:
+    if w>10 and h>10:
         
         list_contours.append((x,y,w,h))
         cv2.rectangle(gray_image, (x,y), (x+w,y+h), 0, 2)
