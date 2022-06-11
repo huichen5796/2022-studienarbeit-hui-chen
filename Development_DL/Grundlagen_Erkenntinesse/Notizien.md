@@ -172,7 +172,7 @@ detectron2 --- https://github.com/facebookresearch/detectron2/blob/main/detectro
 - https://github.com/ibm-aur-nlp/PubTabNet
 - https://github.com/Academic-Hammer/SciTSR
 
-# Ⅷ use Detectron2 to objekt detection
+# Ⅷ use TFODAPI to objekt detection
 https://github.com/facebookresearch/detectron2/blob/main/MODEL_ZOO.md
 - install on Linux or Mac --- https://detectron2.readthedocs.io/en/latest/tutorials/install.html
 - install on Window 10 --- not found ---> use Google Colab
