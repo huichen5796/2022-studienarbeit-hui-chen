@@ -153,6 +153,9 @@ https://blog.csdn.net/john_bh/article/details/106231354?ops_request_misc=%257B%2
 - R-CNN
 - FAST R-CNN
 - FASTER R-CNN
+- MASK R-CNN
+
+detectron2 --- https://github.com/facebookresearch/detectron2/blob/main/detectron2/model_zoo/model_zoo.py
 
 ### 1-stage modelle(end to end)
 - SSD
@@ -161,4 +164,15 @@ https://blog.csdn.net/john_bh/article/details/106231354?ops_request_misc=%257B%2
   - YOLO v2
   - YOLO v3
   - YOLO v4
-  - YOLO v5
+  - YOLO v5 --- https://github.com/ultralytics/yolov5
+
+
+# Ⅶ Datasets von Tabellen
+- https://github.com/doc-analysis/TableBank
+- https://github.com/ibm-aur-nlp/PubTabNet
+- https://github.com/Academic-Hammer/SciTSR
+
+# Ⅷ use Detectron2 to objekt detection
+https://github.com/facebookresearch/detectron2/blob/main/MODEL_ZOO.md
+- install on Linux or Mac --- https://detectron2.readthedocs.io/en/latest/tutorials/install.html
+- install on Window 10 --- not found ---> use Google Colab
