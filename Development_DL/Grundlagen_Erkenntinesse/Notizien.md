@@ -171,8 +171,7 @@ detectron2 --- https://github.com/facebookresearch/detectron2/blob/main/detectro
 - https://github.com/doc-analysis/TableBank
 - https://github.com/ibm-aur-nlp/PubTabNet
 - https://github.com/Academic-Hammer/SciTSR
+- Download processed Marmot dataset: https://drive.google.com/file/d/1irIm19B58-o92IbD9b5qd6k3F31pqp1o/view?usp=sharing
 
-# Ⅷ use TFODAPI to objekt detection
-https://github.com/facebookresearch/detectron2/blob/main/MODEL_ZOO.md
-- install on Linux or Mac --- https://detectron2.readthedocs.io/en/latest/tutorials/install.html
-- install on Window 10 --- not found ---> use Google Colab
+# Ⅷ code implementations (in TensorFlow and PyTorch)
+https://github.com/asagar60/TableNet-pytorch
