@@ -174,4 +174,4 @@ detectron2 --- https://github.com/facebookresearch/detectron2/blob/main/detectro
 - Download processed Marmot dataset: https://drive.google.com/file/d/1irIm19B58-o92IbD9b5qd6k3F31pqp1o/view?usp=sharing
 
 # Ⅷ code implementations (in TensorFlow and PyTorch)
-https://github.com/asagar60/TableNet-pytorch
+https://github.com/asagar60/TableNet-pytorch. Hier werden die Datasets genutzt.
