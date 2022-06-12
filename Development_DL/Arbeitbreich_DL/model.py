@@ -69,29 +69,29 @@ class SegNet(nn.Module):
         return x
         
 params_model={
-        "input_shape": (3, 1024, 1024),
-        "initial_filters": 128, 
-        "num_outputs": 3,
+        "input_shape": (1, 512, 512),
+        "initial_filters": 16, 
+        "num_outputs": 1,
             }
 
 model = SegNet(params_model).to(device)
 
-#print(model)
+print(model)
 
 # """
 # SegNet(
-#  (conv1): Conv2d(3, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv2): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv3): Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv4): Conv2d(512, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv5): Conv2d(1024, 2048, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+#  (conv1): Conv2d(1, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))      
+#  (conv2): Conv2d(16, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))     
+#  (conv3): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))     
+#  (conv4): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))    
+#  (conv5): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))   
 #  (upsample): Upsample(scale_factor=2.0, mode=bilinear)
-#  (conv_up1): Conv2d(2048, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv_up2): Conv2d(1024, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv_up3): Conv2d(512, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv_up4): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv_out): Conv2d(128, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-# )
+#  (conv_up1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+#  (conv_up2): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)) 
+#  (conv_up3): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))  
+#  (conv_up4): Conv2d(32, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))  
+#  (conv_out): Conv2d(16, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))   
+#  )
 # """
 
 
@@ -238,7 +238,7 @@ def train_val(model, params):
 opt = optim.Adam(model.parameters(), lr=3e-4)
 lr_scheduler = ReduceLROnPlateau(opt, mode='min',factor=0.5, patience=20,verbose=1)
 
-path_models = "./models/sos/"
+path_models = "./models/"
 if not os.path.exists(path_models):
     os.mkdir(path_models)
 

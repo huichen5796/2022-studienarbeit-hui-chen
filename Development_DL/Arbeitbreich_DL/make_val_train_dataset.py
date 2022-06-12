@@ -6,6 +6,7 @@ from torchvision.io import read_image
 import numpy as np
 import shutil
 from PIL import Image
+import cv2
 
 
 
@@ -52,8 +53,8 @@ def Aufraeumen():    # Do not run
 # make Dataset class
 class MakeDataset(Dataset):
     def __init__(self, root_image1, root_mask1):
-        images_list = [pp for pp in os.listdir(root_image1) if "." in pp and pp.endswith('.jpg')]
-        masks_list = [pp for pp in os.listdir(root_mask1) if "." in pp and pp.endswith('_table_mask.jpg')]
+        images_list = [pp for pp in os.listdir(root_image1)]
+        masks_list = [pp for pp in os.listdir(root_mask1)]
         self.path_images = [os.path.join(root_image1, fn) for fn in images_list]
         self.path_masks = [os.path.join(root_mask1, fn) for fn in masks_list]
 
@@ -63,15 +64,17 @@ class MakeDataset(Dataset):
     
     def __getitem__(self, idx):
         path_image = self.path_images[idx]
-        image = Image.open(path_image)
+        image = cv2.imread(path_image,0)
+        image = cv2.resize(image, (512, 512))
         
         path_mask = self.path_masks[idx]
-        mask = Image.open(path_mask)
+        mask = cv2.imread(path_mask,0)
+        mask = cv2.resize(mask, (512, 512))
 
 
         
         image = to_tensor(image)
-        mask = 255 * to_tensor(mask)
+        mask = to_tensor(mask)
 
         return image, mask
 
@@ -116,17 +119,13 @@ def GetTrainVal():
 
     return train_dl, val_dl
 
+# GetTrainVal()
 '''
-    The total number of images in the train dataset:  793
-
-    The total number of images in the validation dataset:  200
-
-    every batch of train image:  torch.Size([8, 3, 1024, 1024]) torch.float32
-
-    every batch of train mask:  torch.Size([8, 3, 1024, 1024]) torch.float32
-
-    every batch of val image:  torch.Size([16, 3, 1024, 1024]) torch.float32
-
-    every batch of val mask:  torch.Size([16, 3, 1024, 1024]) torch.float32
+The total number of images in the train dataset:  793
+The total number of images in the validation dataset:  200
+every batch of train image:  torch.Size([8, 1, 512, 512]) torch.float32
+every batch of train mask:  torch.Size([8, 1, 512, 512]) torch.float32
+every batch of val image:  torch.Size([16, 1, 512, 512]) torch.float32
+every batch of val mask:  torch.Size([16, 1, 512, 512]) torch.float32
 
 '''
