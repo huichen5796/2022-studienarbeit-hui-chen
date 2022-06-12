@@ -175,3 +175,6 @@ detectron2 --- https://github.com/facebookresearch/detectron2/blob/main/detectro
 
 # Ⅷ code implementations (in TensorFlow and PyTorch)
 https://github.com/asagar60/TableNet-pytorch. Hier werden die Datasets genutzt.
+
+# Ⅸ Single Object Segmentation
+https://www.jianshu.com/p/7086ded792b2
