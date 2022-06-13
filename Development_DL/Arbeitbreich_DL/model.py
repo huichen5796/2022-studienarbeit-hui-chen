@@ -1,5 +1,6 @@
 #https://github.com/pranjalrai-iitd/Fetal-head-segmentation-and-circumference-measurement-from-ultrasound-images/blob/master/Unet.py
 #https://www.jianshu.com/p/7086ded792b2
+#https://github.com/codecat0/CV/blob/main/Semantic_Segmentation/SegNet/nets/segent.py
 
 import torch
 import torch.nn as nn
@@ -15,9 +16,9 @@ import matplotlib.pyplot as plt
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # encoder-decoder model  U-Net
-class SegNet(nn.Module):
+class UNet(nn.Module):
     def __init__(self, params):
-        super(SegNet, self).__init__()
+        super(UNet, self).__init__()
         C_in, H_in, W_in = params['input_shape'] # C_in is cannel of input image
         init_f = params['initial_filters']
         num_outputs = params['num_outputs']
@@ -69,17 +70,17 @@ class SegNet(nn.Module):
         return x
         
 params_model={
-        "input_shape": (1, 512, 512),
+        "input_shape": (1, 1024, 1024),
         "initial_filters": 16, 
         "num_outputs": 1,
             }
 
-model = SegNet(params_model).to(device)
+model = UNet(params_model).to(device)
 
 print(model)
 
 # """
-# SegNet(
+# UNet(
 #  (conv1): Conv2d(1, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))      
 #  (conv2): Conv2d(16, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))     
 #  (conv3): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))     

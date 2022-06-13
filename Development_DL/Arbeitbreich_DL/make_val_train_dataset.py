@@ -65,11 +65,12 @@ class MakeDataset(Dataset):
     def __getitem__(self, idx):
         path_image = self.path_images[idx]
         image = cv2.imread(path_image,0)
-        image = cv2.resize(image, (512, 512))
+        image = cv2.resize(image, (1024, 1024))
+
         
         path_mask = self.path_masks[idx]
         mask = cv2.imread(path_mask,0)
-        mask = cv2.resize(mask, (512, 512))
+        mask = cv2.resize(mask, (1024, 1024))
 
 
         
@@ -119,13 +120,13 @@ def GetTrainVal():
 
     return train_dl, val_dl
 
-# GetTrainVal()
+#GetTrainVal()
 '''
 The total number of images in the train dataset:  793
 The total number of images in the validation dataset:  200
-every batch of train image:  torch.Size([8, 1, 512, 512]) torch.float32
-every batch of train mask:  torch.Size([8, 1, 512, 512]) torch.float32
-every batch of val image:  torch.Size([16, 1, 512, 512]) torch.float32
-every batch of val mask:  torch.Size([16, 1, 512, 512]) torch.float32
+every batch of train image:  torch.Size([8, 1, 1024, 1024]) torch.float32
+every batch of train mask:  torch.Size([8, 1, 1024, 1024]) torch.float32
+every batch of val image:  torch.Size([16, 1, 1024, 1024]) torch.float32
+every batch of val mask:  torch.Size([16, 1, 1024, 1024]) torch.float32
 
 '''
