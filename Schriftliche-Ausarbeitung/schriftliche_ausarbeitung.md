@@ -41,13 +41,31 @@ Matr.-Nr.: 10048521
 - Erstellung von Datenobjekten je Zeile mit keys aus header
 - Speicherung von Datenobjekten in Datenbank (Elasticsearch)
 
-### Programmierung
+#### Funktionsarchitektur
 
-#### Prozess
+- es gibt zwei Funktionsarchitekturen/Programme:
+  - Training
+  - Produktiver Einsatz
+
+##### Training
+
+- Bilder und Masken werden manuell bereitgestellt
+- Modell wird durch Vorgaben des Menschen trainiert
+- Am Ende steht ein fertiges Modell, dass auch ohne Training also "offline" genutzt werden kann.
+
+##### Produktiver Einsatz
+
+- Das Programm für den produktiven Einsatz nutzt das trainierte Modell
+
+- `extractTableDataFromPdfFile(pdfFilePath)`
+  - `pdfFileToPngFiles(pdfFilePath, tempFolderPath)` (return: void)
+  - `detectTablesInPngFiles(tempFolderPath)` (return: void)
+    - `detectTableInPngFile(pngFilePath)` (return: {xPositionTable, yPositionTable}) &larr; hier wird das trainierte Modell genutzt!
+    - `extractTableDataFromPngFile(pngFilePath, xPostionTable, yPositionTable)` (return: {headerData, rowData[]})
 
 ![komplexe Tabelle](./_images/prozess_zur_extraktion_von_tabellen.drawio.svg)
 
-### Test
+### Programmierung
 
 #### Tabellentypen
 
