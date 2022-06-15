@@ -1,6 +1,7 @@
 #https://github.com/pranjalrai-iitd/Fetal-head-segmentation-and-circumference-measurement-from-ultrasound-images/blob/master/Unet.py
 #https://www.jianshu.com/p/7086ded792b2
 #https://github.com/codecat0/CV/blob/main/Semantic_Segmentation/SegNet/nets/segent.py
+#https://medium.com/analytics-vidhya/table-extraction-using-deep-learning-3c91790aa200
 
 import torch
 import torch.nn as nn
