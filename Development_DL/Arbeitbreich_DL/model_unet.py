@@ -14,9 +14,9 @@ from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader, Subset
+import numpy as np
 
-# CPU or GPU
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 
 # make Dataset class
 class MakeDataset(Dataset):
@@ -26,7 +26,6 @@ class MakeDataset(Dataset):
         self.path_images = [os.path.join(root_image1, fn) for fn in images_list]
         self.path_masks = [os.path.join(root_mask1, fn) for fn in masks_list]
 
-        
     def __len__(self):
         return len(self.path_images)
     
@@ -34,13 +33,17 @@ class MakeDataset(Dataset):
         path_image = self.path_images[idx]
         image = cv2.imread(path_image,0)
         image = cv2.resize(image, (1024, 1024))
+        ret, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        image /= 255.0 # Normalisierung
 
-        
         path_mask = self.path_masks[idx]
         mask = cv2.imread(path_mask,0)
         mask = cv2.resize(mask, (1024, 1024))
+        ret, mask = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        mask /= 255.0
 
-
+        image = image.astype('uint8')
+        mask = mask.astype('uint8') 
         
         image = to_tensor(image)
         mask = to_tensor(mask)
@@ -48,7 +51,7 @@ class MakeDataset(Dataset):
         return image, mask
 
 
-def GetTrainVal():
+def GetTrainVal(batch_size):
     root_image = "Development_DL\\Arbeitbreich_DL\\marmot\\image\\"
     root_mask = "Development_DL\\Arbeitbreich_DL\\marmot\\table_mask\\"
 
@@ -59,17 +62,12 @@ def GetTrainVal():
     train_ds = MakeDataset(root_image, root_mask)
     val_ds = MakeDataset(root_image_val, root_mask_val)
 
-
     print('The total number of images in the train dataset: ',len(train_ds))
     print('The total number of images in the validation dataset: ',len(val_ds))
 
-
-
-
-
     # make dataloader
-    train_dl = DataLoader(train_ds, batch_size=8, shuffle=True)
-    val_dl = DataLoader(val_ds, batch_size=16, shuffle=True)
+    train_dl = DataLoader(train_ds, batch_size, shuffle=True)
+    val_dl = DataLoader(val_ds, batch_size, shuffle=True)
 
     # see the infos of datas
     for img, mask in train_dl:
@@ -86,7 +84,7 @@ def GetTrainVal():
         # torch.Size([16, 3, 1024, 1024]) torch.float32
         break
 
-    return train_dl, val_dl
+    return train_dl, val_dl, len(train_ds),len(val_ds)
 
 #GetTrainVal()
 '''
@@ -99,271 +97,166 @@ every batch of val mask:  torch.Size([16, 1, 1024, 1024]) torch.float32
 
 '''
 
-
-
-
-
 # encoder-decoder model  U-Net
-class UNet(nn.Module):
-    def __init__(self, params):
-        super(UNet, self).__init__()
-        C_in, H_in, W_in = params['input_shape'] # C_in is cannel of input image
-        init_f = params['initial_filters']
-        num_outputs = params['num_outputs']
-        # NN
-        self.conv1 = nn.Conv2d(C_in, init_f, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(init_f, 2*init_f, kernel_size=3, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(2*init_f, 4*init_f, kernel_size=3, stride=1, padding=1)
-        self.conv4 = nn.Conv2d(4*init_f, 8*init_f, kernel_size=3, stride=1, padding=1)
-        self.conv5 = nn.Conv2d(8*init_f, 16*init_f, kernel_size=3, stride=1, padding=1)
-        # Define the upsampling layer
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        
-        self.conv_up1 = nn.Conv2d(16*init_f, 8*init_f, kernel_size=3, stride=1, padding=1)
-        self.conv_up2 = nn.Conv2d(8*init_f, 4*init_f, kernel_size=3, stride=1, padding=1)
-        self.conv_up3 = nn.Conv2d(4*init_f, 2*init_f, kernel_size=3, stride=1, padding=1)
-        self.conv_up4 = nn.Conv2d(2*init_f, init_f, kernel_size=3, stride=1, padding=1)
-        
-        self.conv_out = nn.Conv2d(init_f, num_outputs, kernel_size=3, padding=1)
-        
+
+class conv_block(nn.Module):
+
+    def __init__(self, input_channels, output_channels, down=True):
+        super(conv_block, self).__init__()
+        self.conv = nn.Sequential(nn.Conv2d(input_channels, output_channels, kernel_size=3, stride = 1, padding=1),
+                                   nn.BatchNorm2d(output_channels),
+                                   nn.ReLU(inplace = True),
+                                   nn.Dropout(0.5),
+
+                                   nn.Conv2d(output_channels, output_channels, kernel_size=3, stride = 1, padding=1),
+                                   nn.BatchNorm2d(output_channels),
+                                   nn.ReLU(inplace = True),
+                                   nn.Dropout(0.5),
+                                  )
+
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2, 2)
-        
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2, 2)
-        
-        x = F.relu(self.conv3(x))
-        x = F.max_pool2d(x, 2, 2)
+        x = self.conv(x)
 
-        x = F.relu(self.conv4(x))
-        x = F.max_pool2d(x, 2, 2)
-
-        x = F.relu(self.conv5(x))
-        
-        x = self.upsample(x)
-        x = F.relu(self.conv_up1(x))
-
-        x = self.upsample(x)
-        x = F.relu(self.conv_up2(x))
-        
-        x = self.upsample(x)
-        x = F.relu(self.conv_up3(x))
-        
-        x = self.upsample(x)
-        x = F.relu(self.conv_up4(x))
-
-        x = self.conv_out(x)
-        
         return x
+
+class up_conv(nn.Module):
+    def __init__(self,ch_in,ch_out):
+        super(up_conv,self).__init__()
+        self.up = nn.Sequential(
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(ch_in,ch_out,kernel_size=3,stride=1,padding=1,bias=True),
+		    nn.BatchNorm2d(ch_out),
+            nn.ReLU(inplace=True))
+
+    def forward(self,x):
+        x = self.up(x)
+        return x
+
+class U_Net(nn.Module):
+    def __init__(self,img_ch=1,output_ch=1):
+        super(U_Net,self).__init__()
         
-params_model={
-        "input_shape": (1, 1024, 1024),
-        "initial_filters": 16, 
-        "num_outputs": 1,
-            }
+        self.Maxpool = nn.MaxPool2d(kernel_size=2,stride=2)
 
-model = UNet(params_model).to(device)
+        self.Conv1 = conv_block(img_ch,64)
+        self.Conv2 = conv_block(64,128)
+        self.Conv3 = conv_block(128,256)
+        self.Conv4 = conv_block(256,512)
+        self.Conv5 = conv_block(512,1024)
 
-print(model)
+        self.Up5 = up_conv(1024,512)
+        self.Up_conv5 = conv_block(1024, 512)
 
-# """
-# UNet(
-#  (conv1): Conv2d(1, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))      
-#  (conv2): Conv2d(16, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))     
-#  (conv3): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))     
-#  (conv4): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))    
-#  (conv5): Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))   
-#  (upsample): Upsample(scale_factor=2.0, mode=bilinear)
-#  (conv_up1): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-#  (conv_up2): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)) 
-#  (conv_up3): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))  
-#  (conv_up4): Conv2d(32, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))  
-#  (conv_out): Conv2d(16, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))   
-#  )
-# """
+        self.Up4 = up_conv(512,256)
+        self.Up_conv4 = conv_block(512,256)
+        
+        self.Up3 = up_conv(256,128)
+        self.Up_conv3 = conv_block(256,128)
+        
+        self.Up2 = up_conv(128,64)
+        self.Up_conv2 = conv_block(128,64)
+
+        self.Conv_1x1 = nn.Sequential(nn.Conv2d(64,output_ch,kernel_size=1,stride=1,padding=0),
+                                      nn.Sigmoid()                      
+                                      )
 
 
-## define loss function
-# Dice coefficient is a set similarity measure function, 
-# which is usually used to calculate the similarity between two samples, and its value range is [0,1]
-# https://zhuanlan.zhihu.com/p/86704421
-def dice_loss(pred, target, smooth = 1e-5):
-    intersection = (pred * target).sum(dim=(2,3))
-    union = pred.sum(dim=(2,3)) + target.sum(dim=(2,3)) 
-    
-    dice = 2.0 * (intersection + smooth) / (union+ smooth)    
-    loss = 1.0 - dice
-    
-    return loss.sum(), dice.sum()
 
-def loss_func(pred, target):
-    bce = F.binary_cross_entropy_with_logits(pred, target,  reduction='sum')
-    
-    pred = torch.sigmoid(pred)
-    dlv, _ = dice_loss(pred, target)
-    
-    loss = bce  + dlv
+    def forward(self,x):
 
-    return loss
+        x1 = self.Conv1(x)
 
-## helper functions 
-# get learn rate
-def get_lr(opt):
-    for param_group in opt.param_groups:
-        return param_group['lr']
+        x2 = self.Maxpool(x1)
+        x2 = self.Conv2(x2)
+        
+        x3 = self.Maxpool(x2)
+        x3 = self.Conv3(x3)
 
-# Define an evaluation function
-def metrics_batch(pred, target):
-    pred = torch.sigmoid(pred)
-    _, metric = dice_loss(pred, target)
-    
-    return metric
+        x4 = self.Maxpool(x3)
+        x4 = self.Conv4(x4)
 
-# Loss calculation for each batch
-def loss_batch(loss_func, output, target, opt=None):   
-    loss = loss_func(output, target)
-    
-    with torch.no_grad():
-        pred = torch.sigmoid(output)
-        _, metric_b = dice_loss(pred, target)
-    
-    if opt is not None:
-        opt.zero_grad()
-        loss.backward()
-        opt.step()
+        x5 = self.Maxpool(x4)
+        x5 = self.Conv5(x5)
 
-    return loss.item(), metric_b
+        d5 = self.Up5(x5)
+        d5 = torch.cat((x4,d5),dim=1)
+        d5 = self.Up_conv5(d5)
+        
+        d4 = self.Up4(d5)
+        d4 = torch.cat((x3,d4),dim=1)
+        d4 = self.Up_conv4(d4)
 
-# Calculations for each round
-def loss_epoch(model,loss_func,dataset_dl,sanity_check=False,opt=None):
+        d3 = self.Up3(d4)
+        d3 = torch.cat((x2,d3),dim=1)
+        d3 = self.Up_conv3(d3)
+
+        d2 = self.Up2(d3)
+        d2 = torch.cat((x1,d2),dim=1)
+        d2 = self.Up_conv2(d2)
+
+        d1 = self.Conv_1x1(d2)
+
+        return d1
+
+
+# GPU
+device = 'cuda' 
+
+
+def dice_sim(pred, truth): # to judge Änlichkeit zwischen mask und pred
+    epsilon = 1e-8
+    num_batches = pred.size(0)
+    m1 = pred.view(num_batches, -1).bool()
+    m2 = truth.view(num_batches, -1).bool()
+
+    intersection = torch.logical_and(m1, m2).sum(dim=1)
+    return (((2. * intersection + epsilon) / (m1.sum(dim=1) + m2.sum(dim=1) + epsilon)).sum(dim=0))/2
+
+num_epochs = 50
+batch_size = 8
+
+train_dl, val_dl, train_size, val_size = GetTrainVal(batch_size)
+
+model = U_Net().to(device)
+
+# helper functions
+loss_fn = nn.BCELoss(reduction='mean')
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
+scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=4, min_lr=1e-9)
+train_size = train_size
+val_size = val_size
+
+for epoch in range(num_epochs):
+
     running_loss = 0.0
-    running_metric = 0.0
-    len_data = len(dataset_dl.dataset)
+    val_loss = 0.0
+    val_acc = 0.0
 
-    for xb, yb in dataset_dl:
-        xb = xb.to(device)
-        yb = yb.to(device)
-        
-        output = model(xb)
-        loss_b, metric_b = loss_batch(loss_func, output, yb, opt)
-        running_loss += loss_b
-        
-        if metric_b is not None:
-            running_metric += metric_b
+    # Training
+    for i, data in enumerate(train_dl):
+        image, truth = data
 
-        if sanity_check is True:
-            break
-    
-    loss = running_loss / float(len_data)
-    
-    metric = running_metric / float(len_data)
-    
-    return loss, metric
+        predictions = model(image.cuda())
+        loss = loss_fn(predictions, truth.cuda())
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+    # Validation
+    with torch.no_grad():
+        for i, data in enumerate(val_dl):
+            image, truth = data
 
+            predictions = model(image.cuda())
+            predictions = torch.round(predictions) # Rounding the predictions for classification
+            loss = loss_fn(predictions, truth.cuda())
+            val_loss += loss.item()
+            val_acc += dice_sim(predictions, truth.cuda())*100
 
-# train main function
-def train_val(model, params):
-    num_epochs = params["num_epochs"]
-    loss_func = params["loss_func"]
-    opt = params["optimizer"]
-    train_dl = params["train_dl"]
-    val_dl = params["val_dl"]
-    sanity_check = params["sanity_check"]
-    lr_scheduler = params["lr_scheduler"]
-    path2weights = params["path2weights"]
-    
-    loss_history = {
-        "train": [],
-        "val": []}
-    
-    metric_history = {
-        "train": [],
-        "val": []}    
-    
-    
-    best_model_wts = copy.deepcopy(model.state_dict())
-    best_loss = float('inf')    
-    
-    for epoch in range(num_epochs):
-        current_lr = get_lr(opt)
-        print('Epoch {}/{}, current lr={}'.format(epoch, num_epochs - 1, current_lr))   
+    epoch_train_loss = running_loss / (train_size//batch_size+1)
+    epoch_val_loss = val_loss / (val_size//batch_size+1)
+    epoch_val_acc = val_acc / (val_size//batch_size+1)
+    scheduler.step(epoch_val_loss) # LR Scheduler
+    print(f"==>train_loss: {epoch_train_loss} ==>val_loss: {epoch_val_loss} ==>val_accuracy: {epoch_val_acc}")
 
-        model.train()
-        train_loss, train_metric = loss_epoch(model,loss_func,train_dl,sanity_check,opt)
-
-        loss_history["train"].append(train_loss)
-        metric_history["train"].append(train_metric)
-        
-        model.eval()
-        with torch.no_grad():
-            val_loss, val_metric = loss_epoch(model,loss_func,val_dl,sanity_check)
-       
-        loss_history["val"].append(val_loss)
-        metric_history["val"].append(val_metric)   
-        
-        if val_loss < best_loss:
-            best_loss = val_loss
-            best_model_wts = copy.deepcopy(model.state_dict())
-            
-            torch.save(model.state_dict(), path2weights)
-            print("Copied best model weights!")
-            
-        lr_scheduler.step(val_loss)
-        if current_lr != get_lr(opt):
-            print("Loading best model weights!")
-            model.load_state_dict(best_model_wts) 
-            
-        print("train loss: %.6f, accuracy: %.2f" %(train_loss, 100*train_metric))
-        print("val loss: %.6f, accuracy: %.2f" %(val_loss, 100*val_metric))
-        print("-"*10) 
-        
-
-    model.load_state_dict(best_model_wts)
-    return model, loss_history, metric_history
-
-
-# define optimizer function and how to new the parameter
-opt = optim.Adam(model.parameters(), lr=3e-4)
-lr_scheduler = ReduceLROnPlateau(opt, mode='min',factor=0.5, patience=20,verbose=1)
-
-path_models = "./models/"
-if not os.path.exists(path_models):
-    os.mkdir(path_models)
-
-train_dl, val_dl = GetTrainVal()
-
-params_train={
-    "num_epochs": 10,
-    "optimizer": opt,
-    "loss_func": loss_func,
-    "train_dl": train_dl,
-    "val_dl": val_dl,
-    "sanity_check": False,
-    "lr_scheduler": lr_scheduler,
-    "path2weights": path_models+"weights.pt",
-}
-
-model, loss_hist, metric_hist = train_val(model,params_train)
-
-
-
-## Visualize the results
-num_epochs=params_train["num_epochs"]
-
-plt.title("Train-Val Loss")
-plt.plot(range(1,num_epochs+1),loss_hist["train"],label="train")
-plt.plot(range(1,num_epochs+1),loss_hist["val"],label="val")
-plt.ylabel("Loss")
-plt.xlabel("Training Epochs")
-plt.legend()
-plt.show()
-
-# plot accuracy progress
-plt.title("Train-Val Accuracy")
-plt.plot(range(1,num_epochs+1),metric_hist["train"],label="train")
-plt.plot(range(1,num_epochs+1),metric_hist["val"],label="val")
-plt.ylabel("Accuracy")
-plt.xlabel("Training Epochs")
-plt.legend()
-plt.show()
+torch.save(model, './model/model.pkl')
