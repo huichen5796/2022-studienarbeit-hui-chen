@@ -259,4 +259,7 @@ for epoch in range(num_epochs):
     scheduler.step(epoch_val_loss) # LR Scheduler
     print(f"==>train_loss: {epoch_train_loss} ==>val_loss: {epoch_val_loss} ==>val_accuracy: {epoch_val_acc}")
 
-torch.save(model, './model/model.pkl')
+
+a = open('Development_DL\Arbeitbreich_DL\model.pkl')
+a.close()
+torch.save(model, 'Development_DL\Arbeitbreich_DL\model.pkl')
