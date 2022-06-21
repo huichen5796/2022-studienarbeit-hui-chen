@@ -225,40 +225,66 @@ optimizer = optim.Adam(model.parameters(), lr=1e-4)
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=4, min_lr=1e-9)
 train_size = train_size
 val_size = val_size
+print('--------------------------------start--------------------------------------')
+for epoch in range(1,num_epochs+1):
+    print('---------------------------------------------------------------------------')
+    print('epoch %s' % epoch)
 
-for epoch in range(num_epochs):
+    running_loss = []
+    val_loss = []
+    val_acc = []
 
-    running_loss = 0.0
-    val_loss = 0.0
-    val_acc = 0.0
+    epoch_train_loss_list = []
+    epoch_val_loss_list = []
+    epoch_val_acc_list = []
+
 
     # Training
-    for i, data in enumerate(train_dl):
-        image, truth = data
-
+    for image, truth in train_dl:
         predictions = model(image.cuda())
         loss = loss_fn(predictions, truth.cuda())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        running_loss += loss.item()
+        running_loss.append(loss.item())
     # Validation
     with torch.no_grad():
-        for i, data in enumerate(val_dl):
-            image, truth = data
-
+        for image1, truth1 in val_dl:
             predictions = model(image.cuda())
-            predictions = torch.round(predictions) # Rounding the predictions for classification
             loss = loss_fn(predictions, truth.cuda())
-            val_loss += loss.item()
-            val_acc += dice_sim(predictions, truth.cuda())*100
+            val_loss.append(loss.item())
+            val_acc.append(dice_sim(predictions, truth.cuda())*100)
 
-    epoch_train_loss = running_loss / (train_size//batch_size+1)
-    epoch_val_loss = val_loss / (val_size//batch_size+1)
-    epoch_val_acc = val_acc / (val_size//batch_size+1)
+    epoch_train_loss = sum(running_loss) / len(running_loss)
+    epoch_val_loss = sum(val_loss) / len(val_loss)
+    epoch_val_acc = sum(val_acc) / len(val_acc)
     scheduler.step(epoch_val_loss) # LR Scheduler
-    print(f"==>train_loss: {epoch_train_loss} ==>val_loss: {epoch_val_loss} ==>val_accuracy: {epoch_val_acc}")
 
+    epoch_train_loss_list.append(epoch_train_loss)
+    epoch_val_loss_list.append(epoch_val_loss)
+    epoch_val_acc_list.append(epoch_val_acc)
+
+
+    print(f"==>train_loss: {epoch_train_loss} ==>val_loss: {epoch_val_loss} ==>val_accuracy: {epoch_val_acc}")
+    epoch += 1
+
+#Visualize the results
+
+plt.title("Train-Val Loss")
+plt.plot(range(1,num_epochs+1),epoch_train_loss_list,label="train")
+plt.plot(range(1,num_epochs+1),epoch_val_loss_list,label="val")
+plt.ylabel("Loss")
+plt.xlabel("Training Epochs")
+plt.legend()
+plt.show()
+
+# plot accuracy progress
+plt.title("Val Accuracy")
+plt.plot(range(1,num_epochs+1),epoch_val_acc_list)
+plt.ylabel("Accuracy")
+plt.xlabel("Training Epochs")
+plt.legend()
+plt.show()
 
 a = open('Development_DL\Arbeitbreich_DL\model.pkl')
 a.close()
