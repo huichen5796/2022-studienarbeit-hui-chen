@@ -34,13 +34,13 @@ class MakeDataset(Dataset):
         image = cv2.imread(path_image,0)
         image = cv2.resize(image, (1024, 1024))
         ret, image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        image /= 255.0 # Normalisierung
+        #image /= 255.0 # Normalisierung
 
         path_mask = self.path_masks[idx]
         mask = cv2.imread(path_mask,0)
         mask = cv2.resize(mask, (1024, 1024))
         ret, mask = cv2.threshold(mask, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        mask /= 255.0
+        #mask /= 255.0
 
         image = image.astype('uint8')
         mask = mask.astype('uint8') 
