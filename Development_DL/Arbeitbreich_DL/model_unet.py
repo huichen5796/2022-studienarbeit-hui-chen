@@ -203,14 +203,19 @@ class U_Net(nn.Module):
 device = 'cuda' 
 
 
-def dice_sim(pred, truth): # to judge Änlichkeit zwischen mask und pred
-    epsilon = 1e-8
-    num_batches = pred.size(0)
-    m1 = pred.view(num_batches, -1).bool()
-    m2 = truth.view(num_batches, -1).bool()
+def dice_loss(pred, target, smooth = 1e-5):
+    num = pred.size(0)
+    m1 = pred.view(num, -1)  # flatten
+    m2 = target.view(num, -1)  # flatten
+    intersection = (m1*m2).sum()
+    union = m1.sum() + m2.sum()
+    
+    dice = 2.0 * (intersection + smooth) / (union+ smooth)    
+    loss = 1.0 - dice
 
-    intersection = torch.logical_and(m1, m2).sum(dim=1)
-    return (((2. * intersection + epsilon) / (m1.sum(dim=1) + m2.sum(dim=1) + epsilon)).sum(dim=0))/2
+    acc = dice / (2 - dice)
+    
+    return loss, acc
 
 num_epochs = 50
 batch_size = 8
@@ -242,19 +247,20 @@ for epoch in range(1,num_epochs+1):
     # Training
     for image, truth in train_dl:
         predictions = model(image.cuda())
-        loss = loss_fn(predictions, truth.cuda())
+        loss = dice_loss(predictions, truth.cuda())[0]
+        #loss.requires_grad_(True)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        running_loss.append(loss.item())
+        running_loss.append(loss)
     # Validation
     with torch.no_grad():
         for image1, truth1 in val_dl:
             predictions = model(image.cuda())
-            loss = loss_fn(predictions, truth.cuda())
-            val_loss.append(loss.item())
-            val_acc.append(dice_sim(predictions, truth.cuda())*100)
-
+            loss = dice_loss(predictions, truth.cuda())[0]
+            val_loss.append(loss)
+            val_acc.append(dice_loss(predictions, truth.cuda())[1]*100)
+    
     epoch_train_loss = sum(running_loss) / len(running_loss)
     epoch_val_loss = sum(val_loss) / len(val_loss)
     epoch_val_acc = sum(val_acc) / len(val_acc)
