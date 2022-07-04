@@ -5,6 +5,7 @@ import math
 import json
 import pytesseract
 import time
+import pandas as pd
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
 
@@ -348,9 +349,6 @@ def GetInfoDict(list_info):
         key_list.append('row%s' % (i+1))
     dict_info = dict(zip(key_list, list_info))
 
-    if __name__ == '__main__':
-        print(dict_info)
-
     return dict_info
 
 
@@ -408,3 +406,4 @@ if __name__ == '__main__':
     TableExtract('Development_tradionell\\imageTest\\rotate_table.png')
     time.sleep(1)
     print(Search('table'))
+
