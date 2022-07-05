@@ -9,9 +9,9 @@ from albumentations.pytorch import ToTensorV2
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+import pandas as pd
 
 from TableExtract import TiltCorrection, DeletLines, GetCell, HorizonalAlignment, ReadCell, GetInfoDict, WriteData
-
 
 class DenseNet(nn.Module):
     def __init__(self, pretrained = True, requires_grad = True):
@@ -127,15 +127,15 @@ def PositionTable(img, img_path):
     w = img.shape[1]
     bottom = 1024-h
     right = 1024-w
-    img = cv2.copyMakeBorder(img, 0, bottom, 0, right, cv2.BORDER_CONSTANT, value=(255,255,255))
+    img_1024 = cv2.copyMakeBorder(img, 0, bottom, 0, right, cv2.BORDER_CONSTANT, value=(255,255,255))
 
-    img = np.array(Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))) 
+    img_1024 = np.array(Image.fromarray(cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB))) 
 
     plt.figure(figsize=(10, 10))
     plt.subplot(1, 3, 1)
-    plt.imshow(img)
+    plt.imshow(img_1024)
 
-    image = transform(image = img)["image"]
+    image = transform(image = img_1024)["image"]
     with torch.no_grad():
         image = image.to(device).unsqueeze(0)   
         pred  = model(image)
@@ -166,7 +166,7 @@ def PositionTable(img, img_path):
         table_boundRect[i] = cv2.boundingRect(polyline)
 
     #draw bounding boxes
-    color = (255,255,0)
+    color = (255,0,0) # red
 
     white_image = np.ones((1024,1024,3),np.uint8)*255
     for x,y,w,h in table_boundRect:
@@ -174,7 +174,7 @@ def PositionTable(img, img_path):
         triangle = np.array([[x, y], [x,y+h], [x+w, y+h], [x+w, y]])
         cv2.fillConvexPoly(white_image, triangle, color)
     
-    image_add = cv2.addWeighted(img, 0.8, white_image, 0.5, 0)
+    image_add = cv2.addWeighted(img_1024, 0.9, white_image, 0.5, 0)
 
     plt.subplot(1, 3, 2)
     plt.imshow(pred, cmap='gray')
@@ -184,7 +184,7 @@ def PositionTable(img, img_path):
 
     plt.show()
 
-    return table_boundRect
+    return table_boundRect, img_1024
 
 
 def WhiteBordersRomove(gray_image):
@@ -193,7 +193,7 @@ def WhiteBordersRomove(gray_image):
     bina_image1 = cv2.bitwise_not(bina_image) # invert the image
     
     x,y,w,h = cv2.boundingRect(bina_image1) # round all the white pixel by a rect
-    thickness = 20
+    thickness = 100
     
     text_zone = np.ones((h+2*thickness, w+2*thickness, 1))
 
@@ -208,24 +208,25 @@ def Main(img_path):
     plt.subplot(141)
     plt.imshow(image, cmap='gray')
 
-    image_rotate = TiltCorrection(image) # gray
+    image_rotate = TiltCorrection(image) # got gray
     plt.subplot(142)
     plt.imshow(image_rotate, cmap='gray')
 
-    image_rotate = WhiteBordersRomove(image_rotate)
+    image_rotate = WhiteBordersRomove(image_rotate) # got gray
 
-    image = cv2.cvtColor(image_rotate, cv2.COLOR_GRAY2BGR) # 3 channel
+    image = cv2.cvtColor(image_rotate, cv2.COLOR_GRAY2BGR) # gray to 3 channel
     
     plt.subplot(143)
     plt.imshow(image)
-
+    
+    # then normalize the shape to 1024 X ()
     shape_list = list(image.shape)
-    print('image_shape ==> '+ str(image.shape))
+    print('image_shape ==> '+ str(image.shape)) # h, w, c
 
     if max(shape_list) > 1024:
         scaling_r = 1024/max(shape_list)
-        shape = [int(shape_list[0]*scaling_r), int(shape_list[1]*scaling_r)]
-        shape[shape_list.index(max(shape_list))] = int(1024)
+        shape = [int(shape_list[1]*scaling_r-1), int(shape_list[0]*scaling_r-1)] # w, h to avoid exceeding 1024, subtract one
+        shape[shape.index(max(shape))] = int(1024)
         image = cv2.resize(image, shape)
         print('new ==> ' + str(image.shape))
 
@@ -233,28 +234,42 @@ def Main(img_path):
     plt.imshow(image)
     plt.show()
 
-    table_boundRect = PositionTable(image, img_path) 
+    table_boundRect, img = PositionTable(image, img_path) # input image must be 3 channel. out img 1024x1024
+
+
     table_zone = [None]*len(table_boundRect)
     for i, (x,y,w,h) in enumerate(table_boundRect):
         t = 2
     
-        table_zone[i] = np.ones((h+2*t, w+2*t, 1))
+        table_zone[i] = np.ones((h+2*t, w+2*t, 3))
 
-        table_zone[i] = image_rotate[(y-t):(y+h+t),(x-t):(x+w+t)]
+        table_zone[i] = img[(y-t):(y+h+t),(x-t):(x+w+t)]
     
     print('image '+ img_path + ' has ' + str(len(table_zone)) +' table(s)')
-
-    for table in table_zone:
-        table_ol = DeletLines(table)
-        location = GetCell(table_ol)
+    
+    for nummer,table in enumerate(table_zone):
+        plt.suptitle('table ' + str(nummer+1))
+        plt.subplot(2, 2, 1), plt.imshow(img) # img is 3 channel 1024 x 1024
+        plt.xticks([]), plt.yticks([])
+        plt.subplot(2, 2, 2), plt.imshow(table) # 3 channel
+        plt.xticks([]), plt.yticks([])
+        table = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY) # gray image
+        table_ol = DeletLines(table) # bina_image ohne Linien
+        plt.subplot(2, 2, 3), plt.imshow(table_ol, cmap = 'gray')
+        plt.xticks([]), plt.yticks([])
+        location = GetCell(table_ol) # hier subplot(224)
+        plt.show()
         location = HorizonalAlignment(location)
 
         list_info = ReadCell(location, table_ol)
         dict_info = GetInfoDict(list_info)
-        WriteData(dict_info)
+        print('--------------------------------------------------')
+        print('table %s' %(nummer+1))
+        print(pd.DataFrame(dict_info))
+        #WriteData(dict_info)
 
 
-Main('Development_tradionell\\imageTest\\textandtablewinkel.png')
+Main('Development_tradionell\\imageTest\\table2_rotate.png')
 # Hier ist noch eine einfache Gliederung, 
 # die Tabelle im Bild wird gelesen und in die Datenbank geschrieben, 
 # aber sie kann noch nicht die Verwandtschaft zweier Tabellen aus demselben Bild widerspiegeln.

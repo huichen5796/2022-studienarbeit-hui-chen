@@ -8,7 +8,7 @@ Schritte:
 import cv2
 import numpy as np
 import math
-from binar_noise_reduction import GaussB
+
 
 def LineSearch(bina_image):
     ### Line makieren durch HoughLines()
@@ -144,7 +144,7 @@ def TiltCorrection(path):
     
     
 if __name__ == '__main__':
-    TiltCorrection(r'Development\imageTest\rotate_table.png')
+    #TiltCorrection(r'Development\imageTest\rotate_table.png')
     #TiltCorrection(r'Development\imageTest\winkel_-30.png')
     #TiltCorrection(r'Development\imageTest\winkel_30.png')
     #TiltCorrection(r'Development\imageTest\winkel_-60.png')
@@ -152,4 +152,7 @@ if __name__ == '__main__':
     
 
 
-# bei rotating ist Scanverzerrung ignorriert.
+    # bei rotating ist Scanverzerrung ignorriert.
+    img = cv2.imread(r'Development_tradionell\imageTest\table2_rotate_0.png', 1)
+    img = Rotate(img, 15)
+    cv2.imwrite(r'Development_tradionell\imageTest\table2_rotate.png', img)

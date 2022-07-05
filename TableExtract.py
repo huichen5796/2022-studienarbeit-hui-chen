@@ -239,7 +239,7 @@ def GetCell(img_deletline):
             cv2.rectangle(img_deletline, (x, y), (x+w, y+h), 0, 2) # round the text zone by rect
     plt.subplot(2, 2, 4), plt.imshow(img_deletline, cmap='gray')
     plt.xticks([]), plt.yticks([])
-    plt.show()
+
 
     arr_contours = np.array(list_contours)
 
@@ -392,6 +392,7 @@ def TableExtract(path):
     plt.xticks([]), plt.yticks([])
 
     location = GetCell(image_rotate)
+    plt.show()
     location = HorizonalAlignment(location)
 
     list_info = ReadCell(location, image_rotate)

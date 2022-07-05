@@ -128,15 +128,15 @@ def PositionTable(img):
     w = img.shape[1]
     bottom = 1024-h
     right = 1024-w
-    img = cv2.copyMakeBorder(img, 0, bottom, 0, right, cv2.BORDER_CONSTANT, value=(255,255,255))
+    img_1024 = cv2.copyMakeBorder(img, 0, bottom, 0, right, cv2.BORDER_CONSTANT, value=(255,255,255))
 
-    img = np.array(Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))) 
+    img_1024 = np.array(Image.fromarray(cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB))) 
 
     plt.figure(figsize=(10, 10))
     plt.subplot(1, 3, 1)
-    plt.imshow(img)
+    plt.imshow(img_1024)
 
-    image = transform(image = img)["image"]
+    image = transform(image = img_1024)["image"]
     with torch.no_grad():
         image = image.to(device).unsqueeze(0)   
         pred  = model(image)
@@ -167,7 +167,7 @@ def PositionTable(img):
         table_boundRect[i] = cv2.boundingRect(polyline)
 
     #draw bounding boxes
-    color = (255,255,0)
+    color = (255,0,0) # red
 
     white_image = np.ones((1024,1024,3),np.uint8)*255
     for x,y,w,h in table_boundRect:
@@ -175,7 +175,7 @@ def PositionTable(img):
         triangle = np.array([[x, y], [x,y+h], [x+w, y+h], [x+w, y]])
         cv2.fillConvexPoly(white_image, triangle, color)
     
-    image_add = cv2.addWeighted(img, 0.8, white_image, 0.5, 0)
+    image_add = cv2.addWeighted(img_1024, 0.8, white_image, 0.5, 0)
 
     plt.subplot(1, 3, 2)
     plt.imshow(pred, cmap='gray')
@@ -185,9 +185,9 @@ def PositionTable(img):
 
     plt.show()
 
-    return table_boundRect
+    return table_boundRect, img_1024
 
 
 img_path = 'Development_tradionell\\imageTest\\test_table.PNG'
-img = cv2.imread(img_path, 1)
+img = cv2.imread(img_path, 1) # must be 3 channel
 PositionTable(img)
