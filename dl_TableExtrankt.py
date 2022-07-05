@@ -238,12 +238,12 @@ def Main(img_path):
 
 
     table_zone = [None]*len(table_boundRect)
-    for i, (x,y,w,h) in enumerate(table_boundRect):
+    for ii, (x,y,w,h) in enumerate(table_boundRect):
         t = 2
     
-        table_zone[i] = np.ones((h+2*t, w+2*t, 3))
+        table_zone[ii] = np.ones((h+2*t, w+2*t, 3))
 
-        table_zone[i] = img[(y-t):(y+h+t),(x-t):(x+w+t)]
+        table_zone[ii] = img[(y-t):(y+h+t),(x-t):(x+w+t)]
     
     print('image '+ img_path + ' has ' + str(len(table_zone)) +' table(s)')
     
@@ -259,8 +259,31 @@ def Main(img_path):
         plt.xticks([]), plt.yticks([])
         location = GetCell(table_ol) # hier subplot(224)
         plt.show()
-        location = HorizonalAlignment(location)
+        location = HorizonalAlignment(location) # bei location sind die Positon oben-links-Point jeder Cell, und auch w und h
+        
+        #--------------------------------------------------------#
+        center_list = [None]*len(location)
+        for iii,(x,y,w,h) in enumerate(location):
+            center_list[iii] = (int(x+w)//2, int(y+h)//2)
 
+        center_list = sorted(center_list, key = lambda x:(x[0], x[1]))
+        
+        for axis in [0,1]:
+            center_list = sorted(center_list, key = lambda x:x[0])
+            for i in range(len(location)-1):
+                if location[i+1][axis] == location[i][axis]:
+                    continue
+                else:
+                    # suppose there are no cells with height less than 5
+                    if abs(location[i+1][axis]-location[i][axis]) < (20-15*axis): # y = 5, x = 20
+                        # Assume that the distance between two cells in the y direction should be greater than 5
+                        # Assume that the distance between two cells in the x direction should be greater than 20
+                        location[i+1][axis] = location[i][axis]
+                    else:
+                        continue
+            center_list = sorted(center_list, key = lambda x:x[1])
+        #---------------------------------------------------------#
+        
         list_info = ReadCell(location, table_ol)
         dict_info = GetInfoDict(list_info)
         print('--------------------------------------------------')

@@ -251,7 +251,7 @@ def HorizonalAlignment(location):
     alignment the zones of the Cells in same row
 
     '''
-    location = sorted(location, key=lambda x: x[1])
+    location = sorted(location, key=lambda x: x[1]) # Von oben nach unten
 
     for i in range(len(location)-1):
         if location[i+1][1] == location[i][1]:
@@ -263,10 +263,9 @@ def HorizonalAlignment(location):
             else:
                 continue
 
-    location = sorted(location, key=lambda x: (x[1], x[0]))
+    location = sorted(location, key=lambda x: (x[1], x[0])) # von oben nach unten, dabei von links nach rechts
 
     return location
-
 
 def Extrakt_Tesseract(image_cell):
 
