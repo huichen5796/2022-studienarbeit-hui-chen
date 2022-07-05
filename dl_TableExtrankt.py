@@ -193,10 +193,11 @@ def WhiteBordersRomove(gray_image):
     bina_image1 = cv2.bitwise_not(bina_image) # invert the image
     
     x,y,w,h = cv2.boundingRect(bina_image1) # round all the white pixel by a rect
+    thickness = 20
     
-    text_zone = np.ones((h, w, 1))
+    text_zone = np.ones((h+2*thickness, w+2*thickness, 1))
 
-    text_zone = gray_image[x:(x+w),y:(y+h)]
+    text_zone = gray_image[(y-thickness):(y+h+thickness),(x-thickness):(x+w+thickness)]
 
     return text_zone
 
@@ -235,10 +236,11 @@ def Main(img_path):
     table_boundRect = PositionTable(image, img_path) 
     table_zone = [None]*len(table_boundRect)
     for i, (x,y,w,h) in enumerate(table_boundRect):
+        t = 2
     
-        table_zone[i] = np.ones((h, w, 1))
+        table_zone[i] = np.ones((h+2*t, w+2*t, 1))
 
-        table_zone[i] = image_rotate[x:(x+h),(y):(y+w)]
+        table_zone[i] = image_rotate[(y-t):(y+h+t),(x-t):(x+w+t)]
     
     print('image '+ img_path + ' has ' + str(len(table_zone)) +' table(s)')
 
