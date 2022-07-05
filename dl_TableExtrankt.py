@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 
 
-from PositioningTable import PositionTable
-from TableExtract import TiltCorrection, DeletLines, GetCell, HorizonalAlignment, ReadCell, GetInfoDict, WriteData
+from Development_DL.Arbeitbreich_DL.PositioningTable import PositionTable
+from Development_tradionell.Arbeitbreich.TableExtract import TiltCorrection, DeletLines, GetCell, HorizonalAlignment, ReadCell, GetInfoDict, WriteData
 
 def Main(path):
     image = cv2.imread(path, 0)
@@ -29,7 +29,6 @@ def Main(path):
         dict_info = GetInfoDict(list_info)
         WriteData(dict_info)
 
-Main('Development_tradionell\\imageTest\\textandtable_0.png')
 # Hier ist noch eine einfache Gliederung, 
 # die Tabelle im Bild wird gelesen und in die Datenbank geschrieben, 
 # aber sie kann noch nicht die Verwandtschaft zweier Tabellen aus demselben Bild widerspiegeln.
