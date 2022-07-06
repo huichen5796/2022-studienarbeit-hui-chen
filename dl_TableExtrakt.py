@@ -271,7 +271,9 @@ def PositionTable(img, img_path):
         cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB)))
 
     plt.figure(figsize=(10, 10))
+
     plt.subplot(1, 3, 1)
+    plt.title('Input Image To 1024x1024')
     plt.imshow(img_1024)
 
     image = transform(image=img_1024)["image"]
@@ -323,9 +325,11 @@ def PositionTable(img, img_path):
     image_add = cv2.addWeighted(img_1024, 0.9, white_image, 0.5, 0)
 
     plt.subplot(1, 3, 2)
+    plt.title('Output Prognose')
     plt.imshow(pred, cmap='gray')
 
     plt.subplot(1, 3, 3)
+    plt.title('Tablebreich')
     plt.imshow(image_add)
 
     plt.show()
