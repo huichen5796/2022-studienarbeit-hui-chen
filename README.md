@@ -37,3 +37,10 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
     
     oder: einfach in python-code `pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'` nutzen
   - Install Tesseract package for Python: `pip install pytesseract`
+- install PIL package
+- install pandas
+- install elasticsearch
+- install pytorch
+- install matplotlib
+- install albumentations==0.4.6
+- install numpy
