@@ -315,13 +315,14 @@ def GetLabel(location):
     rows_list = list(set([pp[1] for pp in center_list]))  # alle y axis
     rows_list.sort()
     # print(rows_list)
+    tablesize = [len(rows_list), len(cols_list)]
 
     for i, (c_x, c_y, w, h, x, y) in enumerate(center_list):
 
         label_list[i] = ['row%s' % (rows_list.index(c_y))]
         label_list[i].append('col%s' % (cols_list.index(c_x)))
 
-    return center_list, label_list  # [center_x, center_y, w, h]
+    return center_list, label_list, tablesize  # [center_x, center_y, w, h]
 
 
 def Extrakt_Tesseract(image_cell):
@@ -357,18 +358,32 @@ def ReadCell(center_list, image_rotate_cor):
     return list_info
 
 
-def GetDataframe(list_info, label_list):
+def GetDataframe(list_info, label_list, tablesize):
     '''
     input
      - list_info
+     - label_list
 
     return
-     - dict_info // JSON ----> Each element in the dict is the content of the corresponding cell
-                       the order is from left to right and from top to bottom
+     - Dataframe
 
     '''
+    keys = ['col%s'%s for s in range(tablesize[1])]
 
-    pass
+    values = [None]*len(keys)
+    for i, key in enumerate(keys):
+        col_info = []
+        index = []
+        for m in range(len(label_list)):
+            if key in label_list[m]:
+                col_info.append(list_info[m])
+                index.append(label_list[m][0])
+    
+        values[i] = pd.Series(col_info, index = index)
+    dict_info = dict(zip(keys, values))
+    
+    return dict_info
+
 
 
 def WriteData(dict_info):

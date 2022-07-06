@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import pandas as pd
 
-from Funktionen import TiltCorrection, DeletLines, GetCell, ReadCell, GetLabel
+from Funktionen import TiltCorrection, DeletLines, GetCell, ReadCell, GetLabel, GetDataframe
 
 
 class DenseNet(nn.Module):
@@ -300,9 +300,9 @@ def PositionTable(img, img_path):
             table_contours.append(c)
 
     if len(table_contours) == 0:
-        print("No Table detected ==> " + img_path)
+        print("No Table Detected ==> " + img_path)
     else:
-        print('done ==>' + img_path)
+        print('Current Image ==>' + img_path)
 
     table_boundRect = [None]*len(table_contours)
     for i, c in enumerate(table_contours):
@@ -424,14 +424,16 @@ def Main(img_path):
         location = GetCell(table_ol)  # hier subplot(224)
         plt.show()
 
-        center_list, label_list = GetLabel(location)
+        center_list, label_list, tablesize = GetLabel(location)
 
         list_info = ReadCell(center_list, table_ol)
 
         print('--------------------------------------------------')
         print('table %s' % (nummer+1))
-        print(list_info)
-        print(label_list)
+        #print(list_info)
+        #print(label_list)
+        dict_info = GetDataframe(list_info, label_list, tablesize)
+        print(pd.DataFrame(dict_info))
 
 
 Main('Development_tradionell\\imageTest\\table2_rotate.png')
