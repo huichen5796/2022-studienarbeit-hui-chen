@@ -381,8 +381,9 @@ def GetDataframe(list_info, label_list, tablesize):
     
         values[i] = pd.Series(col_info, index = index)
     dict_info = dict(zip(keys, values))
+    df = pd.DataFrame(dict_info)
     
-    return dict_info
+    return df
 
 
 

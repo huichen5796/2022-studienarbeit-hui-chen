@@ -432,8 +432,8 @@ def Main(img_path):
         print('table %s' % (nummer+1))
         #print(list_info)
         #print(label_list)
-        dict_info = GetDataframe(list_info, label_list, tablesize)
-        print(pd.DataFrame(dict_info))
+        df = GetDataframe(list_info, label_list, tablesize)
+        print(df)
 
 
 Main('Development_tradionell\\imageTest\\table2_rotate.png')
