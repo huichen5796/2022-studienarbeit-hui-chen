@@ -1,3 +1,5 @@
+from Funktionen import TiltCorrection, DeletLines, GetCell, ReadCell, GetLabel, GetDataframe, WriteData, Search
+import os
 import cv2
 import numpy as np
 import torch.nn as nn
@@ -13,8 +15,6 @@ import pandas as pd
 import time
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
-
-from Funktionen import TiltCorrection, DeletLines, GetCell, ReadCell, GetLabel, GetDataframe, WriteData, Search
 
 
 class DenseNet(nn.Module):
@@ -283,10 +283,11 @@ def PositionTable(img_1024, img_path):
         if cv2.contourArea(c) > 1000:
             table_contours.append(c)
 
-    if len(table_contours) == 0:
-        print("No Table Detected ==> " + img_path)
-    else:
-        print('Current Image ==>' + img_path)
+    if __name__ == '__main__':
+        if len(table_contours) == 0:
+            print("No Table Detected ==> " + str(img_path))
+        else:
+            print('Current Image ==>' + str(img_path))
 
     table_boundRect = [None]*len(table_contours)
     for i, c in enumerate(table_contours):
@@ -318,6 +319,7 @@ def PositionTable(img_1024, img_path):
         plt.title('Tablebreich')
         plt.imshow(image_add)
         plt.show()
+        plt.close()
 
     return table_boundRect, img_1024
 
@@ -354,10 +356,12 @@ def SizeNormalize(img):
                      int(shape_list[0]*scaling_r-1)]
         shape_new[shape_new.index(max(shape_new))] = int(1024)
         image = cv2.resize(img, shape_new)
-        
-        if __name__ == '__main__':
-            print('image_shape ==> ' + str(img.shape) + ' new ==> ' + str(image.shape))
 
+        if __name__ == '__main__':
+            print('image_shape ==> ' + str(img.shape) +
+                  ' new ==> ' + str(image.shape))
+    else:
+        image = img
     # The model can only process pictures of 1024x1024 size,
     # so it is necessary to fill the edges of pictures smaller than this size
 
@@ -379,11 +383,11 @@ def SizeNormalize(img):
 def GetTableZone(table_boundRect, img_1024):
     table_zone = [None]*len(table_boundRect)
     for ii, (x, y, w, h) in enumerate(table_boundRect):
-        t = 4
+        t = 50
 
-        table_zone[ii] = np.ones((h+2*t, w+2*t, 3))
+        table_zone[ii] = np.ones((h, w, 3))
 
-        table_zone[ii] = img_1024[(y-t):(y+h+t), (x-t):(x+w+t)]
+        table_zone[ii] = cv2.copyMakeBorder(img_1024[(y):(y+h), (x):(x+w)], t, t, t, t, cv2.BORDER_CONSTANT, value=(255,255,255))
 
     return table_zone
 
@@ -420,18 +424,21 @@ def Main(img_path):
             plt.imshow(img_1024)
             plt.xticks([]), plt.yticks([])
             plt.show()
+            plt.close()
 
-        # input image must be 3 channel 1024x1024. out img 1024x1024
+            # input image must be 3 channel 1024x1024. out img 1024x1024
         table_boundRect, img_1024 = PositionTable(img_1024, img_path)
 
         table_zone = GetTableZone(table_boundRect, img_1024)
 
-        print('image ' + img_path + ' has ' + str(len(table_zone)) + ' table(s)')
+        print('image ' + str(img_path) + ' has ' +
+              str(len(table_zone)) + ' table(s)')
 
         for nummer, table in enumerate(table_zone):
 
             table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
             table_ol = DeletLines(table_gray)  # bina_image ohne Linien
+
             location = GetCell(table_ol)  # hier subplot(224)
 
             if __name__ == '__main__':
@@ -443,38 +450,35 @@ def Main(img_path):
                 plt.subplot(2, 2, 3), plt.imshow(table_ol, cmap='gray')
                 plt.xticks([]), plt.yticks([])
                 plt.show()
+                plt.close()
 
             center_list, label_list, tablesize = GetLabel(location)
 
             list_info = ReadCell(center_list, table_ol)
 
-            print('--------------------------------------------------')
-            print('table %s' % (nummer+1))
-            # print(list_info)
-            # print(label_list)
             df = GetDataframe(list_info, label_list, tablesize)
-            print(df)
-            WriteData(df, index_ = 'table_' + str(nummer+1))
 
-    
+            WriteData(df, index_='table_' + str(nummer+1) + '_of_' + os.path.splitext(os.path.basename(img_path))[0])
+
+            if __name__ == '__main__':
+                print('--------------------------------------------------')
+                print('table %s' % (nummer+1))
+                # print(list_info)
+                # print(label_list)
+                print(df)
+
+                time.sleep(1)
+                result = Search('table_' + str(nummer+1) + '_of_' + os.path.splitext(os.path.basename(img_path))[0])
+                print(result)
+
     except Exception as e:
-        print('ERROR: ' + ' ' + str(e) + ' ==> ' + img_path)
+        print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
 
     else:
-        print('successfully done: ' + img_path)
+        print('successfully done: ' + str(img_path))
+
 
 if __name__ == '__main__':
     img_path = 'Development_tradionell\\imageTest\\table2_rotate.png'
 
-    es.indices.delete(index='table_1', ignore=[400, 404])  # deletes whole index
-    es.indices.delete(index='table_2', ignore=[400, 404])  # deletes whole index
-    
     Main(img_path)
-    # Main('Development_tradionell\\imageTest\\textandtablewinkel_copy.png')
-    # Main('Development_tradionell\\imageTest\\tabelle_ohne_linien.png')
-    time.sleep(1)
-    result = Search('table_' + str(1))
-    print(result)
-    result = Search('table_' + str(2))
-    print(result)
-    

@@ -230,13 +230,14 @@ def GetCell(img_deletline):
 
     ret, bina_image = cv2.threshold(
         bina_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
     contours, h = cv2.findContours(
-        bina_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)  # round the text zone by rect
+        bina_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)  # round the text zone by rect
     image_copy = cv2.bitwise_not(img_deletline_inv)
     list_contours = []
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 10 and h > 10:
+        if w > 15 and h > 15:
 
             list_contours.append((x, y, w, h))
             cv2.rectangle(image_copy, (x, y), (x+w, y+h), 0,
