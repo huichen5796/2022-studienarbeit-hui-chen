@@ -389,23 +389,23 @@ def GetDataframe(list_info, label_list, tablesize):
 
 
 
-def WriteData(df, index_, type_):
+def WriteData(df, index_):
     '''
-    i = 1
     es.index(index='table', doc_type='_doc', body=dict_info)
     '''
-    df_as_json = df.to_json(orient='index', lines=True) # dict like {index -> {column -> value}}。
-    bulk_data = []
+    df_json = df.to_json(orient='index') # dict like {index -> {column -> value}}。
+    
         
-    es.
+    es.index(index=index_, doc_type='_doc', body=df_json)
 
 
 
-def Search(index):
+def Search(index_):
     '''
     Searches for data in ES-index
     op: operator can be "and" (e.g. must match "Husten AND Fieber") or "or" (e.g. "Husten OR Fieber")
 
+    '''
 
     reqBody = {
         "size": 1000,  # no. of hits that will be sent
@@ -413,13 +413,12 @@ def Search(index):
             "match_all": {}  # gives back all entries in ES-index
         }
     }
-
-    res = es.search(index=index, body=reqBody)
+   
+    res = es.search(index=index_, body=reqBody)
 
     # preperation for pretty-print: encoding with utf-8 for "ä, ö, etc."
     data_print = json.dumps(res, indent=4, ensure_ascii=False).encode('utf8')
     # print(data_print.decode()) # pretty-print with indent level
     return data_print.decode()
 
-    '''
-    pass
+    

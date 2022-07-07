@@ -10,8 +10,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import pandas as pd
+import time
+from elasticsearch import Elasticsearch
+es = Elasticsearch()
 
-from Funktionen import TiltCorrection, DeletLines, GetCell, ReadCell, GetLabel, GetDataframe
+from Funktionen import TiltCorrection, DeletLines, GetCell, ReadCell, GetLabel, GetDataframe, WriteData, Search
 
 
 class DenseNet(nn.Module):
@@ -451,13 +454,27 @@ def Main(img_path):
             # print(label_list)
             df = GetDataframe(list_info, label_list, tablesize)
             print(df)
+            WriteData(df, index_ = 'table_' + str(nummer+1))
+
+    
     except Exception as e:
-        print('ERROR: ' + ' ' + e + ' ' + img_path)
+        print('ERROR: ' + ' ' + str(e) + ' ==> ' + img_path)
 
     else:
         print('successfully done: ' + img_path)
 
 if __name__ == '__main__':
-    Main('Development_tradionell\\imageTest\\table2_rotate.png')
+    img_path = 'Development_tradionell\\imageTest\\table2_rotate.png'
+
+    es.indices.delete(index='table_1', ignore=[400, 404])  # deletes whole index
+    es.indices.delete(index='table_2', ignore=[400, 404])  # deletes whole index
+    
+    Main(img_path)
     # Main('Development_tradionell\\imageTest\\textandtablewinkel_copy.png')
     # Main('Development_tradionell\\imageTest\\tabelle_ohne_linien.png')
+    time.sleep(1)
+    result = Search('table_' + str(1))
+    print(result)
+    result = Search('table_' + str(2))
+    print(result)
+    
