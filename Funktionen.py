@@ -333,6 +333,8 @@ def Extrakt_Tesseract(image_cell):
 
     if '\n' in result:
         result = result.replace('\n', '')
+    if result == '':
+        result = '////'
     return result
 
 
@@ -382,17 +384,21 @@ def GetDataframe(list_info, label_list, tablesize):
         values[i] = pd.Series(col_info, index = index)
     dict_info = dict(zip(keys, values))
     df = pd.DataFrame(dict_info)
-    
+    df = df.fillna('')
     return df
 
 
 
-def WriteData(dict_info):
+def WriteData(df, index_, type_):
     '''
     i = 1
     es.index(index='table', doc_type='_doc', body=dict_info)
     '''
-    pass
+    df_as_json = df.to_json(orient='index', lines=True) # dict like {index -> {column -> value}}。
+    bulk_data = []
+        
+    es.
+
 
 
 def Search(index):

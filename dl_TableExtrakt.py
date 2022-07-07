@@ -212,7 +212,7 @@ class U_Net(nn.Module):
 #---------------------------------------------------------------------------------------------------------------#
 
 
-def PositionTable(img, img_path):
+def PositionTable(img_1024, img_path):
     device = 'cpu'
 
     model_used = 'tablenet'
@@ -254,27 +254,6 @@ def PositionTable(img, img_path):
         ),
         ToTensorV2()
     ])
-
-    # The model can only process pictures of 1024x1024 size,
-    # so it is necessary to fill the edges of pictures smaller than this size
-
-    h = img.shape[0]
-    w = img.shape[1]
-    top = (1024-h)//2
-    bottom = 1024-h-top
-    left = (1024-w)//2
-    right = 1024-w-left
-    img_1024 = cv2.copyMakeBorder(
-        img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-
-    img_1024 = np.array(Image.fromarray(
-        cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB)))
-
-    plt.figure(figsize=(10, 10))
-
-    plt.subplot(1, 3, 1)
-    plt.title('Input Image To 1024x1024')
-    plt.imshow(img_1024)
 
     image = transform(image=img_1024)["image"]
     with torch.no_grad():
@@ -324,15 +303,18 @@ def PositionTable(img, img_path):
 
     image_add = cv2.addWeighted(img_1024, 0.9, white_image, 0.5, 0)
 
-    plt.subplot(1, 3, 2)
-    plt.title('Output Prognose')
-    plt.imshow(pred, cmap='gray')
-
-    plt.subplot(1, 3, 3)
-    plt.title('Tablebreich')
-    plt.imshow(image_add)
-
-    plt.show()
+    if __name__ == '__main__':
+        plt.figure(figsize=(10, 10))
+        plt.subplot(1, 3, 1)
+        plt.title('Input Image 1024x1024')
+        plt.imshow(img_1024)
+        plt.subplot(1, 3, 2)
+        plt.title('Output Prognose')
+        plt.imshow(pred, cmap='gray')
+        plt.subplot(1, 3, 3)
+        plt.title('Tablebreich')
+        plt.imshow(image_add)
+        plt.show()
 
     return table_boundRect, img_1024
 
@@ -358,34 +340,9 @@ def WhiteBordersRemove(gray_image):
     return text_zone
 
 
-def Main(img_path):
-    image = cv2.imread(img_path, 0)
-    plt.suptitle('Vorbreitung')
-
-    plt.subplot(141)
-    plt.title('Original Image')
-    plt.imshow(image, cmap='gray')
-    plt.xticks([]), plt.yticks([])
-
-    image_rotate = TiltCorrection(image)  # got gray
-    plt.subplot(142)
-    plt.title('Tilt Correction')
-    plt.imshow(image_rotate, cmap='gray')
-    plt.xticks([]), plt.yticks([])
-
-    text_zone = WhiteBordersRemove(image_rotate)  # got gray
-
-    image_input = cv2.cvtColor(
-        text_zone, cv2.COLOR_GRAY2BGR)  # gray to 3 channel
-
-    plt.subplot(143)
-    plt.title('White Borders Remove')
-    plt.imshow(image_input)
-    plt.xticks([]), plt.yticks([])
-
+def SizeNormalize(img):
     # then normalize the shape to 1024 X ()
-    shape_list = list(image_input.shape)
-    print('image_shape ==> ' + str(image_input.shape))  # h, w, c
+    shape_list = list(img.shape)
 
     if max(shape_list) > 1024:
         scaling_r = 1024/max(shape_list)
@@ -393,54 +350,114 @@ def Main(img_path):
         shape_new = [int(shape_list[1]*scaling_r-1),
                      int(shape_list[0]*scaling_r-1)]
         shape_new[shape_new.index(max(shape_new))] = int(1024)
-        image_input = cv2.resize(image_input, shape_new)
-        print('new ==> ' + str(image_input.shape))
+        image = cv2.resize(img, shape_new)
+        
+        if __name__ == '__main__':
+            print('image_shape ==> ' + str(img.shape) + ' new ==> ' + str(image.shape))
 
-    plt.subplot(144)
-    plt.title('Resize if > 1024')
-    plt.imshow(image_input)
-    plt.xticks([]), plt.yticks([])
-    plt.show()
+    # The model can only process pictures of 1024x1024 size,
+    # so it is necessary to fill the edges of pictures smaller than this size
 
-    # input image must be 3 channel. out img 1024x1024
-    table_boundRect, img = PositionTable(image_input, img_path)
+    h = image.shape[0]
+    w = image.shape[1]
+    top = (1024-h)//2
+    bottom = 1024-h-top
+    left = (1024-w)//2
+    right = 1024-w-left
+    img_1024 = cv2.copyMakeBorder(
+        image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(255, 255, 255))
 
+    img_1024 = np.array(Image.fromarray(
+        cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB)))
+
+    return img_1024
+
+
+def GetTableZone(table_boundRect, img_1024):
     table_zone = [None]*len(table_boundRect)
     for ii, (x, y, w, h) in enumerate(table_boundRect):
         t = 4
 
         table_zone[ii] = np.ones((h+2*t, w+2*t, 3))
 
-        table_zone[ii] = img[(y-t):(y+h+t), (x-t):(x+w+t)]
+        table_zone[ii] = img_1024[(y-t):(y+h+t), (x-t):(x+w+t)]
 
-    print('image ' + img_path + ' has ' + str(len(table_zone)) + ' table(s)')
-
-    for nummer, table in enumerate(table_zone):
-        plt.suptitle('table ' + str(nummer+1))
-        plt.subplot(2, 2, 1), plt.imshow(img)  # img is 3 channel 1024 x 1024
-        plt.xticks([]), plt.yticks([])
-        plt.subplot(2, 2, 2), plt.imshow(table)  # 3 channel
-        plt.xticks([]), plt.yticks([])
-        table = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
-        table_ol = DeletLines(table)  # bina_image ohne Linien
-        plt.subplot(2, 2, 3), plt.imshow(table_ol, cmap='gray')
-        plt.xticks([]), plt.yticks([])
-        location = GetCell(table_ol)  # hier subplot(224)
-        plt.show()
-
-        center_list, label_list, tablesize = GetLabel(location)
-
-        list_info = ReadCell(center_list, table_ol)
-
-        print('--------------------------------------------------')
-        print('table %s' % (nummer+1))
-        #print(list_info)
-        #print(label_list)
-        df = GetDataframe(list_info, label_list, tablesize)
-        print(df)
+    return table_zone
 
 
-Main('Development_tradionell\\imageTest\\table2_rotate.png')
-# Main('Development_tradionell\\imageTest\\textandtablewinkel_copy.png')
-# Main('Development_tradionell\\imageTest\\tabelle_ohne_linien.png')
+def Main(img_path):
+    try:
+        image = cv2.imread(img_path, 0)
 
+        image_rotate = TiltCorrection(image)  # got gray
+
+        text_zone = WhiteBordersRemove(image_rotate)  # got gray
+
+        img_3channel = cv2.cvtColor(
+            text_zone, cv2.COLOR_GRAY2BGR)  # gray to 3 channel
+
+        img_1024 = SizeNormalize(img_3channel)
+
+        if __name__ == '__main__':
+            plt.suptitle('Vorbreitung')
+            plt.subplot(141)
+            plt.title('Original Image')
+            plt.imshow(image, cmap='gray')
+            plt.xticks([]), plt.yticks([])
+            plt.subplot(142)
+            plt.title('Tilt Correction')
+            plt.imshow(image_rotate, cmap='gray')
+            plt.xticks([]), plt.yticks([])
+            plt.subplot(143)
+            plt.title('White Borders Remove')
+            plt.imshow(img_3channel)
+            plt.xticks([]), plt.yticks([])
+            plt.subplot(144)
+            plt.title('Resize if not 1024x1024')
+            plt.imshow(img_1024)
+            plt.xticks([]), plt.yticks([])
+            plt.show()
+
+        # input image must be 3 channel 1024x1024. out img 1024x1024
+        table_boundRect, img_1024 = PositionTable(img_1024, img_path)
+
+        table_zone = GetTableZone(table_boundRect, img_1024)
+
+        print('image ' + img_path + ' has ' + str(len(table_zone)) + ' table(s)')
+
+        for nummer, table in enumerate(table_zone):
+
+            table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
+            table_ol = DeletLines(table_gray)  # bina_image ohne Linien
+            location = GetCell(table_ol)  # hier subplot(224)
+
+            if __name__ == '__main__':
+                plt.suptitle('table ' + str(nummer+1))
+                plt.subplot(2, 2, 1), plt.imshow(img_1024)
+                plt.xticks([]), plt.yticks([])
+                plt.subplot(2, 2, 2), plt.imshow(table)
+                plt.xticks([]), plt.yticks([])
+                plt.subplot(2, 2, 3), plt.imshow(table_ol, cmap='gray')
+                plt.xticks([]), plt.yticks([])
+                plt.show()
+
+            center_list, label_list, tablesize = GetLabel(location)
+
+            list_info = ReadCell(center_list, table_ol)
+
+            print('--------------------------------------------------')
+            print('table %s' % (nummer+1))
+            # print(list_info)
+            # print(label_list)
+            df = GetDataframe(list_info, label_list, tablesize)
+            print(df)
+    except Exception as e:
+        print('ERROR: ' + ' ' + e + ' ' + img_path)
+
+    else:
+        print('successfully done: ' + img_path)
+
+if __name__ == '__main__':
+    Main('Development_tradionell\\imageTest\\table2_rotate.png')
+    # Main('Development_tradionell\\imageTest\\textandtablewinkel_copy.png')
+    # Main('Development_tradionell\\imageTest\\tabelle_ohne_linien.png')
