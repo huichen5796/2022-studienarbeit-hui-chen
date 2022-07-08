@@ -8,7 +8,7 @@
 
 ## Programmablauf
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
-![Logik](./Abbildungen\Logik.drawio.svg)
+![Logik](./Abbildungen/single_image_processing.drawio.svg)
 
 ## Setup
 
