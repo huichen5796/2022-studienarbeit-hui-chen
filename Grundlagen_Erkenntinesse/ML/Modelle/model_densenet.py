@@ -185,6 +185,8 @@ class TableNet(nn.Module):
 model = TableNet().to(device)
 
 def dice_loss(pred, target, smooth = 1e-5):
+    s = nn.Sigmoid()
+    pred = s(pred)
     num = pred.size(0)
     m1 = pred.view(num, -1)  # flatten
     m2 = target.view(num, -1)  # flatten
