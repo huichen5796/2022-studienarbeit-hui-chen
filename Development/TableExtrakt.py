@@ -3,6 +3,8 @@ import os
 import fitz
 import shutil
 from functions import Main, Search
+from elasticsearch import Elasticsearch
+es = Elasticsearch()
 
 def GetImageList(dir_name): 
     '''
@@ -111,8 +113,12 @@ def StapelVerbreitung(dir):
     path_images = [os.path.normpath(os.path.join(dir, fn)) for fn in image_list]
     for image in path_images:
         Main(image)
+    print('done')
 
     
 if __name__ == '__main__':
+    es.indices.delete(index='table', ignore=[400, 404]) # deletes whole index
     StapelVerbreitung('Development\\imageTest')
     
+    result = Search('table', 'all')
+    print(result)

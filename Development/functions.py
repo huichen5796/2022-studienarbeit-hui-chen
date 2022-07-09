@@ -87,17 +87,22 @@ es = Elasticsearch()
     - input 3: tablesize
     - output: Dataframe
 
-12. WriteData(df, index_):
+12. WriteData(df, label_):
     write dataframe to elasticsearch
     - input 1: dataframe
-    - input 2: index_, here is the table name, for example: table_2_of_table2_rotate_0
+    - input 2: label_, here is the table name, for example: table_2_of_table2_rotate_0
 
-13. Search(index_):
+13. Search(index_, label_):
     Searches for data in ES-index, for example: table_2_of_table2_rotate_0
+    - input 1: index_ is 'table'
+    - input 2: label of table, for example: table_2_of_table2_rotate_0, if label_ is all --> back all datas
+    - output: result
     
 '''
 #---------------------------------------------------------------------------------------------------------------#
 # model structures 
+
+# densenet- tablenet
 class DenseNet(nn.Module):
     def __init__(self, pretrained=True, requires_grad=True):
         super(DenseNet, self).__init__()
@@ -289,6 +294,7 @@ class U_Net(nn.Module):
 
         return d1
 #---------------------------------------------------------------------------------------------------------------#
+# functions
 
 def GetAngle(img):
     '''
@@ -397,6 +403,187 @@ def WhiteBordersRemove(gray_image):
                             (x-thickness):(x+w+thickness)]
 
     return text_zone
+
+def SizeNormalize(img):
+    '''
+    Normalize the input image size to 1024 x 1024
+
+    - input: image, 1 channel or 3 channel
+
+    - output: image 1024 x 1024
+    
+    '''
+    # at first normalize the shape to 1024 X () if size > 1024
+    shape_list = list(img.shape)
+
+    if max(shape_list) > 1024:
+        scaling_r = 1024/max(shape_list)
+        # w, h to avoid exceeding 1024, subtract one
+        shape_new = [int(shape_list[1]*scaling_r-1),
+                     int(shape_list[0]*scaling_r-1)]
+        shape_new[shape_new.index(max(shape_new))] = int(1024)
+        image = cv2.resize(img, shape_new)
+
+        if __name__ == '__main__':
+            print('image_shape ==> ' + str(img.shape) +
+                  ' new ==> ' + str(image.shape))
+    else:
+        image = img
+    # The model can only process pictures of 1024x1024 size,
+    # so it is necessary to fill the edges of pictures smaller than this size
+
+    h = image.shape[0]
+    w = image.shape[1]
+    top = (1024-h)//2
+    bottom = 1024-h-top
+    left = (1024-w)//2
+    right = 1024-w-left
+    img_1024 = cv2.copyMakeBorder(
+        image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+
+    img_1024 = np.array(Image.fromarray(
+        cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB)))
+
+    return img_1024
+
+def PositionTable(img_1024, img_path):
+    '''
+    get the position of table in a image
+
+    - input 1: image must be 3 channel, 1024 x 1024
+    - input 2: the path of the image
+
+    - output: the location of tables in image [[x, y, w, h], ..] here x and y are the locaiton of top left point
+
+    '''
+
+    device = 'cpu'
+
+    model_used = 'tablenet'
+
+    if model_used == 'densenet':
+        path = 'Development\\models\\densenet_100.pkl'
+        model = torch.load(path, map_location=torch.device(device))
+
+    elif model_used == 'unet':
+        path = 'Development\\models\\unet_model_100.pkl'
+        model = torch.load(path, map_location=torch.device(device))
+    elif model_used == 'tablenet':
+        model = TableNet().to(device)
+        path = 'Development\\models\densenet_config_4_model_checkpoint.pth.tar'
+
+        pop_list = ["column_decoder.conv_8_column.0.weight",
+                    "column_decoder.conv_8_column.0.bias",
+                    "column_decoder.conv_8_column.3.weight",
+                    "column_decoder.conv_8_column.3.bias",
+                    "column_decoder.upsample_1_column.weight",
+                    "column_decoder.upsample_1_column.bias",
+                    "column_decoder.upsample_2_column.weight",
+                    "column_decoder.upsample_2_column.bias",
+                    "column_decoder.upsample_3_column.weight",
+                    "column_decoder.upsample_3_column.bias"]
+        params = torch.load(path, map_location=torch.device(device))[
+            'state_dict']
+
+        for key in pop_list:
+            params.pop(key)
+
+        model.load_state_dict(params)
+
+    transform = A.Compose([
+        A.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225],
+            max_pixel_value=255,
+        ),
+        ToTensorV2()
+    ])
+
+    image = transform(image=img_1024)["image"]
+    with torch.no_grad():
+        image = image.to(device).unsqueeze(0)
+        pred = model(image)
+
+        if model_used == 'unet':
+            pred = (pred.cpu().detach().numpy().squeeze())
+        else:
+            pred = torch.sigmoid(pred)
+
+            pred = (pred.cpu().detach().numpy().squeeze())
+
+        pred[:][pred[:] > 0.5] = 255.0
+        pred[:][pred[:] < 0.5] = 0.0
+        pred = pred.astype('uint8')
+
+    # get contours of the prognose to get tables
+    contours, _ = cv2.findContours(
+        pred, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    table_contours = []
+    # remove bad contours
+    for c in contours:
+        if cv2.contourArea(c) > 1000:
+            table_contours.append(c)
+
+    if __name__ == '__main__':
+        if len(table_contours) == 0:
+            print("No Table Detected ==> " + str(img_path))
+        else:
+            print('Current Image ==>' + str(img_path))
+
+    table_boundRect = [None]*len(table_contours)
+    for i, c in enumerate(table_contours):
+        polyline = cv2.approxPolyDP(c, 5, True)
+        table_boundRect[i] = cv2.boundingRect(polyline)
+
+    # draw bounding boxes
+    color = (255, 0, 0)  # red
+
+    white_image = np.ones((1024, 1024, 3), np.uint8)*255
+    for x, y, w, h in table_boundRect:
+        size = 4
+        #cv2.rectangle(img, (x,y),(x+w,y+h), color, thickness)
+        triangle = np.array(
+            [[x-size, y-size], [x-size, y+h+size], [x+w+size, y+h+size], [x+w+size, y-size]])
+        cv2.fillConvexPoly(white_image, triangle, color)
+
+    image_add = cv2.addWeighted(img_1024, 0.9, white_image, 0.5, 0)
+
+    if __name__ == '__main__':
+        plt.figure(figsize=(10, 10))
+        plt.subplot(1, 3, 1)
+        plt.title('Input Image 1024x1024')
+        plt.imshow(img_1024)
+        plt.subplot(1, 3, 2)
+        plt.title('Output Prognose')
+        plt.imshow(pred, cmap='gray')
+        plt.subplot(1, 3, 3)
+        plt.title('Tablebreich')
+        plt.imshow(image_add)
+        plt.show()
+        plt.close()
+
+    return table_boundRect
+
+def GetTableZone(table_boundRect, img_1024):
+    '''
+    ROI the table in image
+
+    - input 1: location of tables in image
+    - input 2: image
+
+    - output: table_zone
+
+    '''
+
+    table_zone = [None]*len(table_boundRect)
+    for ii, (x, y, w, h) in enumerate(table_boundRect):
+        t = 50
+
+        table_zone[ii] = np.ones((h, w, 3))
+
+        table_zone[ii] = cv2.copyMakeBorder(img_1024[(y):(y+h), (x):(x+w)], t, t, t, t, cv2.BORDER_CONSTANT, value=(255,255,255))
+
+    return table_zone
 
 def LSDGetLines(img):
     '''
@@ -610,7 +797,7 @@ def Extrakt_Tesseract(image_cell):
     if '\n' in result:
         result = result.replace('\n', '')
     if result == '':
-        result = '////'
+        result = '----'
     return result
 
 
@@ -672,33 +859,54 @@ def GetDataframe(list_info, label_list, tablesize):
 
 
 
-def WriteData(df, index_):
+def WriteData(df, label_):
     '''
     write dataframe to elasticsearch
 
     - input 1: dataframe
-    - input 2: index_, here is the table name, for example: table_2_of_table2_rotate_0
+    - input 2: label_, here is the table name, for example: table_2_of_table2_rotate_0
 
     '''
-    df_json = df.to_json(orient='index') # dict like {index -> {column -> value}}。
+    df_json = df.to_json(orient='index') # str like {index -> {column -> value}}。
+    df_dict = eval(df_json)
+
+    body_ = {
+        "label": label_.lower(),
+        "content": df_dict
+    }
     
-    index_ = index_.lower()
-    es.index(index=index_, doc_type='_doc', body=df_json)
+
+    es.index(index='table', doc_type='_doc', body=body_)
 
 
 
-def Search(index_):
+def Search(index_, label_):
     '''
     Searches for data in ES-index, for example: table_2_of_table2_rotate_0
 
-    '''
+    - input 1: index_ is 'table'
+    - input 2: label of table, for example: table_2_of_table2_rotate_0
+                if label_ is all --> back all datas
 
-    reqBody = {
-        "size": 1000,  # no. of hits that will be sent
-        "query": {
-            "match_all": {}  # gives back all entries in ES-index
+    - output: result
+    '''
+    if label_ == 'all':
+         reqBody = {
+            "size": 1000, # no. of hits that will be sent
+            "query": {
+                "match_all": {} # gives back all entries in ES-index
+            }
         }
-    }
+    else:
+        reqBody = {
+            "size": 1000,  # No. of hits that will be sent
+            "query": {
+                "match": {
+                    label_:{
+                    }
+                }  
+            }
+        }
    
     res = es.search(index=index_, body=reqBody)
 
@@ -706,187 +914,6 @@ def Search(index_):
     data_print = json.dumps(res, indent=4, ensure_ascii=False).encode('utf8')
     # print(data_print.decode()) # pretty-print with indent level
     return data_print.decode()
-
-def SizeNormalize(img):
-    '''
-    Normalize the input image size to 1024 x 1024
-
-    - input: image, 1 channel or 3 channel
-
-    - output: image 1024 x 1024
-    
-    '''
-    # at first normalize the shape to 1024 X () if size > 1024
-    shape_list = list(img.shape)
-
-    if max(shape_list) > 1024:
-        scaling_r = 1024/max(shape_list)
-        # w, h to avoid exceeding 1024, subtract one
-        shape_new = [int(shape_list[1]*scaling_r-1),
-                     int(shape_list[0]*scaling_r-1)]
-        shape_new[shape_new.index(max(shape_new))] = int(1024)
-        image = cv2.resize(img, shape_new)
-
-        if __name__ == '__main__':
-            print('image_shape ==> ' + str(img.shape) +
-                  ' new ==> ' + str(image.shape))
-    else:
-        image = img
-    # The model can only process pictures of 1024x1024 size,
-    # so it is necessary to fill the edges of pictures smaller than this size
-
-    h = image.shape[0]
-    w = image.shape[1]
-    top = (1024-h)//2
-    bottom = 1024-h-top
-    left = (1024-w)//2
-    right = 1024-w-left
-    img_1024 = cv2.copyMakeBorder(
-        image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-
-    img_1024 = np.array(Image.fromarray(
-        cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB)))
-
-    return img_1024
-
-def PositionTable(img_1024, img_path):
-    '''
-    get the position of table in a image
-
-    - input 1: image must be 3 channel, 1024 x 1024
-    - input 2: the path of the image
-
-    - output: the location of tables in image [[x, y, w, h], ..] here x and y are the locaiton of top left point
-
-    '''
-
-    device = 'cpu'
-
-    model_used = 'tablenet'
-
-    if model_used == 'densenet':
-        path = 'Development\\models\\densenet_100.pkl'
-        model = torch.load(path, map_location=torch.device(device))
-
-    elif model_used == 'unet':
-        path = 'Development\\models\\unet_model_100.pkl'
-        model = torch.load(path, map_location=torch.device(device))
-    elif model_used == 'tablenet':
-        model = TableNet().to(device)
-        path = 'Development\\models\densenet_config_4_model_checkpoint.pth.tar'
-
-        pop_list = ["column_decoder.conv_8_column.0.weight",
-                    "column_decoder.conv_8_column.0.bias",
-                    "column_decoder.conv_8_column.3.weight",
-                    "column_decoder.conv_8_column.3.bias",
-                    "column_decoder.upsample_1_column.weight",
-                    "column_decoder.upsample_1_column.bias",
-                    "column_decoder.upsample_2_column.weight",
-                    "column_decoder.upsample_2_column.bias",
-                    "column_decoder.upsample_3_column.weight",
-                    "column_decoder.upsample_3_column.bias"]
-        params = torch.load(path, map_location=torch.device(device))[
-            'state_dict']
-
-        for key in pop_list:
-            params.pop(key)
-
-        model.load_state_dict(params)
-
-    transform = A.Compose([
-        A.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225],
-            max_pixel_value=255,
-        ),
-        ToTensorV2()
-    ])
-
-    image = transform(image=img_1024)["image"]
-    with torch.no_grad():
-        image = image.to(device).unsqueeze(0)
-        pred = model(image)
-
-        if model_used == 'unet':
-            pred = (pred.cpu().detach().numpy().squeeze())
-        else:
-            pred = torch.sigmoid(pred)
-
-            pred = (pred.cpu().detach().numpy().squeeze())
-
-        pred[:][pred[:] > 0.5] = 255.0
-        pred[:][pred[:] < 0.5] = 0.0
-        pred = pred.astype('uint8')
-
-    # get contours of the prognose to get tables
-    contours, _ = cv2.findContours(
-        pred, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    table_contours = []
-    # remove bad contours
-    for c in contours:
-        if cv2.contourArea(c) > 1000:
-            table_contours.append(c)
-
-    if __name__ == '__main__':
-        if len(table_contours) == 0:
-            print("No Table Detected ==> " + str(img_path))
-        else:
-            print('Current Image ==>' + str(img_path))
-
-    table_boundRect = [None]*len(table_contours)
-    for i, c in enumerate(table_contours):
-        polyline = cv2.approxPolyDP(c, 5, True)
-        table_boundRect[i] = cv2.boundingRect(polyline)
-
-    # draw bounding boxes
-    color = (255, 0, 0)  # red
-
-    white_image = np.ones((1024, 1024, 3), np.uint8)*255
-    for x, y, w, h in table_boundRect:
-        size = 4
-        #cv2.rectangle(img, (x,y),(x+w,y+h), color, thickness)
-        triangle = np.array(
-            [[x-size, y-size], [x-size, y+h+size], [x+w+size, y+h+size], [x+w+size, y-size]])
-        cv2.fillConvexPoly(white_image, triangle, color)
-
-    image_add = cv2.addWeighted(img_1024, 0.9, white_image, 0.5, 0)
-
-    if __name__ == '__main__':
-        plt.figure(figsize=(10, 10))
-        plt.subplot(1, 3, 1)
-        plt.title('Input Image 1024x1024')
-        plt.imshow(img_1024)
-        plt.subplot(1, 3, 2)
-        plt.title('Output Prognose')
-        plt.imshow(pred, cmap='gray')
-        plt.subplot(1, 3, 3)
-        plt.title('Tablebreich')
-        plt.imshow(image_add)
-        plt.show()
-        plt.close()
-
-    return table_boundRect
-
-def GetTableZone(table_boundRect, img_1024):
-    '''
-    ROI the table in image
-
-    - input 1: location of tables in image
-    - input 2: image
-
-    - output: table_zone
-
-    '''
-
-    table_zone = [None]*len(table_boundRect)
-    for ii, (x, y, w, h) in enumerate(table_boundRect):
-        t = 50
-
-        table_zone[ii] = np.ones((h, w, 3))
-
-        table_zone[ii] = cv2.copyMakeBorder(img_1024[(y):(y+h), (x):(x+w)], t, t, t, t, cv2.BORDER_CONSTANT, value=(255,255,255))
-
-    return table_zone
 
 #---------------------------------------------------------------------------------------------------------------#
 def Main(img_path):
@@ -954,8 +981,9 @@ def Main(img_path):
             list_info = ReadCell(center_list, table_ol)
 
             df = GetDataframe(list_info, label_list, tablesize)
+        
 
-            WriteData(df, index_='table_' + str(nummer+1) + '_of_' + os.path.splitext(os.path.basename(img_path))[0])
+            WriteData(df, label_='table_' + str(nummer+1) + '_of_' + os.path.splitext(os.path.basename(img_path))[0])
 
             if __name__ == '__main__':
                 print('--------------------------------------------------')
@@ -964,9 +992,6 @@ def Main(img_path):
                 # print(label_list)
                 print(df)
 
-                time.sleep(1)
-                result = Search('table_' + str(nummer+1) + '_of_' + os.path.splitext(os.path.basename(img_path))[0])
-                print(result)
 
     except Exception as e:
         print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
@@ -976,6 +1001,12 @@ def Main(img_path):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\table_0.png'
+    img_path = 'Development\imageTest\einfach_table.jpg'
 
+    
+
+    es.indices.delete(index='table', ignore=[400, 404]) # deletes whole index
     Main(img_path)
+    time.sleep(1)
+    result = Search('table', 'all')
+    print(result)
