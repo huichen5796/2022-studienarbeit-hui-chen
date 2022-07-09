@@ -8,7 +8,14 @@
 
 ## Programmablauf
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
-![Logik](./Abbildungen/single_image_processing.drawio.svg)
+- Die Verarbeitung einzeles Bilds
+
+  ![pa_ein_bild](./Abbildungen/programmablauf.svg)
+
+- Stapelverarbeitung mehrer Bilder
+
+  ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.svg)
+
 
 ## Setup
 
@@ -20,10 +27,10 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
   - die entsprechende Version herunterladen
   - Tesseract-OCR installieren
 
-    ![install](./Abbildungen\install0.jpg)
+    ![install](./Abbildungen/install0.jpg)
   - den Installationspfad wählen
     
-    ![install1](.Abbildungen/install1.jpg)
+    ![install1](./Abbildungen/install1.jpg)
   - zu den Systemvariablen (PATH) der Umgebungsvariablen hinzufügen
 
     ![zu PATH](./Abbildungen/zupath.jpg)
