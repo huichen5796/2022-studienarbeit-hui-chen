@@ -8,34 +8,52 @@ Hier ist der Arbeitsplatz für die Studienarbeit “Automatische Erkennung und K
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Die Verarbeitung einzeles Bilds
 
-  ![pa_ein_bild](./Abbildungen/programmablauf.svg#pic_center)
+  <center>
+
+  ![pa_ein_bild](./Abbildungen/programmablauf.svg)
+
+  </center>
 
 - Stapelverarbeitung mehrer Bilder
 
-  ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.svg#pic_center)
+  <center>
+
+  ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.svg)
+
+  </center>
 
 ## Ergebniss
 - Die Verarbeitung einzeles Bilds
    - Vorbreitung und Normalizierung
-   ![Vorbreitung](Abbildungen\vorverarbeitung.png#pic_center)
+   ![Vorbreitung](Abbildungen\vorverarbeitung.png)
    - Erkennung des Tablebreichs
-   ![Erkennung](Abbildungen\erkennung.png#pic_center)
+   ![Erkennung](Abbildungen\erkennung.png)
    - Erkennung der Zelle
-   ![cell](Abbildungen\cell.png#pic_center)
+   ![cell](Abbildungen\cell.png)
    - Rekonstruktion
       - Zuweisung der Labels
-      ![LABELS](Abbildungen\labels.jpg#pic_center)
+      ![LABELS](Abbildungen\labels.jpg)
       - Rekonstruktion
-      ![table](Abbildungen\table.jpg#pic_center)
+      ![table](Abbildungen\table.jpg)
    - Einschreibung in Elasticsearch
-   ![elastic](Abbildungen\elasticsearch.png#pic_center)
+   ![elastic](Abbildungen\elasticsearch.png)
 
 - Stapelverarbeitung mehrer Bilder
    - Die Bilder im Verzeichnis werden zuerst formatiert,  alle PDFs werden Seite für Seite in das PNG-Dateiformat konvertiert.
-   ![stapel_vor](Abbildungen\stapel_vor.jpg#pic_center)
+   <center>
+
+   ![stapel_vor](Abbildungen\stapel_vor.jpg)
+
+   </center>
+
    - Dann wird jedes Bild verarbeitet und in Elasticsearch geschrieben.
-   ![stapelverarbeitung](Abbildungen\stapelverarbeitung.png#pic_center)
-   ![tablesinelas](Abbildungen\tableselas.png#pic_center)
+
+   <center>
+
+   ![stapelverarbeitung](Abbildungen\stapelverarbeitung.png)
+   ![tablesinelas](Abbildungen\tableselas.png)
+
+   </center>
 
 
 ## Config
@@ -80,19 +98,19 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
   - die entsprechende Version herunterladen
   - Tesseract-OCR installieren
 
-    ![install](./Abbildungen/install0.jpg#pic_center)
+    ![install](./Abbildungen/install0.jpg)
   - den Installationspfad wählen
     
-    ![install1](./Abbildungen/install1.jpg#pic_center)
+    ![install1](./Abbildungen/install1.jpg)
   - zu den Systemvariablen (PATH) der Umgebungsvariablen hinzufügen
 
-    ![zu PATH](./Abbildungen/zupath.jpg#pic_center)
+    ![zu PATH](./Abbildungen/zupathadd.jpg)
     
   - eine neue Systemvariable erstellen
     - Variablename: TESSDATA_PREFIX-Variablennamen 
     - Variablenwert ist Installationspfad, z.B. C:\Program Files\Tesseract-OCR\tessdata
 
-    ![tessdata](./Abbildungen/tesserdata.jpg#pic_center)
+    ![tessdata](./Abbildungen/tesserdata.jpg)
   - in der Datei _pytesseract.py_ (unter dem Pfad, den Sie gerade installiert haben) ändern `tesseract_cmd = 'tesseract'`  in `tesseract_cmd =r'C:\Program Files\Tesseract-OCR\tesseract.exe"`
     
     oder: Bei Verwendung der Tesseract-OCR in python-code einfach `pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'` nutzen
@@ -100,5 +118,5 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
 
 - Install pytorch
   - bekommen Command for Installation hier [Pytorch](https://pytorch.org/get-started/locally/)
-  ![pytorchinstall](./Abbildungen/pytorch.jpg#pic_center)
+  ![pytorchinstall](./Abbildungen/pytorch.jpg)
   - füren den Command in Terminal durch wie z.B. `pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113`
