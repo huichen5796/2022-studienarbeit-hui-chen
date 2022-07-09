@@ -100,9 +100,11 @@ es = Elasticsearch()
     
 '''
 #---------------------------------------------------------------------------------------------------------------#
-# model structures 
+# model structures
 
 # densenet- tablenet
+
+
 class DenseNet(nn.Module):
     def __init__(self, pretrained=True, requires_grad=True):
         super(DenseNet, self).__init__()
@@ -128,6 +130,7 @@ class DenseNet(nn.Module):
         out_2 = self.densenet_out_2(out_1)  # torch.Size([1, 512, 32, 32])
         out_3 = self.densenet_out_3(out_2)  # torch.Size([1, 1024, 32, 32])
         return out_1, out_2, out_3
+
 
 class TableDecoder(nn.Module):
     def __init__(self, channels, kernels, strides):
@@ -161,6 +164,7 @@ class TableDecoder(nn.Module):
         out = torch.cat((out, pool_3_out), dim=1)  # [1, 512, 128, 128]
         out = self.upsample_3_table(out)  # [1, 3, 1024, 1024]
         return out
+
 
 class TableNet(nn.Module):
     def __init__(self, encoder='densenet', use_pretrained_model=True, basemodel_requires_grad=True):
@@ -196,6 +200,7 @@ class TableNet(nn.Module):
 
 # encoder-decoder model U-Net
 
+
 class conv_block(nn.Module):
 
     def __init__(self, input_channels, output_channels, down=True):
@@ -215,6 +220,7 @@ class conv_block(nn.Module):
 
         return x
 
+
 class up_conv(nn.Module):
     def __init__(self, ch_in, ch_out):
         super(up_conv, self).__init__()
@@ -228,6 +234,7 @@ class up_conv(nn.Module):
     def forward(self, x):
         x = self.up(x)
         return x
+
 
 class U_Net(nn.Module):
     def __init__(self, img_ch=1, output_ch=1):
@@ -295,6 +302,7 @@ class U_Net(nn.Module):
         return d1
 #---------------------------------------------------------------------------------------------------------------#
 # functions
+
 
 def GetAngle(img):
     '''
@@ -375,6 +383,7 @@ def TiltCorrection(img):
 
     return image_rotate
 
+
 def WhiteBordersRemove(gray_image):
     '''
     remove excess white edges of image
@@ -382,7 +391,7 @@ def WhiteBordersRemove(gray_image):
     - input: must be grat image
 
     - output: gray image with reasonably sized white border white border
-    
+
     '''
 
     # at first add border for debug of removing
@@ -404,6 +413,7 @@ def WhiteBordersRemove(gray_image):
 
     return text_zone
 
+
 def SizeNormalize(img):
     '''
     Normalize the input image size to 1024 x 1024
@@ -411,7 +421,7 @@ def SizeNormalize(img):
     - input: image, 1 channel or 3 channel
 
     - output: image 1024 x 1024
-    
+
     '''
     # at first normalize the shape to 1024 X () if size > 1024
     shape_list = list(img.shape)
@@ -445,6 +455,7 @@ def SizeNormalize(img):
         cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB)))
 
     return img_1024
+
 
 def PositionTable(img_1024, img_path):
     '''
@@ -564,6 +575,7 @@ def PositionTable(img_1024, img_path):
 
     return table_boundRect
 
+
 def GetTableZone(table_boundRect, img_1024):
     '''
     ROI the table in image
@@ -581,16 +593,18 @@ def GetTableZone(table_boundRect, img_1024):
 
         table_zone[ii] = np.ones((h, w, 3))
 
-        table_zone[ii] = cv2.copyMakeBorder(img_1024[(y):(y+h), (x):(x+w)], t, t, t, t, cv2.BORDER_CONSTANT, value=(255,255,255))
+        table_zone[ii] = cv2.copyMakeBorder(img_1024[(y):(
+            y+h), (x):(x+w)], t, t, t, t, cv2.BORDER_CONSTANT, value=(255, 255, 255))
 
     return table_zone
+
 
 def LSDGetLines(img):
     '''
     lines be marked by LSD 
-    
+
     - input: is a bina image
-    
+
     - output: is a new black image with same shape of input image, on it is the lines of image, location to location
 
     '''
@@ -654,7 +668,7 @@ def GetCell(img_deletline):
     - input: bina image without lines
 
     - output: contour location of text blocks
-    
+
     '''
 
     img_deletline_inv = cv2.bitwise_not(img_deletline)
@@ -692,7 +706,7 @@ def GetCell(img_deletline):
 def PointCorrection(location):
     '''
     align the points
-    
+
     '''
 
     # location = [dot1, dot2, dot3, dot4, ...]
@@ -752,7 +766,7 @@ def GetLabel(location):
     - output1: the center locationn of cells (aligned), [[center_x, center_y, w, h, x, y], ..]
     - output2: the label of each cell, [[row?, col?], ..]
     - output3: the size of table, [[row_number, col_number], [...], ...]
-    
+
     '''
 
     label_list = [None]*len(location)
@@ -777,7 +791,7 @@ def GetLabel(location):
         label_list[i] = ['row%s' % (rows_list.index(c_y))]
         label_list[i].append('col%s' % (cols_list.index(c_x)))
 
-    return center_list, label_list, tablesize 
+    return center_list, label_list, tablesize
 
 
 def Extrakt_Tesseract(image_cell):
@@ -787,7 +801,7 @@ def Extrakt_Tesseract(image_cell):
     - input: image
 
     - output: str
-    
+
     '''
 
     pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
@@ -812,7 +826,7 @@ def ReadCell(center_list, image):
 
     '''
 
-    size = 3 
+    size = 3
 
     list_info = []
 
@@ -840,7 +854,7 @@ def GetDataframe(list_info, label_list, tablesize):
     - output: Dataframe
 
     '''
-    keys = ['col%s'%s for s in range(tablesize[1])]
+    keys = ['col%s' % s for s in range(tablesize[1])]
 
     values = [None]*len(keys)
     for i, key in enumerate(keys):
@@ -850,13 +864,12 @@ def GetDataframe(list_info, label_list, tablesize):
             if key in label_list[m]:
                 col_info.append(list_info[m])
                 index.append(label_list[m][0])
-    
-        values[i] = pd.Series(col_info, index = index)
+
+        values[i] = pd.Series(col_info, index=index)
     dict_info = dict(zip(keys, values))
     df = pd.DataFrame(dict_info)
     df = df.fillna('')
     return df
-
 
 
 def WriteData(df, label_):
@@ -867,17 +880,16 @@ def WriteData(df, label_):
     - input 2: label_, here is the table name, for example: table_2_of_table2_rotate_0
 
     '''
-    df_json = df.to_json(orient='index') # str like {index -> {column -> value}}。
+    df_json = df.to_json(
+        orient='index')  # str like {index -> {column -> value}}。
     df_dict = eval(df_json)
 
     body_ = {
         "label": label_.lower(),
         "content": df_dict
     }
-    
 
     es.index(index='table', doc_type='_doc', body=body_)
-
 
 
 def Search(index_, label_):
@@ -891,10 +903,10 @@ def Search(index_, label_):
     - output: result
     '''
     if label_ == 'all':
-         reqBody = {
-            "size": 1000, # no. of hits that will be sent
+        reqBody = {
+            "size": 1000,  # no. of hits that will be sent
             "query": {
-                "match_all": {} # gives back all entries in ES-index
+                "match_all": {}  # gives back all entries in ES-index
             }
         }
     else:
@@ -902,12 +914,12 @@ def Search(index_, label_):
             "size": 1000,  # No. of hits that will be sent
             "query": {
                 "match": {
-                    label_:{
+                    label_: {
                     }
-                }  
+                }
             }
         }
-   
+
     res = es.search(index=index_, body=reqBody)
 
     # preperation for pretty-print: encoding with utf-8 for "ä, ö, etc."
@@ -916,6 +928,8 @@ def Search(index_, label_):
     return data_print.decode()
 
 #---------------------------------------------------------------------------------------------------------------#
+
+
 def Main(img_path):
     try:
         image = cv2.imread(img_path, 0)
@@ -981,9 +995,9 @@ def Main(img_path):
             list_info = ReadCell(center_list, table_ol)
 
             df = GetDataframe(list_info, label_list, tablesize)
-        
 
-            WriteData(df, label_='table_' + str(nummer+1) + '_of_' + os.path.splitext(os.path.basename(img_path))[0])
+            WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
+                      os.path.splitext(os.path.basename(img_path))[0])
 
             if __name__ == '__main__':
                 print('--------------------------------------------------')
@@ -991,7 +1005,6 @@ def Main(img_path):
                 # print(list_info)
                 # print(label_list)
                 print(df)
-
 
     except Exception as e:
         print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
@@ -1003,9 +1016,7 @@ def Main(img_path):
 if __name__ == '__main__':
     img_path = 'Development\imageTest\einfach_table.jpg'
 
-    
-
-    es.indices.delete(index='table', ignore=[400, 404]) # deletes whole index
+    es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
     Main(img_path)
     time.sleep(1)
     result = Search('table', 'all')

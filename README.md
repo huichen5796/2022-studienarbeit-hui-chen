@@ -8,52 +8,39 @@ Hier ist der Arbeitsplatz für die Studienarbeit “Automatische Erkennung und K
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Die Verarbeitung einzeles Bilds
 
-  <center>
-
   ![pa_ein_bild](./Abbildungen/programmablauf.svg)
 
-  </center>
 
 - Stapelverarbeitung mehrer Bilder
 
-  <center>
-
   ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.svg)
 
-  </center>
 
 ## Ergebniss
 - Die Verarbeitung einzeles Bilds
    - Vorbreitung und Normalizierung
-   ![Vorbreitung](Abbildungen\vorverarbeitung.png)
+   ![Vorbreitung](./Abbildungen/vorverarbeitung.png)
    - Erkennung des Tablebreichs
-   ![Erkennung](Abbildungen\erkennung.png)
+   ![Erkennung](./Abbildungen/erkennung.png)
    - Erkennung der Zelle
-   ![cell](Abbildungen\cell.png)
+   ![cell](./Abbildungen/cell.png)
    - Rekonstruktion
       - Zuweisung der Labels
-      ![LABELS](Abbildungen\labels.jpg)
+      ![LABELS](./Abbildungen/labels.jpg)
       - Rekonstruktion
-      ![table](Abbildungen\table.jpg)
+      ![table](./Abbildungen/table.jpg)
    - Einschreibung in Elasticsearch
-   ![elastic](Abbildungen\elasticsearch.png)
+   ![elastic](./Abbildungen/elasticsearch.png)
 
 - Stapelverarbeitung mehrer Bilder
    - Die Bilder im Verzeichnis werden zuerst formatiert,  alle PDFs werden Seite für Seite in das PNG-Dateiformat konvertiert.
-   <center>
 
-   ![stapel_vor](Abbildungen\stapel_vor.jpg)
-
-   </center>
+   ![stapel_vor](./Abbildungen/stapel_vor.jpg)
 
    - Dann wird jedes Bild verarbeitet und in Elasticsearch geschrieben.
 
-   <center>
-
-   ![stapelverarbeitung](Abbildungen\stapelverarbeitung.png)
-   ![tablesinelas](Abbildungen\tableselas.png)
-
-   </center>
+   ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.png)
+   ![tablesinelas](./Abbildungen/tableselas.png)
 
 
 ## Config
