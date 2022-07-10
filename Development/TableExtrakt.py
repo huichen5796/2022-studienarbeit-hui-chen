@@ -1,12 +1,12 @@
 
+import json
+import pandas as pd
 import os
 import fitz
 import shutil
 from functions import Main, Search
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
-import pandas as pd
-import json
 
 
 def GetImageList(dir_name):
@@ -120,7 +120,7 @@ def ImageReformat(dir):
         print('ERROR BY ImageReformat')
 
 
-def StapelVerbreitung(dir):
+def StapelVerbreitung(dir, model):
 
     image_list = GetImageList(dir)
     print('---------------------------')
@@ -132,14 +132,16 @@ def StapelVerbreitung(dir):
     path_images = [os.path.normpath(os.path.join(dir, fn))
                    for fn in image_list]
     for image in path_images:
-        Main(image)
+        Main(image, model)
     print('done')
 
 
 if __name__ == '__main__':
-    
+
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
-    StapelVerbreitung('Development\\imageTest')
+
+    StapelVerbreitung('Development\\imageTest', model = 'unet')
+    # model: 'tablenet', 'densenet' or 'unet'
 
     results = Search('table', 'all')
 

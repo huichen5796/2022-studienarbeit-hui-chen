@@ -44,6 +44,7 @@ es = Elasticsearch()
     get the position of table in a image
     - input 1: image must be 3 channel, 1024 x 1024
     - input 2: the path of the image
+    - input 3: the used model ---> 'tabelnet', 'densenet' or 'unet'
     - output: the location of tables in image [[x, y, w, h], ..] here x and y are the locaiton of top left point
 
 6. GetTableZone(table_boundRect, img_1024): 
@@ -457,12 +458,13 @@ def SizeNormalize(img):
     return img_1024
 
 
-def PositionTable(img_1024, img_path):
+def PositionTable(img_1024, img_path, model_used):
     '''
     get the position of table in a image
 
     - input 1: image must be 3 channel, 1024 x 1024
     - input 2: the path of the image
+    - input 3: the used model
 
     - output: the location of tables in image [[x, y, w, h], ..] here x and y are the locaiton of top left point
 
@@ -470,15 +472,14 @@ def PositionTable(img_1024, img_path):
 
     device = 'cpu'
 
-    model_used = 'tablenet'
-
     if model_used == 'densenet':
-        path = 'Development\\models\\densenet_100.pkl'
+        path = 'Development\\models\\densenet_100epochs.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
         path = 'Development\\models\\unet_model_100.pkl'
         model = torch.load(path, map_location=torch.device(device))
+
     elif model_used == 'tablenet':
         model = TableNet().to(device)
         path = 'Development\\models\densenet_config_4_model_checkpoint.pth.tar'
@@ -930,7 +931,7 @@ def Search(index_, label_):
 #---------------------------------------------------------------------------------------------------------------#
 
 
-def Main(img_path):
+def Main(img_path, model):
     try:
         image = cv2.imread(img_path, 0)
 
@@ -965,7 +966,7 @@ def Main(img_path):
             plt.close()
 
             # input image must be 3 channel 1024x1024. out img 1024x1024
-        table_boundRect = PositionTable(img_1024, img_path)
+        table_boundRect = PositionTable(img_1024, img_path, model)
 
         table_zone = GetTableZone(table_boundRect, img_1024)
 
@@ -1014,10 +1015,22 @@ def Main(img_path):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\einfach_table.jpg'
+    img_path = 'Development\\imageTest\\textandtablewinkel.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
-    Main(img_path)
+
+    Main(img_path, model = 'unet')
+    # model: 'tablenet', 'densenet' or 'unet'
+
     time.sleep(1)
-    result = Search('table', 'all')
-    print(result)
+    results = Search('table', 'all')
+    print(results)
+
+    # show in dataframe
+    results = json.loads(results)
+    for result in results['hits']['hits']:
+        df = pd.DataFrame(result['_source']['content']).stack().unstack(0)
+        print('--------------------')
+        table_label = result['_source']['label']
+        print(table_label)
+        print(df)
