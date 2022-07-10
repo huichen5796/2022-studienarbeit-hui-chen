@@ -19,20 +19,33 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 ## Ergebniss
 - Die Verarbeitung einzeles Bilds
    - Vorbreitung und Normalizierung
+
    ![Vorbreitung](./Abbildungen/vorverarbeitung.png)
+
    - Erkennung des Tablebreichs
+
    ![Erkennung](./Abbildungen/erkennung.png)
+
    - Erkennung der Zelle
+
    ![cell](./Abbildungen/cell.png)
+
    - Rekonstruktion
+
       - Zuweisung der Labels
+
       ![LABELS](./Abbildungen/labels.jpg)
+
       - Rekonstruktion
+
       ![table](./Abbildungen/table.jpg)
+
    - Einschreibung in Elasticsearch
+
    ![elastic](./Abbildungen/elasticsearch.png)
 
 - Stapelverarbeitung mehrer Bilder
+
    - Die Bilder im Verzeichnis werden zuerst formatiert,  alle PDFs werden Seite für Seite in das PNG-Dateiformat konvertiert.
 
    ![stapel_vor](./Abbildungen/stapel_vor.jpg)
@@ -40,6 +53,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
    - Dann wird jedes Bild verarbeitet und in Elasticsearch geschrieben.
 
    ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.png)
+
    ![tablesinelas](./Abbildungen/tableselas.png)
 
 
@@ -86,9 +100,11 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
   - Tesseract-OCR installieren
 
     ![install](./Abbildungen/install0.jpg)
+
   - den Installationspfad wählen
     
     ![install1](./Abbildungen/install1.jpg)
+
   - zu den Systemvariablen (PATH) der Umgebungsvariablen hinzufügen
 
     ![zu PATH](./Abbildungen/zupathadd.jpg)
@@ -98,6 +114,7 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
     - Variablenwert ist Installationspfad, z.B. C:\Program Files\Tesseract-OCR\tessdata
 
     ![tessdata](./Abbildungen/tesserdata.jpg)
+
   - in der Datei _pytesseract.py_ (unter dem Pfad, den Sie gerade installiert haben) ändern `tesseract_cmd = 'tesseract'`  in `tesseract_cmd =r'C:\Program Files\Tesseract-OCR\tesseract.exe"`
     
     oder: Bei Verwendung der Tesseract-OCR in python-code einfach `pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'` nutzen
@@ -105,5 +122,7 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
 
 - Install pytorch
   - bekommen Command for Installation hier [Pytorch](https://pytorch.org/get-started/locally/)
+
   ![pytorchinstall](./Abbildungen/pytorch.jpg)
+  
   - füren den Command in Terminal durch wie z.B. `pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113`

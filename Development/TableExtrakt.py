@@ -5,6 +5,8 @@ import shutil
 from functions import Main, Search
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
+import pandas as pd
+import json
 
 
 def GetImageList(dir_name):
@@ -94,17 +96,26 @@ def ImageReformat(dir):
     try:
         PDFRemover(dir)
         pdf_list = GetImageList('Development\\PDF')
-        for pdf in pdf_list:
-            pdf_path = 'Development\\PDF' + '\\' + pdf
-            save_path = 'Development\\imageTest'
-            PdfToPng(pdf_path, save_path)
+        if len(pdf_list) == 0:
+            image_list = GetImageList(dir)
+            print('There are %s images in total, including the images from the pdfs.' % len(
+                image_list))
+            print('---------------------------')
+            # print(image_list)
+            return image_list
 
-        image_list = GetImageList(dir)
-        print('There are %s images in total, including the images from the pdfs.' % len(
-            image_list))
-        print('---------------------------')
-        # print(image_list)
-        return image_list
+        else:
+            for pdf in pdf_list:
+                pdf_path = 'Development\\PDF' + '\\' + pdf
+                save_path = 'Development\\imageTest'
+                PdfToPng(pdf_path, save_path)
+
+            image_list = GetImageList(dir)
+            print('There are %s images in total, including the images from the pdfs.' % len(
+                image_list))
+            print('---------------------------')
+            # print(image_list)
+            return image_list
     except:
         print('ERROR BY ImageReformat')
 
@@ -126,8 +137,17 @@ def StapelVerbreitung(dir):
 
 
 if __name__ == '__main__':
+    
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
     StapelVerbreitung('Development\\imageTest')
 
-    result = Search('table', 'all')
-    print(result)
+    results = Search('table', 'all')
+
+    # show in dataframe
+    results = json.loads(results)
+    for result in results['hits']['hits']:
+        df = pd.DataFrame(result['_source']['content']).stack().unstack(0)
+        print('--------------------')
+        table_label = result['_source']['label']
+        print(table_label)
+        print(df)

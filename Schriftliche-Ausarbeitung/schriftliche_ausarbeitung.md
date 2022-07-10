@@ -16,6 +16,7 @@ Matr.-Nr.: 10048521
 - Daten, Informationen, Wissen (--> Pyramide)
 - Tabellen
 - Python
+- Maschinen Learning
 
 ![Pyramide](./_images/wissenspyramide_derwirtschaftsinformatiker.png)
 
@@ -23,6 +24,8 @@ Matr.-Nr.: 10048521
 
 - [OpenCV][1]
 - Tesseract
+- Maschinen Learning
+- GOOGLE COLAB
 
 ## Implementierung
 
@@ -34,6 +37,7 @@ Matr.-Nr.: 10048521
 
 - ggf. Korrektur von Fehlern (z.B. tilt, Artefakte)
 - Binärisierung
+- Detektion von Tabellenbreich
 - Detektion von Zellen
 - OCR auf Zelle
   - Oberste Zeile (header) --> keys (= Feldnamen; z.B. "Datum", "Name", ...)
@@ -78,10 +82,16 @@ Matr.-Nr.: 10048521
 ![binarization](./_images/binarization_test.png)
 
 ## Diskussion
+- Normalerweise besteht keine starke Korrelation zwischen den beiden Tabellen, daher werden sie als separate Blöcke in das Verzeichnis geschrieben.
+- Um die Tabellenstruktur möglichst nicht zu zerstören, werden ,,Header" und ,,Wert" auf gleicher Ebene in Elasticsearch geschrieben.
 
 ## Zusammenfassung
+- In dieser Studienarbeit werden eine Methode zur Automatisierte Erfassung und Extraktion von Daten aus Tabellen bringen, mittels Maschinen Learing gibt es bei der Erkennung von Tablebreich mehr Robustness, und mittels traditioneller Verfahrensweisen hat die Rekonstruktion mehr Genauigkeit.
+
 
 ## Ausblick
+- Die Einfernung von Weißrand wäre mittels ML robuster. Dadurch könnte Schwarzrand sowie komplexer Rand auch entfernt werden.
+
 
 ## Quellen
 
