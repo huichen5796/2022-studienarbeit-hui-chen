@@ -477,7 +477,7 @@ def PositionTable(img_1024, img_path, model_used):
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
-        path = 'Development\\models\\unet_model_100.pkl'
+        path = 'Development\\models\\unet_model_100epochs.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'tablenet':
