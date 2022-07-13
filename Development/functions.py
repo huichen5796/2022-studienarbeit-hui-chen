@@ -1015,11 +1015,11 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\textandtablewinkel.png'
+    img_path = 'Development\imageTest\\rotate_table.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    Main(img_path, model = 'unet')
+    Main(img_path, model = 'tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
 
     time.sleep(1)
