@@ -344,7 +344,7 @@ if __name__ == '__main__':
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    StapelVerbreitung('Development\\imageTest', model = 'unet')
+    StapelVerbreitung('Development\\imageTest', model = 'tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
 
     results = Search('table', 'all')
