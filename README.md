@@ -3,7 +3,7 @@
 Hier ist der Arbeitsplatz für die Studienarbeit “Automatische Erkennung und Konvertierung von Tabellen in Bilddokumenten”.
 
 **Ein Tool zur Erkennung, Extraktion und Rekonstruktion von Tabellen aus Bilddokumenten**
-
+![er](./Abbildungen\/uebersehen.jpg)
 ## Programmablauf
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Die Verarbeitung einzeles Bilds
@@ -42,7 +42,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
    - Einschreibung in Elasticsearch
 
-   ![elastic](./Abbildungen/elasticsearch.png)
+   ![elastic](./Abbildungen/table2.png)
 
 - Stapelverarbeitung mehrer Bilder
 
@@ -54,12 +54,12 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
    ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.png)
 
-   ![tablesinelas](./Abbildungen/tableselas.png)
+   ![tablesinelas](./Abbildungen/speicehrn.jpg)
 
 
 ## Config
 - python 3.10.0
-- elasticsearch==8.3.1
+- elasticsearch==7.17.1
 - elasticsearch-dsl==7.4.0
 - matplotlib==3.5.2
 - numpy==1.22.4
