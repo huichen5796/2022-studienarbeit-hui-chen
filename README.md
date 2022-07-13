@@ -59,7 +59,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
 ## Config
 - python 3.10.0
-- elasticsearch==7.16.0
+- elasticsearch==8.3.1
 - elasticsearch-dsl==7.4.0
 - matplotlib==3.5.2
 - numpy==1.22.4
