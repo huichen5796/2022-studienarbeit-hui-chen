@@ -547,6 +547,7 @@ def PositionTable(img_1024, img_path, model_used):
         polyline = cv2.approxPolyDP(c, 5, True)
         table_boundRect[i] = cv2.boundingRect(polyline)
 
+    table_boundRect = sorted(table_boundRect, key=lambda x: x[1])
     # draw bounding boxes
     color = (255, 0, 0)  # red
 
@@ -967,8 +968,9 @@ def Main(img_path, model):
 
             # input image must be 3 channel 1024x1024. out img 1024x1024
         table_boundRect = PositionTable(img_1024, img_path, model)
-
+        
         table_zone = GetTableZone(table_boundRect, img_1024)
+
 
         print('image ' + str(img_path) + ' has ' +
               str(len(table_zone)) + ' table(s)')
@@ -1015,7 +1017,7 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\\rotate_table.png'
+    img_path = 'Development\\image_v2\\10.1.1.1.2092_12.jpg'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
