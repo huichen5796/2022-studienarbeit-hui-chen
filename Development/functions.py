@@ -610,7 +610,7 @@ def LSDGetLines(img):
     - output: is a new black image with same shape of input image, on it is the lines of image, location to location
 
     '''
-    long_size = 20
+    long_size = 30
     # make a new black image with the same shape of input img
     copy_image = np.zeros((img.shape[0], img.shape[1]))
 
@@ -674,9 +674,11 @@ def GetCell(img_deletline):
     '''
 
     img_deletline_inv = cv2.bitwise_not(img_deletline)
+    '''
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
     bina_image = cv2.erode(img_deletline_inv, kernel, iterations=1)
     # reduce the noise
+    '''
 
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
     bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=1)
@@ -690,22 +692,29 @@ def GetCell(img_deletline):
         bina_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)  # round the text zone by rect
     image_copy = cv2.bitwise_not(img_deletline_inv)
     list_contours = []
+    average_cellsize = [0, 0]
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         if w > 15 and h > 15:
 
             list_contours.append((x, y, w, h))
+            average_cellsize[0] = average_cellsize[0] + w
+            average_cellsize[1] = average_cellsize[1] + h
             cv2.rectangle(image_copy, (x, y), (x+w, y+h), 0,
                           2)  # round the text zone by rect
-    plt.subplot(2, 2, 4), plt.imshow(image_copy, cmap='gray')
-    plt.xticks([]), plt.yticks([])
+
+    average_cellsize = [average_cellsize[0]//len(contours), average_cellsize[1]//len(contours)]
+    if __name__ == '__main__':
+        print('average_cellsize [w, h] --> ' + str(average_cellsize))
+        plt.subplot(2, 2, 4), plt.imshow(image_copy, cmap='gray')
+        plt.xticks([]), plt.yticks([])
 
     location = np.array(list_contours)
 
-    return location
+    return location, average_cellsize
 
 
-def PointCorrection(location):
+def PointCorrection(location, average_cellsize):
     '''
     align the points
 
@@ -735,8 +744,8 @@ def PointCorrection(location):
         if location[i+1][0] == location[i][0]:
             continue
         else:
-            # suppose there are no two cells with distance less than 10 in x axis
-            if abs(location[i+1][0]-location[i][0]) < 20:
+            # suppose there are no two cells with distance less than 25 in x axis
+            if abs(location[i+1][0]-location[i][0]) < average_cellsize[0]//2:
                 location[i+1][0] = location[i][0]
             else:
                 continue
@@ -748,7 +757,7 @@ def PointCorrection(location):
             continue
         else:
             # suppose there are no two cells with distance less than 10 in y axis
-            if abs(location[i+1][1]-location[i][1]) < 10:
+            if abs(location[i+1][1]-location[i][1]) < average_cellsize[1]//2:
                 location[i+1][1] = location[i][1]
             else:
                 continue
@@ -759,7 +768,7 @@ def PointCorrection(location):
     return location
 
 
-def GetLabel(location):
+def GetLabel(location, average_cellsize):
     '''
     Assign row and column labels to each cell
 
@@ -776,9 +785,9 @@ def GetLabel(location):
     # get center of cells
     center_list = [None]*len(location)
     for iii, (x, y, w, h) in enumerate(location):
-        center_list[iii] = [x+w//2, y+h//2, w, h, x, y]
+        center_list[iii] = [(x+w//2+x)//2, (y+h//2+y)//2, w, h, x, y]
 
-    center_list = PointCorrection(center_list)
+    center_list = PointCorrection(center_list, average_cellsize)
     # print(center_list)
     cols_list = list(set([pp[0] for pp in center_list]))  # alle x axis
     cols_list.sort()
@@ -980,7 +989,7 @@ def Main(img_path, model):
             table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
             table_ol = DeletLines(table_gray)  # bina_image ohne Linien
 
-            location = GetCell(table_ol)  # hier subplot(224)
+            location, average_cellsize = GetCell(table_ol)  # hier subplot(224)
 
             if __name__ == '__main__':
                 plt.suptitle('table ' + str(nummer+1))
@@ -993,7 +1002,7 @@ def Main(img_path, model):
                 plt.show()
                 plt.close()
 
-            center_list, label_list, tablesize = GetLabel(location)
+            center_list, label_list, tablesize = GetLabel(location, average_cellsize)
 
             list_info = ReadCell(center_list, table_ol)
 
@@ -1017,13 +1026,13 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\image_v2\\10.1.1.1.2092_12.jpg'
+    img_path = 'Development\imageTest\\rotate_table.png'
 
-    es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
+    #es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     Main(img_path, model = 'tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
-
+    '''
     time.sleep(1)
     results = Search('table', 'all')
     print(results)
@@ -1036,3 +1045,4 @@ if __name__ == '__main__':
         table_label = result['_source']['label']
         print(table_label)
         print(df)
+    '''
