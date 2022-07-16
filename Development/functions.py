@@ -610,7 +610,7 @@ def LSDGetLines(img):
     - output: is a new black image with same shape of input image, on it is the lines of image, location to location
 
     '''
-    long_size = 30
+    long_size = 20
     # make a new black image with the same shape of input img
     copy_image = np.zeros((img.shape[0], img.shape[1]))
 
@@ -682,7 +682,7 @@ def GetCell(img_deletline):
 
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
     bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=1)
-    #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
+    #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
     #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
 
     ret, bina_image = cv2.threshold(
@@ -738,14 +738,16 @@ def PointCorrection(location, average_cellsize):
     # Disrupted the ordering and caused the region to not be closed
     # Can't get correct cells with intersections that are not aligned, need to correction
 
+    parameter = 1
+
     location = sorted(location, key=lambda x: x[0])
 
     for i in range(len(location)-1):
         if location[i+1][0] == location[i][0]:
             continue
         else:
-            # suppose there are no two cells with distance less than 25 in x axis
-            if abs(location[i+1][0]-location[i][0]) < average_cellsize[0]//2:
+            # suppose there are no two cells with distance less than - in x axis
+            if abs(location[i+1][0]-location[i][0]) < int(average_cellsize[0]*parameter):
                 location[i+1][0] = location[i][0]
             else:
                 continue
@@ -756,8 +758,8 @@ def PointCorrection(location, average_cellsize):
         if location[i+1][1] == location[i][1]:
             continue
         else:
-            # suppose there are no two cells with distance less than 10 in y axis
-            if abs(location[i+1][1]-location[i][1]) < average_cellsize[1]//2:
+            # suppose there are no two cells with distance less than - in y axis
+            if abs(location[i+1][1]-location[i][1]) < int(average_cellsize[1]*parameter):
                 location[i+1][1] = location[i][1]
             else:
                 continue
@@ -785,7 +787,7 @@ def GetLabel(location, average_cellsize):
     # get center of cells
     center_list = [None]*len(location)
     for iii, (x, y, w, h) in enumerate(location):
-        center_list[iii] = [(x+w//2+x)//2, (y+h//2+y)//2, w, h, x, y]
+        center_list[iii] = [x+w//2, y+h//2, w, h, x, y]
 
     center_list = PointCorrection(center_list, average_cellsize)
     # print(center_list)
@@ -798,9 +800,12 @@ def GetLabel(location, average_cellsize):
     tablesize = [len(rows_list), len(cols_list)]
 
     for i, (c_x, c_y, w, h, x, y) in enumerate(center_list):
-
-        label_list[i] = ['row%s' % (rows_list.index(c_y))]
+        #label_list[i] = ['row%s' % (rows_list.index(c_y))]
+        
+        
+        label_list[i] = [int(rows_list.index(c_y))]
         label_list[i].append('col%s' % (cols_list.index(c_x)))
+        
 
     return center_list, label_list, tablesize
 
@@ -815,7 +820,7 @@ def Extrakt_Tesseract(image_cell):
 
     '''
 
-    pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+    pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
     result = pytesseract.image_to_string(image_cell)
     # print(result)
 
@@ -845,9 +850,14 @@ def ReadCell(center_list, image):
 
         cell_zone = np.ones((h+2*size, w+2*size, 1))
         cell_zone = image[(y-size):(y+h+size), (x-size):(x+w+size)]
-        # cv2.imshow('',cell_zone)
+        cell_zone = cv2.resize(cell_zone, (cell_zone.shape[1]*4, cell_zone.shape[0]*4))
+
+        cell = cv2.copyMakeBorder(
+        cell_zone, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
+        # cv2.imshow('',cell)
         # cv2.waitKey()
-        result = Extrakt_Tesseract(cell_zone)
+        # print(cell.shape)
+        result = Extrakt_Tesseract(cell)
 
         list_info.append(result)
 
@@ -1008,8 +1018,9 @@ def Main(img_path, model):
 
             df = GetDataframe(list_info, label_list, tablesize)
 
-            WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
-                      os.path.splitext(os.path.basename(img_path))[0])
+            
+            #WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
+            #          os.path.splitext(os.path.basename(img_path))[0])
 
             if __name__ == '__main__':
                 print('--------------------------------------------------')
@@ -1026,7 +1037,7 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\\rotate_table.png'
+    img_path = 'Development\\imageTest\\test_table.PNG'
 
     #es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
