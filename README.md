@@ -69,6 +69,8 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - torchvision==0.12.0+cu113
 - albumentations==0.4.6 
 - Pillow==9.1.0
+- pytesseract==0.3.9
+- tesseract-ocr==v5.2.0.20220712
 
 ## Setup
 
@@ -101,6 +103,9 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
 
     ![install](./Abbildungen/install0.jpg)
 
+  - alle Sprache auswählen
+
+    ![language](./Abbildungen\installtesse.jpg)
   - den Installationspfad wählen
     
     ![install1](./Abbildungen/install1.jpg)
@@ -110,7 +115,7 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
     ![zu PATH](./Abbildungen/zupathadd.jpg)
     
   - eine neue Systemvariable erstellen
-    - Variablename: TESSDATA_PREFIX-Variablennamen 
+    - Variablename: TESSDATA_PREFIX 
     - Variablenwert ist Installationspfad, z.B. C:\Program Files\Tesseract-OCR\tessdata
 
     ![tessdata](./Abbildungen/tesserdata.jpg)

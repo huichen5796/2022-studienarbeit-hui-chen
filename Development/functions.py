@@ -610,7 +610,7 @@ def LSDGetLines(img):
     - output: is a new black image with same shape of input image, on it is the lines of image, location to location
 
     '''
-    long_size = 30
+    long_size = 20
     # make a new black image with the same shape of input img
     copy_image = np.zeros((img.shape[0], img.shape[1]))
 
@@ -815,7 +815,7 @@ def Extrakt_Tesseract(image_cell):
 
     '''
 
-    pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+    pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
     result = pytesseract.image_to_string(image_cell)
     # print(result)
 
@@ -845,9 +845,13 @@ def ReadCell(center_list, image):
 
         cell_zone = np.ones((h+2*size, w+2*size, 1))
         cell_zone = image[(y-size):(y+h+size), (x-size):(x+w+size)]
-        # cv2.imshow('',cell_zone)
-        # cv2.waitKey()
-        result = Extrakt_Tesseract(cell_zone)
+
+        cell = cv2.copyMakeBorder(
+        cell_zone, 200, 200, 200, 200, cv2.BORDER_CONSTANT, value=255)
+        #cv2.imshow('',cell)
+        #cv2.waitKey()
+        #print(cell.shape)
+        result = Extrakt_Tesseract(cell)
 
         list_info.append(result)
 
@@ -1008,8 +1012,9 @@ def Main(img_path, model):
 
             df = GetDataframe(list_info, label_list, tablesize)
 
-            WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
-                      os.path.splitext(os.path.basename(img_path))[0])
+            
+            #WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
+            #          os.path.splitext(os.path.basename(img_path))[0])
 
             if __name__ == '__main__':
                 print('--------------------------------------------------')
@@ -1026,7 +1031,7 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\\rotate_table.png'
+    img_path = 'Development\imageTest\\table_zwei_rotate.png'
 
     #es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
