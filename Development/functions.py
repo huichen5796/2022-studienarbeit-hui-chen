@@ -1019,8 +1019,8 @@ def Main(img_path, model):
             df = GetDataframe(list_info, label_list, tablesize)
 
             
-            #WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
-            #          os.path.splitext(os.path.basename(img_path))[0])
+            WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
+                      os.path.splitext(os.path.basename(img_path))[0])
 
             if __name__ == '__main__':
                 print('--------------------------------------------------')
@@ -1039,11 +1039,11 @@ def Main(img_path, model):
 if __name__ == '__main__':
     img_path = 'Development\\imageTest\\test_table.PNG'
 
-    #es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
+    es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     Main(img_path, model = 'tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
-    '''
+    
     time.sleep(1)
     results = Search('table', 'all')
     print(results)
@@ -1056,4 +1056,4 @@ if __name__ == '__main__':
         table_label = result['_source']['label']
         print(table_label)
         print(df)
-    '''
+    
