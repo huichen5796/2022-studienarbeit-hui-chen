@@ -703,15 +703,14 @@ def GetCell(img_deletline):
             cv2.rectangle(image_copy, (x, y), (x+w, y+h), 0,
                           2)  # round the text zone by rect
 
-    average_cellsize = [average_cellsize[0]//len(contours), average_cellsize[1]//len(contours)]
+    average_cellsize = [average_cellsize[0] //
+                        len(contours), average_cellsize[1]//len(contours)]
     if __name__ == '__main__':
         print('average_cellsize [w, h] --> ' + str(average_cellsize))
-        plt.subplot(2, 2, 4), plt.imshow(image_copy, cmap='gray')
-        plt.xticks([]), plt.yticks([])
 
     location = np.array(list_contours)
 
-    return location, average_cellsize
+    return location, average_cellsize, image_copy  # image_copy is used only for show
 
 
 def PointCorrection(location, average_cellsize):
@@ -801,11 +800,9 @@ def GetLabel(location, average_cellsize):
 
     for i, (c_x, c_y, w, h, x, y) in enumerate(center_list):
         #label_list[i] = ['row%s' % (rows_list.index(c_y))]
-        
-        
+
         label_list[i] = [int(rows_list.index(c_y))]
         label_list[i].append('col%s' % (cols_list.index(c_x)))
-        
 
     return center_list, label_list, tablesize
 
@@ -850,10 +847,11 @@ def ReadCell(center_list, image):
 
         cell_zone = np.ones((h+2*size, w+2*size, 1))
         cell_zone = image[(y-size):(y+h+size), (x-size):(x+w+size)]
-        cell_zone = cv2.resize(cell_zone, (cell_zone.shape[1]*4, cell_zone.shape[0]*4))
+        cell_zone = cv2.resize(
+            cell_zone, (cell_zone.shape[1]*4, cell_zone.shape[0]*4))
 
         cell = cv2.copyMakeBorder(
-        cell_zone, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
+            cell_zone, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
         # cv2.imshow('',cell)
         # cv2.waitKey()
         # print(cell.shape)
@@ -987,9 +985,8 @@ def Main(img_path, model):
 
             # input image must be 3 channel 1024x1024. out img 1024x1024
         table_boundRect = PositionTable(img_1024, img_path, model)
-        
-        table_zone = GetTableZone(table_boundRect, img_1024)
 
+        table_zone = GetTableZone(table_boundRect, img_1024)
 
         print('image ' + str(img_path) + ' has ' +
               str(len(table_zone)) + ' table(s)')
@@ -999,7 +996,8 @@ def Main(img_path, model):
             table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
             table_ol = DeletLines(table_gray)  # bina_image ohne Linien
 
-            location, average_cellsize = GetCell(table_ol)  # hier subplot(224)
+            location, average_cellsize, image_copy = GetCell(
+                table_ol)  # hier subplot(224)
 
             if __name__ == '__main__':
                 plt.suptitle('table ' + str(nummer+1))
@@ -1009,16 +1007,18 @@ def Main(img_path, model):
                 plt.xticks([]), plt.yticks([])
                 plt.subplot(2, 2, 3), plt.imshow(table_ol, cmap='gray')
                 plt.xticks([]), plt.yticks([])
+                plt.subplot(2, 2, 4), plt.imshow(image_copy, cmap='gray')
+                plt.xticks([]), plt.yticks([])
                 plt.show()
                 plt.close()
 
-            center_list, label_list, tablesize = GetLabel(location, average_cellsize)
+            center_list, label_list, tablesize = GetLabel(
+                location, average_cellsize)
 
             list_info = ReadCell(center_list, table_ol)
 
             df = GetDataframe(list_info, label_list, tablesize)
 
-            
             WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
                       os.path.splitext(os.path.basename(img_path))[0])
 
@@ -1037,13 +1037,13 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test_table.PNG'
+    img_path = 'Development\\imageTest\\test1.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    Main(img_path, model = 'tablenet')
+    Main(img_path, model='tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
-    
+
     time.sleep(1)
     results = Search('table', 'all')
     print(results)
@@ -1056,4 +1056,3 @@ if __name__ == '__main__':
         table_label = result['_source']['label']
         print(table_label)
         print(df)
-    
