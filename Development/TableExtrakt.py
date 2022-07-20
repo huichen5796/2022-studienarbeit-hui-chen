@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import os
 import fitz
+import time
 import shutil
 from functions import Main, Search
 from elasticsearch import Elasticsearch
@@ -344,10 +345,11 @@ if __name__ == '__main__':
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    dir_path = 'Development\\image_v2'
+    dir_path = 'Development\\imageTest'
     StapelVerbreitung(dir_path, model = 'tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
 
+    time.sleep(1)
     results = Search('table', 'all')
 
     # show in dataframe
