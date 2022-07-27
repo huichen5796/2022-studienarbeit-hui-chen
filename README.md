@@ -52,10 +52,13 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
    - Dann wird jedes Bild verarbeitet und in Elasticsearch geschrieben.
 
-   ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.png)
+   ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.jpg)
 
    ![tablesinelas](./Abbildungen/kibana.jpg)
 
+- Leistung bei komplexer Tabelle
+  ![ori](./Development/imageTest\test2.PNG)
+  ![leistung](./Abbildungen/komplexbild.jpg)
 
 ## Config
 - python 3.10.0
