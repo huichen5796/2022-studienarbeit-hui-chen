@@ -1037,14 +1037,14 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test1.png'
+    img_path = 'Development\\imageTest\\test3_0.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     Main(img_path, model='tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
 
-    time.sleep(1)
+    time.sleep(2)
     results = Search('table', 'all')
     print(results)
 
