@@ -54,7 +54,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
    ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.png)
 
-   ![tablesinelas](./Abbildungen/speicehrn.jpg)
+   ![tablesinelas](./Abbildungen/kibana.jpg)
 
 
 ## Config
