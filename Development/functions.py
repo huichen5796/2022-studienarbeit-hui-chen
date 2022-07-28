@@ -560,7 +560,7 @@ def PositionTable(img_1024, img_path, model_used):
         cv2.fillConvexPoly(white_image, triangle, color)
 
     image_add = cv2.addWeighted(img_1024, 0.9, white_image, 0.5, 0)
-
+    '''
     if __name__ == '__main__':
         plt.figure(figsize=(10, 10))
         plt.subplot(1, 3, 1)
@@ -574,7 +574,7 @@ def PositionTable(img_1024, img_path, model_used):
         plt.imshow(image_add)
         plt.show()
         plt.close()
-
+    '''
     return table_boundRect
 
 
@@ -861,7 +861,6 @@ def ReadCell(center_list, image):
 
     return list_info
 
-
 def GetDataframe(list_info, label_list, tablesize):
     '''
     Rebuild the table in a Dataframe
@@ -890,21 +889,62 @@ def GetDataframe(list_info, label_list, tablesize):
     df = df.fillna('')
     return df
 
+def Umform(df_dict):
+    '''
+    Beurteilen: Überschrift, Zeilenüberschrift, Subüberschrift, Value
+    
+    - input: dict
 
-def WriteData(df, label_):
+    - output: dict
+    '''
+
+    #{'0': {'col0': 'Project', 'col1': '2019.12.31', 'col2': '2020.9.30'}, 
+    # '1': {'col0': 'Total Assets', 'col1': '10,991,903,55', 'col2': '12,049,642,76'}, 
+    # '2': {'col0': 'Net Assets', 'col1': '1,044,954,84', 'col2': '1,053,487,14'}, 
+    # '3': {'col0': 'Project', 'col1': '2019.1-12', 'col2': '2020.1-9'}, 
+    # '4': {'col0': 'Operating Revenues', 'col1': '286,039,95', 'col2': '211,058,\\/75'}, 
+    # '5': {'col0': 'Net Profit', 'col1': '105,444, 74', 'col2': '91,193,39'}}
+
+    # let 'index'= value of 'col0' ==> '1' is 'Total Assets'
+    # let 'col1' = value of 'col1' in '0' ==> 'col1' in '1' is '2019.12.31'
+    # wie tun bei 'Projekt'?
+
+    # print(df_dict)
+    newDictKeys = [None]*(len(list(df_dict.keys()))-1)
+    newSubKeys = list(dict(list(df_dict.values())[0]).values())[1:]
+ 
+    newDictValues = [None]*(len(newDictKeys))
+    for i, (key, value) in enumerate(list(df_dict.items())[1:]):
+        newDictKeys[i] = list(dict(value).values())[0]
+        newSubValues = list(dict(value).values())[1:]
+        newDictValues[i] = dict(zip(newSubKeys, newSubValues))
+    
+    newDict = dict(zip(newDictKeys, newDictValues))
+
+    # print(newDict)
+
+    return newDict
+
+def WriteData(df, img_path, nummer):
     '''
     write dataframe to elasticsearch
 
     - input 1: dataframe
-    - input 2: label_, here is the table name, for example: table_2_of_table2_rotate_0
+    - input 2: path
+    - input 3: table nummer
 
     '''
+
+    label_ = 'table_' + str(nummer+1) + '_of_' + os.path.basename(img_path)
     df_json = df.to_json(
         orient='index')  # str like {index -> {column -> value}}。
-    df_dict = eval(df_json)
+    df_dict = eval(df_json) # chance str to dict
+
+    df_dict = Umform(df_dict)
 
     body_ = {
-        "label": label_.lower(),
+        "uniqueId": label_.lower(),
+        "filename": os.path.basename(img_path),
         "content": df_dict
     }
 
@@ -961,7 +1001,7 @@ def Main(img_path, model):
             text_zone, cv2.COLOR_GRAY2BGR)  # gray to 3 channel
 
         img_1024 = SizeNormalize(img_3channel)
-
+        '''
         if __name__ == '__main__':
             plt.suptitle('Vorbreitung')
             plt.subplot(141)
@@ -982,7 +1022,7 @@ def Main(img_path, model):
             plt.xticks([]), plt.yticks([])
             plt.show()
             plt.close()
-
+        '''
             # input image must be 3 channel 1024x1024. out img 1024x1024
         table_boundRect = PositionTable(img_1024, img_path, model)
 
@@ -998,7 +1038,7 @@ def Main(img_path, model):
 
             location, average_cellsize, image_copy = GetCell(
                 table_ol)  # hier subplot(224)
-
+            '''
             if __name__ == '__main__':
                 plt.suptitle('table ' + str(nummer+1))
                 plt.subplot(2, 2, 1), plt.imshow(img_1024)
@@ -1011,7 +1051,7 @@ def Main(img_path, model):
                 plt.xticks([]), plt.yticks([])
                 plt.show()
                 plt.close()
-
+            '''
             center_list, label_list, tablesize = GetLabel(
                 location, average_cellsize)
 
@@ -1019,8 +1059,7 @@ def Main(img_path, model):
 
             df = GetDataframe(list_info, label_list, tablesize)
 
-            WriteData(df, label_='table_' + str(nummer+1) + '_of_' +
-                      os.path.splitext(os.path.basename(img_path))[0])
+            WriteData(df, img_path, nummer)
 
             if __name__ == '__main__':
                 print('--------------------------------------------------')
@@ -1037,13 +1076,13 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test3_0.png'
+    img_path = 'Development\\imageTest\\test4.jpg'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     Main(img_path, model='tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
-
+    
     time.sleep(2)
     results = Search('table', 'all')
     print(results)
@@ -1053,6 +1092,7 @@ if __name__ == '__main__':
     for result in results['hits']['hits']:
         df = pd.DataFrame(result['_source']['content']).stack().unstack(0)
         print('--------------------')
-        table_label = result['_source']['label']
-        print(table_label)
+        table_uniqueId = result['_source']['uniqueId']
+        print(table_uniqueId)
         print(df)
+    
