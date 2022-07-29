@@ -315,21 +315,41 @@ def GetAngle(img):
     bina_image = cv2.adaptiveThreshold(
         img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)  # Gaussian binar
     bina_image1 = cv2.bitwise_not(bina_image)  # invert the image
+    # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))
+    # bina_image1 = cv2.erode(bina_image1,kernel,iterations = 1) # noise reduce by erode
+
     # get the location of white pixel
-    coords = np.column_stack(np.where(bina_image1 > 0))
-    angle = cv2.minAreaRect(coords)[2]  # round all the white pixel by a rect
+    coords = np.where(bina_image1 > 0)
+
+    points = [None]*len(coords[0])
+    for i,x in enumerate(coords[0]):
+        y = coords[1][i]
+        points[i] = (y,x)
+    points = np.array(points)
+    rect = cv2.minAreaRect(points)
+    angle = int(rect[2])  # round all the white pixel by a rect
+
     # https://theailearner.com/tag/cv2-minarearect/
     # this function has three return
     # [0] -- center point of recttangle
     # [1] -- (w,h) of rectangle
     # [2] -- The rotation angle of the rectangle,
     # angle from the x-axis counterclockwise to w, the range is [-90,0)
-
     # actually after opencv4.5 is the angle in (0, 90]
+
+    if __name__ == '__main__':
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        cv2.polylines(bina_image, [box], True, 0, 3)
+        plt.subplot(121)
+        plt.imshow(bina_image1, cmap = 'gray')
+        plt.subplot(122)
+        plt.imshow(bina_image, cmap = 'gray')
+        plt.show()
 
     if angle > 45:
         angle = angle - 90
-    angle = -angle
+
     return angle
 
 
@@ -818,7 +838,7 @@ def Extrakt_Tesseract(image_cell):
     '''
 
     pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
-    result = pytesseract.image_to_string(image_cell)
+    result = pytesseract.image_to_string(image_cell, lang='deu')
     # print(result)
 
     if '\n' in result:
@@ -889,6 +909,20 @@ def GetDataframe(list_info, label_list, tablesize):
     df = df.fillna('')
     return df
 
+def MergeRow(df_dict):
+    '''
+    Merge cells across rows
+    
+    - input: dict
+
+    - output: dict
+
+    '''
+
+
+
+    return df_dict
+
 def Umform(df_dict):
     '''
     Beurteilen: Überschrift, Zeilenüberschrift, Subüberschrift, Value
@@ -909,7 +943,12 @@ def Umform(df_dict):
     # let 'col1' = value of 'col1' in '0' ==> 'col1' in '1' is '2019.12.31'
     # wie tun bei 'Projekt'?
 
-    # print(df_dict)
+    #{'Total Assets': {'2019.12.31': '10,991,903,55', '2020.9.30': '12,049,642,76'}, 
+    # 'Net Assets': {'2019.12.31': '1,044,954,84', '2020.9.30': '1,053,487,14'}, 
+    # 'Operating Revenues': {'2019.12.31': '286,039,95', '2020.9.30': '211,058,75'}, 
+    # 'Net Profit': {'2019.12.31': '105,444,74', '2020.9.30': '91,193,39'}}
+
+    print(df_dict)
     newDictKeys = [None]*(len(list(df_dict.keys()))-1)
     newSubKeys = list(dict(list(df_dict.values())[0]).values())[1:]
  
@@ -921,7 +960,7 @@ def Umform(df_dict):
     
     newDict = dict(zip(newDictKeys, newDictValues))
 
-    # print(newDict)
+    print(newDict)
 
     return newDict
 
@@ -940,20 +979,20 @@ def WriteData(df, img_path, nummer):
         orient='index')  # str like {index -> {column -> value}}。
     df_dict = eval(df_json) # chance str to dict
 
-    df_dict = Umform(df_dict)
+    #df_dict = Umform(df_dict)
 
     body_ = {
         "uniqueId": label_.lower(),
-        "filename": os.path.basename(img_path),
+        "fileName": os.path.basename(img_path),
         "content": df_dict
     }
 
-    es.index(index='table', doc_type='_doc', body=body_)
+    es.index(index='table', body=body_)
 
 
 def Search(index_, label_):
     '''
-    Searches for data in ES-index, for example: table_2_of_table2_rotate_0
+    Searches for data in ES-index, for example: table_2_of_test3_0.png
 
     - input 1: index_ is 'table'
     - input 2: label of table, for example: table_2_of_table2_rotate_0
@@ -990,7 +1029,7 @@ def Search(index_, label_):
 
 
 def Main(img_path, model):
-    try:
+    #try:
         image = cv2.imread(img_path, 0)
 
         image_rotate = TiltCorrection(image)  # got gray
@@ -1001,7 +1040,7 @@ def Main(img_path, model):
             text_zone, cv2.COLOR_GRAY2BGR)  # gray to 3 channel
 
         img_1024 = SizeNormalize(img_3channel)
-        '''
+        
         if __name__ == '__main__':
             plt.suptitle('Vorbreitung')
             plt.subplot(141)
@@ -1022,7 +1061,7 @@ def Main(img_path, model):
             plt.xticks([]), plt.yticks([])
             plt.show()
             plt.close()
-        '''
+        
             # input image must be 3 channel 1024x1024. out img 1024x1024
         table_boundRect = PositionTable(img_1024, img_path, model)
 
@@ -1038,7 +1077,7 @@ def Main(img_path, model):
 
             location, average_cellsize, image_copy = GetCell(
                 table_ol)  # hier subplot(224)
-            '''
+            
             if __name__ == '__main__':
                 plt.suptitle('table ' + str(nummer+1))
                 plt.subplot(2, 2, 1), plt.imshow(img_1024)
@@ -1051,7 +1090,7 @@ def Main(img_path, model):
                 plt.xticks([]), plt.yticks([])
                 plt.show()
                 plt.close()
-            '''
+            
             center_list, label_list, tablesize = GetLabel(
                 location, average_cellsize)
 
@@ -1068,15 +1107,15 @@ def Main(img_path, model):
                 # print(label_list)
                 print(df)
 
-    except Exception as e:
-        print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
+    #except Exception as e:
+    #    print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
 
-    else:
-        print('successfully done: ' + str(img_path))
+    #else:
+    #    print('successfully done: ' + str(img_path))
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test4.jpg'
+    img_path = 'Development\imageTest\\test5.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 

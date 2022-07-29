@@ -312,7 +312,7 @@ def ImageReformat(dir):
         else:
             for pdf in pdf_list:
                 pdf_path = 'Development\\PDF' + '\\' + pdf
-                save_path = 'Development\\imageTest'
+                save_path = dir
                 PdfToPng(pdf_path, save_path)
 
             image_list = GetImageList(dir)
@@ -345,7 +345,7 @@ if __name__ == '__main__':
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    dir_path = 'Development\\imageTest'
+    dir_path = 'Development\\successControl'
     StapelVerbreitung(dir_path, model = 'tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
 
