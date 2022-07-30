@@ -1,9 +1,11 @@
+from elasticsearch import Elasticsearch
 import os
 import cv2
 import numpy as np
 import torch.nn as nn
 import torch
 import torchvision
+import math
 import matplotlib.pyplot as plt
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -14,7 +16,8 @@ import pandas as pd
 import json
 import pytesseract
 import time
-from elasticsearch import Elasticsearch
+import taichi as ti
+ti.init()
 es = Elasticsearch()
 
 #---------------------------------------------------------------------------------------------------------------#
@@ -305,7 +308,123 @@ class U_Net(nn.Module):
 # functions
 
 
-def GetAngle(img):
+def LSDGetLines(img, minLong):
+    '''
+    lines be marked by LSD 
+
+    - input 1: is a bina image
+    - input 2: the min long of lines
+
+    - output 1: is a new black image with same shape of input image, on it is the lines of image, location to location
+    - output 2: list of lines, [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...] 
+
+    '''
+
+    # make a new black image with the same shape of input img
+    copy_image = np.zeros((img.shape[0], img.shape[1]))
+
+    lsd = cv2.createLineSegmentDetector(0)
+    # get all the location of lines by LSD, if no line, dlines = None
+    dlines = lsd.detect(img)[0]
+    # print(dlines)
+    longLines = []
+    if dlines is not None:
+        for dline in dlines:
+            x0 = int(round(dline[0][0]))
+            y0 = int(round(dline[0][1]))
+            x1 = int(round(dline[0][2]))
+            y1 = int(round(dline[0][3]))
+            long = (y1-y0)*(y1-y0)+(x1-x0)*(x1-x0)
+            if long >= minLong*minLong:
+                # It is possible that the shorter lines are part of the letter, so filter out the longer lines.
+                cv2.line(copy_image, (x0, y0), (x1, y1), color=255,
+                         thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
+                longLines.append([x0, y0, x1, y1])
+
+    if __name__ == "__main__":
+        plt.subplot(121)
+        plt.imshow(img, cmap='gray')
+        plt.subplot(122)
+        plt.imshow(copy_image)
+        plt.show()
+
+    return copy_image, longLines
+
+
+def HoughGetLines(img, minLong):  # this function be used now not
+    '''
+    lines be marked by LSD 
+
+    - input 1: is a bina image
+    - input 2: the min long of lines
+
+    - output 1: is a new black image with same shape of input image, on it is the lines of image, location to location
+    - output 2: list of lines, [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...] 
+
+    '''
+    # Line makieren durch HoughLines()
+    # apertureSize is the size of kernel, also soble
+    edges = cv2.Canny(img, 50, 250, apertureSize=3)
+    lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50,
+                            minLineLength=minLong, maxLineGap=0)
+    copy_image = np.zeros((img.shape[0], img.shape[1]))
+    longLines = []
+    if lines is not None:
+        for line in lines:
+            x0, y0, x1, y1 = line[0]
+            longLines.append([x0, y0, x1, y1])
+            cv2.line(copy_image, (x0, y0), (x1, y1), color=255,
+                     thickness=3, lineType=cv2.LINE_AA)
+
+    if __name__ == "__main__":
+        plt.subplot(121)
+        plt.imshow(img, cmap='gray')
+        plt.subplot(122)
+        plt.imshow(copy_image)
+        plt.show()
+
+    return copy_image, longLines
+
+
+def GetLineAngle(img):
+    '''
+    - input: gray image
+    - output: angle for tilt correction
+
+    '''
+    bina_image = cv2.adaptiveThreshold(
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)  # Gaussian binar
+    longLines = LSDGetLines(bina_image, minLong=80)[1]
+
+    if len(longLines) == 0:
+        return 'nolines'
+    else:
+        angle_list = []
+        for line in longLines:
+            x0, y0, x1, y1 = line
+            if x0 == x1:
+                angle_list.append(90)
+            elif y0 == y1:
+                angle_list.append(0)
+            else:
+                t = float(y1-y0)/(x1-x0)
+                rotate_angle = (math.degrees(math.atan(t)))
+                angle_list.append(rotate_angle)
+
+        angle_list_45 = [angle_list[i] for i in range(len(angle_list)) if abs(
+            angle_list[i]) < 45]  # list for angle < +-45
+        # print(angle_list_45)
+        # print(angle_list)
+
+        if len(angle_list_45) == 0:  # if no abs(anlge) < 45
+            angle_average = 0
+        else:
+            angle_average = (sum(angle_list_45)/len(angle_list_45))
+
+        return angle_average
+
+
+def GetBoxAngle(img):
     '''
     - input: img, is gray
 
@@ -315,19 +434,21 @@ def GetAngle(img):
     bina_image = cv2.adaptiveThreshold(
         img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)  # Gaussian binar
     bina_image1 = cv2.bitwise_not(bina_image)  # invert the image
-    # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))
-    # bina_image1 = cv2.erode(bina_image1,kernel,iterations = 1) # noise reduce by erode
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+    bina_image1 = cv2.erode(bina_image1, kernel, iterations=1)
+    # noise reduce by opening
+    bina_image1 = cv2.dilate(bina_image1, kernel, iterations=1)
 
     # get the location of white pixel
     coords = np.where(bina_image1 > 0)
 
     points = [None]*len(coords[0])
-    for i,x in enumerate(coords[0]):
+    for i, x in enumerate(coords[0]):
         y = coords[1][i]
-        points[i] = (y,x)
+        points[i] = (y, x)
     points = np.array(points)
     rect = cv2.minAreaRect(points)
-    angle = int(rect[2])  # round all the white pixel by a rect
+    angle = (rect[2])  # round all the white pixel by a rect
 
     # https://theailearner.com/tag/cv2-minarearect/
     # this function has three return
@@ -342,9 +463,9 @@ def GetAngle(img):
         box = np.int0(box)
         cv2.polylines(bina_image, [box], True, 0, 3)
         plt.subplot(121)
-        plt.imshow(bina_image1, cmap = 'gray')
+        plt.imshow(bina_image1, cmap='gray')
         plt.subplot(122)
-        plt.imshow(bina_image, cmap = 'gray')
+        plt.imshow(bina_image, cmap='gray')
         plt.show()
 
     if angle > 45:
@@ -397,8 +518,9 @@ def TiltCorrection(img):
     - output: the tilt corrected image
 
     '''
-
-    angle = GetAngle(img)
+    angle = GetLineAngle(img)
+    if angle == 'nolines':  # if no lines in image, then use GetBoxAngle
+        angle = GetBoxAngle(img)
 
     image_rotate = ImageRotate(img, angle)
 
@@ -553,7 +675,7 @@ def PositionTable(img_1024, img_path, model_used):
     table_contours = []
     # remove bad contours
     for c in contours:
-        if cv2.contourArea(c) > 1000:
+        if cv2.contourArea(c) > 3000:  # the size of table must be bigger than 3000 pixels
             table_contours.append(c)
 
     if __name__ == '__main__':
@@ -580,7 +702,7 @@ def PositionTable(img_1024, img_path, model_used):
         cv2.fillConvexPoly(white_image, triangle, color)
 
     image_add = cv2.addWeighted(img_1024, 0.9, white_image, 0.5, 0)
-    '''
+
     if __name__ == '__main__':
         plt.figure(figsize=(10, 10))
         plt.subplot(1, 3, 1)
@@ -594,7 +716,7 @@ def PositionTable(img_1024, img_path, model_used):
         plt.imshow(image_add)
         plt.show()
         plt.close()
-    '''
+
     return table_boundRect
 
 
@@ -621,36 +743,6 @@ def GetTableZone(table_boundRect, img_1024):
     return table_zone
 
 
-def LSDGetLines(img):
-    '''
-    lines be marked by LSD 
-
-    - input: is a bina image
-
-    - output: is a new black image with same shape of input image, on it is the lines of image, location to location
-
-    '''
-    long_size = 20
-    # make a new black image with the same shape of input img
-    copy_image = np.zeros((img.shape[0], img.shape[1]))
-
-    lsd = cv2.createLineSegmentDetector(0, scale=1)
-    dlines = lsd.detect(img)  # get all the location of lines by LSD
-
-    for dline in dlines[0]:
-        x0 = int(round(dline[0][0]))
-        y0 = int(round(dline[0][1]))
-        x1 = int(round(dline[0][2]))
-        y1 = int(round(dline[0][3]))
-        long = (y1-y0)*(y1-y0)+(x1-x0)*(x1-x0)
-        if long >= long_size*long_size:
-            # It is possible that the shorter lines are part of the letter, so filter out the longer lines.
-            cv2.line(copy_image, (x0, y0), (x1, y1), color=255,
-                     thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
-
-    return copy_image
-
-
 def OrImage(img1, img2):
     '''
     add two images, weiss + weiss = weiss, weiss + schwarz = weiss, schwarz + schwarz = schwarz
@@ -658,7 +750,9 @@ def OrImage(img1, img2):
     '''
     img1 = np.array(img1, np.uint8)
     img2 = np.array(img2, np.uint8)
-
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    img2 = cv2.dilate(img2, kernel, iterations=1)
+    img2 = cv2.erode(img2, kernel, iterations=1)  # closing
     image = cv2.bitwise_or(img1, img2)
     # bitwise_or the original img and the copy img with black lines
     # so can the lines on image be deleted
@@ -676,8 +770,9 @@ def DeletLines(img):
 
     '''
     img1 = cv2.adaptiveThreshold(
-        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
-    img2 = LSDGetLines(img)
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 3, 3)
+    img2 = LSDGetLines(img1, minLong=18)[0]
+
     img_deletline = OrImage(img1, img2)
 
     return img_deletline
@@ -700,7 +795,7 @@ def GetCell(img_deletline):
     # reduce the noise
     '''
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 7))
     bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=1)
     #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
     #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
@@ -713,18 +808,19 @@ def GetCell(img_deletline):
     image_copy = cv2.bitwise_not(img_deletline_inv)
     list_contours = []
     average_cellsize = [0, 0]
+    i = 0
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 15 and h > 15:
+        if w > 10 and h > 8:
 
             list_contours.append((x, y, w, h))
             average_cellsize[0] = average_cellsize[0] + w
             average_cellsize[1] = average_cellsize[1] + h
+            i += 1
             cv2.rectangle(image_copy, (x, y), (x+w, y+h), 0,
                           2)  # round the text zone by rect
 
-    average_cellsize = [average_cellsize[0] //
-                        len(contours), average_cellsize[1]//len(contours)]
+    average_cellsize = [average_cellsize[0] // i, average_cellsize[1] // i]
     if __name__ == '__main__':
         print('average_cellsize [w, h] --> ' + str(average_cellsize))
 
@@ -881,6 +977,7 @@ def ReadCell(center_list, image):
 
     return list_info
 
+
 def GetDataframe(list_info, label_list, tablesize):
     '''
     Rebuild the table in a Dataframe
@@ -909,60 +1006,61 @@ def GetDataframe(list_info, label_list, tablesize):
     df = df.fillna('')
     return df
 
+
 def MergeRow(df_dict):
     '''
     Merge cells across rows
-    
+
     - input: dict
 
     - output: dict
 
     '''
 
-
-
     return df_dict
+
 
 def Umform(df_dict):
     '''
     Beurteilen: Überschrift, Zeilenüberschrift, Subüberschrift, Value
-    
+
     - input: dict
 
     - output: dict
     '''
 
-    #{'0': {'col0': 'Project', 'col1': '2019.12.31', 'col2': '2020.9.30'}, 
-    # '1': {'col0': 'Total Assets', 'col1': '10,991,903,55', 'col2': '12,049,642,76'}, 
-    # '2': {'col0': 'Net Assets', 'col1': '1,044,954,84', 'col2': '1,053,487,14'}, 
-    # '3': {'col0': 'Project', 'col1': '2019.1-12', 'col2': '2020.1-9'}, 
-    # '4': {'col0': 'Operating Revenues', 'col1': '286,039,95', 'col2': '211,058,\\/75'}, 
+    # {'0': {'col0': 'Project', 'col1': '2019.12.31', 'col2': '2020.9.30'},
+    # '1': {'col0': 'Total Assets', 'col1': '10,991,903,55', 'col2': '12,049,642,76'},
+    # '2': {'col0': 'Net Assets', 'col1': '1,044,954,84', 'col2': '1,053,487,14'},
+    # '3': {'col0': 'Project', 'col1': '2019.1-12', 'col2': '2020.1-9'},
+    # '4': {'col0': 'Operating Revenues', 'col1': '286,039,95', 'col2': '211,058,\\/75'},
     # '5': {'col0': 'Net Profit', 'col1': '105,444, 74', 'col2': '91,193,39'}}
 
     # let 'index'= value of 'col0' ==> '1' is 'Total Assets'
     # let 'col1' = value of 'col1' in '0' ==> 'col1' in '1' is '2019.12.31'
     # wie tun bei 'Projekt'?
 
-    #{'Total Assets': {'2019.12.31': '10,991,903,55', '2020.9.30': '12,049,642,76'}, 
-    # 'Net Assets': {'2019.12.31': '1,044,954,84', '2020.9.30': '1,053,487,14'}, 
-    # 'Operating Revenues': {'2019.12.31': '286,039,95', '2020.9.30': '211,058,75'}, 
+    # {'Total Assets': {'2019.12.31': '10,991,903,55', '2020.9.30': '12,049,642,76'},
+    # 'Net Assets': {'2019.12.31': '1,044,954,84', '2020.9.30': '1,053,487,14'},
+    # 'Operating Revenues': {'2019.12.31': '286,039,95', '2020.9.30': '211,058,75'},
     # 'Net Profit': {'2019.12.31': '105,444,74', '2020.9.30': '91,193,39'}}
 
     print(df_dict)
     newDictKeys = [None]*(len(list(df_dict.keys()))-1)
     newSubKeys = list(dict(list(df_dict.values())[0]).values())[1:]
- 
+
     newDictValues = [None]*(len(newDictKeys))
     for i, (key, value) in enumerate(list(df_dict.items())[1:]):
         newDictKeys[i] = list(dict(value).values())[0]
         newSubValues = list(dict(value).values())[1:]
         newDictValues[i] = dict(zip(newSubKeys, newSubValues))
-    
+
     newDict = dict(zip(newDictKeys, newDictValues))
 
     print(newDict)
 
     return newDict
+
 
 def WriteData(df, img_path, nummer):
     '''
@@ -977,9 +1075,9 @@ def WriteData(df, img_path, nummer):
     label_ = 'table_' + str(nummer+1) + '_of_' + os.path.basename(img_path)
     df_json = df.to_json(
         orient='index')  # str like {index -> {column -> value}}。
-    df_dict = eval(df_json) # chance str to dict
+    df_dict = eval(df_json)  # chance str to dict
 
-    #df_dict = Umform(df_dict)
+    df_dict = Umform(df_dict)
 
     body_ = {
         "uniqueId": label_.lower(),
@@ -1029,7 +1127,9 @@ def Search(index_, label_):
 
 
 def Main(img_path, model):
-    #try:
+
+    try:
+        start = time.time()
         image = cv2.imread(img_path, 0)
 
         image_rotate = TiltCorrection(image)  # got gray
@@ -1040,7 +1140,7 @@ def Main(img_path, model):
             text_zone, cv2.COLOR_GRAY2BGR)  # gray to 3 channel
 
         img_1024 = SizeNormalize(img_3channel)
-        
+
         if __name__ == '__main__':
             plt.suptitle('Vorbreitung')
             plt.subplot(141)
@@ -1061,7 +1161,7 @@ def Main(img_path, model):
             plt.xticks([]), plt.yticks([])
             plt.show()
             plt.close()
-        
+
             # input image must be 3 channel 1024x1024. out img 1024x1024
         table_boundRect = PositionTable(img_1024, img_path, model)
 
@@ -1077,7 +1177,7 @@ def Main(img_path, model):
 
             location, average_cellsize, image_copy = GetCell(
                 table_ol)  # hier subplot(224)
-            
+
             if __name__ == '__main__':
                 plt.suptitle('table ' + str(nummer+1))
                 plt.subplot(2, 2, 1), plt.imshow(img_1024)
@@ -1090,7 +1190,7 @@ def Main(img_path, model):
                 plt.xticks([]), plt.yticks([])
                 plt.show()
                 plt.close()
-            
+
             center_list, label_list, tablesize = GetLabel(
                 location, average_cellsize)
 
@@ -1100,6 +1200,9 @@ def Main(img_path, model):
 
             WriteData(df, img_path, nummer)
 
+            end = time.time()
+            print('runtime: %s' % (end - start))
+
             if __name__ == '__main__':
                 print('--------------------------------------------------')
                 print('table %s' % (nummer+1))
@@ -1107,21 +1210,21 @@ def Main(img_path, model):
                 # print(label_list)
                 print(df)
 
-    #except Exception as e:
-    #    print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
+    except Exception as e:
+        print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
 
-    #else:
-    #    print('successfully done: ' + str(img_path))
+    else:
+        print('successfully done: ' + str(img_path))
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\\test5.png'
+    img_path = 'Development\imageTest\\test8.jpg'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     Main(img_path, model='tablenet')
     # model: 'tablenet', 'densenet' or 'unet'
-    
+
     time.sleep(2)
     results = Search('table', 'all')
     print(results)
@@ -1134,4 +1237,3 @@ if __name__ == '__main__':
         table_uniqueId = result['_source']['uniqueId']
         print(table_uniqueId)
         print(df)
-    

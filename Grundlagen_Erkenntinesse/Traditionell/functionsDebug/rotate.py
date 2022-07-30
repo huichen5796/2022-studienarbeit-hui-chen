@@ -155,10 +155,11 @@ def TiltCorrection(img):
     return image_rotate
 
 if __name__ == '__main__':
-    for angle in range(0,91):
-        #Rotate(r'Development\imageTest\test3_0.png', -angle)
-        path = "winkel_%s.png" %angle
-        img = cv2.imread(path,0)
-        TiltCorrection(img)
+    #for angle in range(0,91):
+        angle = 30
+        Rotate(r'Development\imageTest\test9.jpg', angle)
+        #path = "winkel_%s.png" %angle
+        #img = cv2.imread(path,0)
+        #TiltCorrection(img)
     # 60 means rotate sixty degrees clockwise
     # -60 means rotate sixty degrees counterclockwise
