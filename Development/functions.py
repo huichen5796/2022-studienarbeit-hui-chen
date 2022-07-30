@@ -623,6 +623,7 @@ def PositionTable(img_1024, img_path, model_used):
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'tablenet':
+        
         model = TableNet().to(device)
         path = 'Development\\models\densenet_config_4_model_checkpoint.pth.tar'
 
@@ -1045,7 +1046,7 @@ def Umform(df_dict):
     # 'Operating Revenues': {'2019.12.31': '286,039,95', '2020.9.30': '211,058,75'},
     # 'Net Profit': {'2019.12.31': '105,444,74', '2020.9.30': '91,193,39'}}
 
-    print(df_dict)
+    # print(df_dict)
     newDictKeys = [None]*(len(list(df_dict.keys()))-1)
     newSubKeys = list(dict(list(df_dict.values())[0]).values())[1:]
 
@@ -1057,7 +1058,7 @@ def Umform(df_dict):
 
     newDict = dict(zip(newDictKeys, newDictValues))
 
-    print(newDict)
+    # print(newDict)
 
     return newDict
 
@@ -1198,17 +1199,17 @@ def Main(img_path, model):
 
             df = GetDataframe(list_info, label_list, tablesize)
 
-            WriteData(df, img_path, nummer)
-
-            end = time.time()
-            print('runtime: %s' % (end - start))
-
             if __name__ == '__main__':
                 print('--------------------------------------------------')
                 print('table %s' % (nummer+1))
                 # print(list_info)
                 # print(label_list)
                 print(df)
+
+            WriteData(df, img_path, nummer)
+
+            end = time.time()
+            print('runtime: %s' % (end - start))
 
     except Exception as e:
         print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
@@ -1218,7 +1219,7 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\\test8.jpg'
+    img_path = 'Development\imageTest\\test6.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
