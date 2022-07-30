@@ -623,7 +623,7 @@ def PositionTable(img_1024, img_path, model_used):
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'tablenet':
-        
+
         model = TableNet().to(device)
         path = 'Development\\models\densenet_config_4_model_checkpoint.pth.tar'
 
@@ -1046,21 +1046,43 @@ def Umform(df_dict):
     # 'Operating Revenues': {'2019.12.31': '286,039,95', '2020.9.30': '211,058,75'},
     # 'Net Profit': {'2019.12.31': '105,444,74', '2020.9.30': '91,193,39'}}
 
-    # print(df_dict)
-    newDictKeys = [None]*(len(list(df_dict.keys()))-1)
-    newSubKeys = list(dict(list(df_dict.values())[0]).values())[1:]
+    '''
+    für komplexe Tabellen
 
-    newDictValues = [None]*(len(newDictKeys))
-    for i, (key, value) in enumerate(list(df_dict.items())[1:]):
-        newDictKeys[i] = list(dict(value).values())[0]
-        newSubValues = list(dict(value).values())[1:]
-        newDictValues[i] = dict(zip(newSubKeys, newSubValues))
+    angenommen 1: header liegt immer in den ersten drei Zeilen
+    angenommen 2: main-header liegt immer ober sub-header
+    angenommen 3: (row0, col0) ist immer leer
+    angenommen 4: es gibt keine leere Zellen in der erste Zeile unter header
 
-    newDict = dict(zip(newDictKeys, newDictValues))
+    Ich plane, basierend auf dem Zeileninhalt, main-header auf sub-header zu addieren.
 
-    # print(newDict)
+    '''
+    header_items = list(df_dict.items())[0:3]
+    # ['Meldewscher3!', '', 'MelgewöcherL4)', '', 'IAnuErißeFimivereleich', '']
+    main_header = list(dict(header_items[0][1]).values())[1:]
+    # print(first_item)
+    if '' not in main_header:  # die Tabelle ist einfache Tabelle
+        # print(df_dict)
+        newDictKeys = [None]*(len(list(df_dict.keys()))-1)
+        newSubKeys = list(dict(list(df_dict.values())[0]).values())[1:]
 
-    return newDict
+        newDictValues = [None]*(len(newDictKeys))
+        for i, (key, value) in enumerate(list(df_dict.items())[1:]):
+            newDictKeys[i] = list(dict(value).values())[0]
+            newSubValues = list(dict(value).values())[1:]
+            newDictValues[i] = dict(zip(newSubKeys, newSubValues))
+
+        newDict = dict(zip(newDictKeys, newDictValues))
+
+        # print(newDict)
+
+        return newDict
+
+    elif '' in main_header:  # die Tabelle ist komplexe Tabelle
+
+        if len(main_header) % 2 == 0:
+            
+        return df_dict
 
 
 def WriteData(df, img_path, nummer):
@@ -1219,7 +1241,7 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\\test6.png'
+    img_path = 'Development\imageTest\\test2.PNG'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
