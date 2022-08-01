@@ -67,6 +67,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - matplotlib==3.5.2
 - numpy==1.22.4
 - opencv-python==4.6.0.66
+- opencv-contrib-python==4.6.0.66
 - pandas==1.3.4
 - torch==1.11.0+cu113
 - torchvision==0.12.0+cu113
@@ -79,7 +80,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
 - Install Python & pip
 - Install *packagename* package for Python: `pip install *packagename*`
-  packages: _Pillow_, _pandas_, _matplotlib_, _albumentations_, _numpy_
+  packages: _Pillow_, _pandas_, _matplotlib_, _albumentations_, _numpy_, _opencv-contrib-python, _opencv-python_
   
   Die entsprechende empfohlene Version finden Sie in **Config** 
   
