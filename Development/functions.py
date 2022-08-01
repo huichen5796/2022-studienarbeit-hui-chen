@@ -307,7 +307,6 @@ class U_Net(nn.Module):
 #---------------------------------------------------------------------------------------------------------------#
 # functions
 
-
 def LSDGetLines(img, minLong):
     '''
     lines be marked by LSD 
@@ -386,6 +385,48 @@ def HoughGetLines(img, minLong):  # this function be used now not
 
     return copy_image, longLines
 
+def FLDGetLines(img, minLong):
+    '''
+    lines be marked by FLD
+
+    - input 1: is a bina image
+    - input 2: the min long of lines
+
+    - output 1: is a new black image with same shape of input image, on it is the lines of image, location to location
+                be used for DeleteLine
+    - output 2: list of lines, [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...], for tiltCorrection
+
+    '''
+
+    # make a new black image with the same shape of input img
+    copy_image = np.zeros((img.shape[0], img.shape[1]))
+
+    fld = cv2.ximgproc.createFastLineDetector()
+    # get all the location of lines by FLD, if no line, dlines = None
+    dlines = fld.detect(img)
+    # print(dlines)
+    longLines = []
+    if dlines is not None:
+        for dline in dlines:
+            x0 = int(round(dline[0][0]))
+            y0 = int(round(dline[0][1]))
+            x1 = int(round(dline[0][2]))
+            y1 = int(round(dline[0][3]))
+            long = (y1-y0)*(y1-y0)+(x1-x0)*(x1-x0)
+            if long >= minLong*minLong:
+                # It is possible that the shorter lines are part of the letter, so filter out the longer lines.
+                cv2.line(copy_image, (x0, y0), (x1, y1), color=255,
+                         thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
+                longLines.append([x0, y0, x1, y1])
+
+    if __name__ == "__main__":
+        plt.subplot(121)
+        plt.imshow(img, cmap='gray')
+        plt.subplot(122)
+        plt.imshow(copy_image)
+        plt.show()
+
+    return copy_image, longLines
 
 def GetLineAngle(img):
     '''
@@ -395,7 +436,8 @@ def GetLineAngle(img):
     '''
     bina_image = cv2.adaptiveThreshold(
         img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)  # Gaussian binar
-    longLines = LSDGetLines(bina_image, minLong=80)[1]
+    minLong = (img.shape[0]+img.shape[1])//4
+    longLines = FLDGetLines(bina_image, minLong)[1]
 
     if len(longLines) == 0:
         return 'nolines'
@@ -806,7 +848,7 @@ def DeletLines(img):
     img1 = cv2.adaptiveThreshold(
         img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
     # _, img1 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY|cv2.THRESH_OTSU)
-    img2 = LSDGetLines(img1, minLong=15)[0]
+    img2 = FLDGetLines(img1, minLong=15)[0]
 
     img_deletline = OrImage(img1, img2)
 
@@ -830,10 +872,10 @@ def GetCell(image_table, img_deletline):
     # reduce the noise
     '''
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 3))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 5))
     bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=1)
     #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
-    #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
+    bina_image = cv2.erode(bina_image, kernel, iterations = 1)
 
     _, bina_image = cv2.threshold(
         bina_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -849,10 +891,14 @@ def GetCell(image_table, img_deletline):
     color_image = np.ones(
         (img_deletline_inv.shape[0], img_deletline_inv.shape[1], 3), np.uint8)*255
     i = 0
+    size = 6
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         if w > 10 and h > 6:
-
+            x = int(x - size)
+            y = int(y - size // 3)
+            w = int(w + 2 * size)
+            h = int(h + 2 * (size // 3))
             list_contours.append((x, y, w, h))
             average_cellsize[0] = average_cellsize[0] + w
             average_cellsize[1] = average_cellsize[1] + h
@@ -1145,7 +1191,7 @@ def WriteData(df, img_path, nummer):
         orient='index')  # str like {index -> {column -> value}}。
     df_dict = eval(df_json)  # chance str to dict
 
-    df_dict = Umform(df_dict)
+    # df_dict = Umform(df_dict)
 
     body_ = {
         "uniqueId": label_.lower(),
@@ -1226,7 +1272,8 @@ def SaveTable(nummer, table, img_path):
         plt.xticks([]), plt.yticks([])
         plt.subplot(122), plt.imshow(image_add)
         plt.xticks([]), plt.yticks([])
-        plt.show()
+        plt.savefig('.\\Development\\imageSave\\{}'.format('table_' + str(nummer+1) + '_of_' + str(os.path.basename(img_path))))
+        # plt.show()
 
         center_list, label_list, tablesize = GetLabel(
             location, average_cellsize)
@@ -1306,11 +1353,11 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\\test1.png'
+    img_path = 'Development\\imageTest\\test13.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    Main(img_path, model='unet')
+    Main(img_path, model='densenet')
     # model: 'tablenet', 'densenet' or 'unet'
 
     time.sleep(2)
