@@ -316,7 +316,8 @@ def LSDGetLines(img, minLong):
     - input 2: the min long of lines
 
     - output 1: is a new black image with same shape of input image, on it is the lines of image, location to location
-    - output 2: list of lines, [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...] 
+                be used for DeleteLine
+    - output 2: list of lines, [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...], for tiltCorrection
 
     '''
 
@@ -615,11 +616,11 @@ def PositionTable(img_1024, img_path, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = 'Development\\models\\densenet_100epochs.pkl'
+        path = 'Development\\models\\dense100_+40speziell.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
-        path = 'Development\\models\\unet_model_100epochs.pkl'
+        path = 'Development\\models\\unet_model100_50speziell.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'tablenet':
@@ -671,6 +672,11 @@ def PositionTable(img_1024, img_path, model_used):
         pred = pred.astype('uint8')
 
     # get contours of the prognose to get tables
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    pred = cv2.erode(pred, kernel, iterations=1)
+    pred = cv2.dilate(pred, kernel, iterations=4)  # remove small zone
+    pred = cv2.erode(pred, kernel, iterations=3)
+
     contours, _ = cv2.findContours(
         pred, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     table_contours = []
@@ -691,28 +697,55 @@ def PositionTable(img_1024, img_path, model_used):
         table_boundRect[i] = cv2.boundingRect(polyline)
 
     table_boundRect = sorted(table_boundRect, key=lambda x: x[1])
-    # draw bounding boxes
-    color = (255, 0, 0)  # red
-
-    white_image = np.ones((1024, 1024, 3), np.uint8)*255
+    # Überlappende Tabellen werden zu einer zusammengeführt:
+    mask_image = np.zeros((1024, 1024, 1), np.uint8)
     for x, y, w, h in table_boundRect:
-        size = 4
+        size = 0
+        triangle = np.array(
+            [[x-size, y-size], [x-size, y+h+size], [x+w+size, y+h+size], [x+w+size, y-size]])
+        cv2.fillConvexPoly(mask_image, triangle, 255)
+    contours, _ = cv2.findContours(
+        mask_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    table_contours = []
+    # remove bad contours
+    for c in contours:
+        if cv2.contourArea(c) > 3000:  # the size of table must be bigger than 3000 pixels
+            table_contours.append(c)
+
+    table_boundRect = [None]*len(table_contours)
+    for i, c in enumerate(table_contours):
+        polyline = cv2.approxPolyDP(c, 5, True)
+        table_boundRect[i] = cv2.boundingRect(polyline)
+
+    table_boundRect = sorted(table_boundRect, key=lambda x: x[1])
+
+    # draw bounding boxes
+    color = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 0, 255)]
+    i = 0
+    color_image = np.ones((1024, 1024, 3), np.uint8)*255
+    for x, y, w, h in table_boundRect:
+        size = 0
         #cv2.rectangle(img, (x,y),(x+w,y+h), color, thickness)
         triangle = np.array(
             [[x-size, y-size], [x-size, y+h+size], [x+w+size, y+h+size], [x+w+size, y-size]])
-        cv2.fillConvexPoly(white_image, triangle, color)
+        cv2.fillConvexPoly(color_image, triangle, color[i])
+        i += 1
+        if i > 3:
+            i = 0
 
-    image_add = cv2.addWeighted(img_1024, 0.9, white_image, 0.5, 0)
+    image_add = cv2.addWeighted(img_1024, 0.9, color_image, 0.5, 0)
 
     if __name__ == '__main__':
-        plt.figure(figsize=(10, 10))
-        plt.subplot(1, 3, 1)
+        plt.subplot(221)
         plt.title('Input Image 1024x1024')
         plt.imshow(img_1024)
-        plt.subplot(1, 3, 2)
+        plt.subplot(222)
         plt.title('Output Prognose')
         plt.imshow(pred, cmap='gray')
-        plt.subplot(1, 3, 3)
+        plt.subplot(223)
+        plt.title('Verarbeitete Prognose')
+        plt.imshow(mask_image, cmap='gray')
+        plt.subplot(224)
         plt.title('Tablebreich')
         plt.imshow(image_add)
         plt.show()
@@ -771,19 +804,20 @@ def DeletLines(img):
 
     '''
     img1 = cv2.adaptiveThreshold(
-        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 3, 3)
-    img2 = LSDGetLines(img1, minLong=18)[0]
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+    # _, img1 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY|cv2.THRESH_OTSU)
+    img2 = LSDGetLines(img1, minLong=15)[0]
 
     img_deletline = OrImage(img1, img2)
 
     return img_deletline
 
 
-def GetCell(img_deletline):
+def GetCell(image_table, img_deletline):
     '''
     Get word blocks by dilate
-
-    - input: bina image without lines
+    - input 1: gray image for OCR
+    - input 2: bina image without lines
 
     - output: contour location of text blocks
 
@@ -796,38 +830,48 @@ def GetCell(img_deletline):
     # reduce the noise
     '''
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 7))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 3))
     bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=1)
     #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
     #bina_image = cv2.erode(bina_image,kernel,iterations = 1)
 
-    ret, bina_image = cv2.threshold(
+    _, bina_image = cv2.threshold(
         bina_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     contours, h = cv2.findContours(
         bina_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)  # round the text zone by rect
-    image_copy = cv2.bitwise_not(img_deletline_inv)
+
+    #image_copy = cv2.bitwise_not(img_deletline_inv)
+
     list_contours = []
     average_cellsize = [0, 0]
+    color = (255, 0, 0)
+    color_image = np.ones(
+        (img_deletline_inv.shape[0], img_deletline_inv.shape[1], 3), np.uint8)*255
     i = 0
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 10 and h > 8:
+        if w > 10 and h > 6:
 
             list_contours.append((x, y, w, h))
             average_cellsize[0] = average_cellsize[0] + w
             average_cellsize[1] = average_cellsize[1] + h
             i += 1
-            cv2.rectangle(image_copy, (x, y), (x+w, y+h), 0,
-                          2)  # round the text zone by rect
+            # cv2.rectangle(color_image, (x, y), (x+w, y+h), 0, 2)  # round the text zone by rect
+            triangle = np.array([[x, y], [x, y+h], [x+w, y+h], [x+w, y]])
+            cv2.fillConvexPoly(color_image, triangle, color)
 
+    # plt.imshow(color_image)
+    # plt.show()
+    # image_table = cv2.cvtColor(image_table, cv2.COLOR_GRAY2BGR)
+    image_add = cv2.addWeighted(image_table, 0.9, color_image, 0.5, 0)
     average_cellsize = [average_cellsize[0] // i, average_cellsize[1] // i]
     if __name__ == '__main__':
         print('average_cellsize [w, h] --> ' + str(average_cellsize))
 
     location = np.array(list_contours)
 
-    return location, average_cellsize, image_copy  # image_copy is used only for show
+    return location, average_cellsize, image_add  # image_add is used only for show
 
 
 def PointCorrection(location, average_cellsize):
@@ -950,13 +994,13 @@ def ReadCell(center_list, image):
     ORI of each cell and OCR by tesseract
 
     - input 1: center_list of the table
-    - input 2: the image with table
+    - input 2: the image with table for OCR
 
     - output: infos in each cell 
 
     '''
 
-    size = 3
+    size = 0
 
     list_info = []
 
@@ -968,12 +1012,13 @@ def ReadCell(center_list, image):
             cell_zone, (cell_zone.shape[1]*4, cell_zone.shape[0]*4))
 
         cell = cv2.copyMakeBorder(
-            cell_zone, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
-        # cv2.imshow('',cell)
-        # cv2.waitKey()
-        # print(cell.shape)
+            cell_zone, 40, 40, 40, 40, cv2.BORDER_REPLICATE)
+
         result = Extrakt_Tesseract(cell)
 
+        # cv2.imshow('',cell)
+        # cv2.waitKey()
+        # print(result)
         list_info.append(result)
 
     return list_info
@@ -1080,8 +1125,8 @@ def Umform(df_dict):
 
     elif '' in main_header:  # die Tabelle ist komplexe Tabelle
 
-        if len(main_header) % 2 == 0:
-            
+        # if len(main_header) % 2 == 0:
+
         return df_dict
 
 
@@ -1146,19 +1191,73 @@ def Search(index_, label_):
     # print(data_print.decode()) # pretty-print with indent level
     return data_print.decode()
 
+
+def SaveTable(nummer, table, img_path):
+    '''
+    This function is the analysis and writing of the table area.
+    The purpose of the function is to make multiple tables in the same graph not affect each other. 
+    The failure of table 1 will not affect the processing of subsequent table 2.
+
+    - input 1: nummer of table
+    - input 2: infos of table
+    - input 3: is a parameter for WriteData()
+
+    - output: None
+    '''
+    try:
+        table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
+        table_ol = DeletLines(table_gray)  # bina_image ohne Linien
+
+        location, average_cellsize, image_add = GetCell(
+            table, table_ol)  # hier subplot(224)
+
+        if __name__ == '__main__':
+            plt.suptitle('table ' + str(nummer+1) + ' of ' + str(img_path))
+            plt.subplot(131), plt.imshow(table)
+            plt.xticks([]), plt.yticks([])
+            plt.subplot(132), plt.imshow(table_ol, cmap='gray')
+            plt.xticks([]), plt.yticks([])
+            plt.subplot(133), plt.imshow(image_add)
+            plt.xticks([]), plt.yticks([])
+            plt.show()
+
+        plt.suptitle('table ' + str(nummer+1) + ' of ' + str(img_path))
+        plt.subplot(121), plt.imshow(table)
+        plt.xticks([]), plt.yticks([])
+        plt.subplot(122), plt.imshow(image_add)
+        plt.xticks([]), plt.yticks([])
+        plt.show()
+
+        center_list, label_list, tablesize = GetLabel(
+            location, average_cellsize)
+
+        list_info = ReadCell(center_list, table)
+
+        df = GetDataframe(list_info, label_list, tablesize)
+
+        if __name__ == '__main__':
+            print('--------------------------------------------------')
+            print('table %s' % (nummer+1))
+            # print(list_info)
+            # print(label_list)
+            print(df)
+
+        WriteData(df, img_path, nummer)
+    except Exception as e:
+        print('ERROR: ' + ' ' + str(e) + ' ==> table ' + str(nummer))
+    else:
+        print('successful save table ' + str(nummer))
+
 #---------------------------------------------------------------------------------------------------------------#
 
 
 def Main(img_path, model):
-
+    start = time.time()
     try:
-        start = time.time()
+
         image = cv2.imread(img_path, 0)
-
         image_rotate = TiltCorrection(image)  # got gray
-
         text_zone = WhiteBordersRemove(image_rotate)  # got gray
-
         img_3channel = cv2.cvtColor(
             text_zone, cv2.COLOR_GRAY2BGR)  # gray to 3 channel
 
@@ -1194,58 +1293,24 @@ def Main(img_path, model):
               str(len(table_zone)) + ' table(s)')
 
         for nummer, table in enumerate(table_zone):
-
-            table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
-            table_ol = DeletLines(table_gray)  # bina_image ohne Linien
-
-            location, average_cellsize, image_copy = GetCell(
-                table_ol)  # hier subplot(224)
-
-            if __name__ == '__main__':
-                plt.suptitle('table ' + str(nummer+1))
-                plt.subplot(2, 2, 1), plt.imshow(img_1024)
-                plt.xticks([]), plt.yticks([])
-                plt.subplot(2, 2, 2), plt.imshow(table)
-                plt.xticks([]), plt.yticks([])
-                plt.subplot(2, 2, 3), plt.imshow(table_ol, cmap='gray')
-                plt.xticks([]), plt.yticks([])
-                plt.subplot(2, 2, 4), plt.imshow(image_copy, cmap='gray')
-                plt.xticks([]), plt.yticks([])
-                plt.show()
-                plt.close()
-
-            center_list, label_list, tablesize = GetLabel(
-                location, average_cellsize)
-
-            list_info = ReadCell(center_list, table_ol)
-
-            df = GetDataframe(list_info, label_list, tablesize)
-
-            if __name__ == '__main__':
-                print('--------------------------------------------------')
-                print('table %s' % (nummer+1))
-                # print(list_info)
-                # print(label_list)
-                print(df)
-
-            WriteData(df, img_path, nummer)
-
-            end = time.time()
-            print('runtime: %s' % (end - start))
+            SaveTable(nummer, table, img_path)
 
     except Exception as e:
         print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
-
+        end = time.time()
+        print('runtime: %s' % (end - start))
     else:
         print('successfully done: ' + str(img_path))
+        end = time.time()
+        print('runtime: %s' % (end - start))
 
 
 if __name__ == '__main__':
-    img_path = 'Development\imageTest\\test2.PNG'
+    img_path = 'Development\imageTest\\test1.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    Main(img_path, model='tablenet')
+    Main(img_path, model='unet')
     # model: 'tablenet', 'densenet' or 'unet'
 
     time.sleep(2)

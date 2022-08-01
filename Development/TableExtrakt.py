@@ -346,7 +346,7 @@ if __name__ == '__main__':
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     dir_path = 'Development\\successControl'
-    StapelVerbreitung(dir_path, model = 'tablenet')
+    StapelVerbreitung(dir_path, model = 'unet')
     # model: 'tablenet', 'densenet' or 'unet'
 
     time.sleep(1)
@@ -357,6 +357,6 @@ if __name__ == '__main__':
     for result in results['hits']['hits']:
         df = pd.DataFrame(result['_source']['content']).stack().unstack(0)
         print('--------------------')
-        table_label = result['_source']['label']
+        table_label = result['_source']['uniqueId']
         print(table_label)
         print(df)
