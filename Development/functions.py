@@ -307,6 +307,7 @@ class U_Net(nn.Module):
 #---------------------------------------------------------------------------------------------------------------#
 # functions
 
+
 def LSDGetLines(img, minLong):
     '''
     lines be marked by LSD 
@@ -385,6 +386,7 @@ def HoughGetLines(img, minLong):  # this function be used now not
 
     return copy_image, longLines
 
+
 def FLDGetLines(img, minLong):
     '''
     lines be marked by FLD
@@ -427,6 +429,7 @@ def FLDGetLines(img, minLong):
         plt.show()
 
     return copy_image, longLines
+
 
 def GetLineAngle(img):
     '''
@@ -658,7 +661,7 @@ def PositionTable(img_1024, img_path, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = 'Development\\models\\dense100_+40speziell.pkl'
+        path = 'Development\\models\\densenet_100spe.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
@@ -701,12 +704,11 @@ def PositionTable(img_1024, img_path, model_used):
     with torch.no_grad():
         image = image.to(device).unsqueeze(0)
         pred = model(image)
-
+        
         if model_used == 'unet':
             pred = (pred.cpu().detach().numpy().squeeze())
         else:
             pred = torch.sigmoid(pred)
-
             pred = (pred.cpu().detach().numpy().squeeze())
 
         pred[:][pred[:] > 0.5] = 255.0
@@ -848,7 +850,7 @@ def DeletLines(img):
     img1 = cv2.adaptiveThreshold(
         img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
     # _, img1 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY|cv2.THRESH_OTSU)
-    img2 = FLDGetLines(img1, minLong=15)[0]
+    img2 = FLDGetLines(img1, minLong=18)[0]
 
     img_deletline = OrImage(img1, img2)
 
@@ -875,7 +877,10 @@ def GetCell(image_table, img_deletline):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 5))
     bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=1)
     #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
-    bina_image = cv2.erode(bina_image, kernel, iterations = 1)
+    bina_image = cv2.erode(bina_image, kernel, iterations=1)
+
+    # cv2.imshow("", bina_image)
+    # cv2.waitKey()
 
     _, bina_image = cv2.threshold(
         bina_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -894,7 +899,7 @@ def GetCell(image_table, img_deletline):
     size = 6
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 10 and h > 6:
+        if w > 4 and h > 4:
             x = int(x - size)
             y = int(y - size // 3)
             w = int(w + 2 * size)
@@ -907,8 +912,6 @@ def GetCell(image_table, img_deletline):
             triangle = np.array([[x, y], [x, y+h], [x+w, y+h], [x+w, y]])
             cv2.fillConvexPoly(color_image, triangle, color)
 
-    # plt.imshow(color_image)
-    # plt.show()
     # image_table = cv2.cvtColor(image_table, cv2.COLOR_GRAY2BGR)
     image_add = cv2.addWeighted(image_table, 0.9, color_image, 0.5, 0)
     average_cellsize = [average_cellsize[0] // i, average_cellsize[1] // i]
@@ -1093,7 +1096,11 @@ def GetDataframe(list_info, label_list, tablesize):
                 index.append(label_list[m][0])
 
         values[i] = pd.Series(col_info, index=index)
+        values[i] = values[i].to_dict()  # Deduplizierung
+        values[i] = pd.Series(values[i])
+        
     dict_info = dict(zip(keys, values))
+    # print(dict_info)
     df = pd.DataFrame(dict_info)
     df = df.fillna('')
     return df
@@ -1267,13 +1274,8 @@ def SaveTable(nummer, table, img_path):
             plt.xticks([]), plt.yticks([])
             plt.show()
 
-        plt.suptitle('table ' + str(nummer+1) + ' of ' + str(img_path))
-        plt.subplot(121), plt.imshow(table)
-        plt.xticks([]), plt.yticks([])
-        plt.subplot(122), plt.imshow(image_add)
-        plt.xticks([]), plt.yticks([])
-        plt.savefig('.\\Development\\imageSave\\{}'.format('table_' + str(nummer+1) + '_of_' + str(os.path.basename(img_path))))
-        # plt.show()
+        cv2.imwrite('.\\Development\\imageSave\\{}'.format(
+            'table_' + str(nummer+1) + '_of_' + str(os.path.basename(img_path))), image_add)
 
         center_list, label_list, tablesize = GetLabel(
             location, average_cellsize)
@@ -1353,7 +1355,7 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test13.png'
+    img_path = 'Development\\imageTest\\test6.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
