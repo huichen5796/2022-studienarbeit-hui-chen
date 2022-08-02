@@ -753,7 +753,7 @@ def PositionTable(img_1024, img_path, model_used):
     table_contours = []
     # remove bad contours
     for c in contours:
-        if cv2.contourArea(c) > 3000:  # the size of table must be bigger than 3000 pixels
+        if cv2.contourArea(c) > 100000:  # the size of table must be bigger than 100000 pixels
             table_contours.append(c)
 
     table_boundRect = [None]*len(table_contours)
@@ -1355,7 +1355,7 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test6.png'
+    img_path = 'Development\\imageTest\\test16.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 

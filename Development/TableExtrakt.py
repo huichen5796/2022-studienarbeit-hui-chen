@@ -345,7 +345,7 @@ if __name__ == '__main__':
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    dir_path = 'Development\\imageTest'
+    dir_path = 'Development\\successControl'
     StapelVerbreitung(dir_path, model = 'densenet')
     # model: 'tablenet', 'densenet' or 'unet'
 
