@@ -16,6 +16,7 @@ import pandas as pd
 import json
 import pytesseract
 import time
+import copy
 import taichi as ti
 ti.init()
 es = Elasticsearch()
@@ -438,7 +439,7 @@ def GetLineAngle(img):
 
     '''
     bina_image = cv2.adaptiveThreshold(
-        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)  # Gaussian binar
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 10)  # Gaussian binar
     minLong = (img.shape[0]+img.shape[1])//4
     longLines = FLDGetLines(bina_image, minLong)[1]
 
@@ -478,7 +479,7 @@ def GetBoxAngle(img):
 
     '''
     bina_image = cv2.adaptiveThreshold(
-        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)  # Gaussian binar
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 10)  # Gaussian binar
     bina_image1 = cv2.bitwise_not(bina_image)  # invert the image
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
     bina_image1 = cv2.erode(bina_image1, kernel, iterations=1)
@@ -557,6 +558,7 @@ def ImageRotate(image, angle):
         image, M, (new_w, new_h), borderValue=(255, 255, 255))
     return image_rotate
 
+
 def WhiteBordersRemove(gray_image):
     '''
     remove excess white edges of image
@@ -571,7 +573,7 @@ def WhiteBordersRemove(gray_image):
     gray_image1 = cv2.copyMakeBorder(
         gray_image, 25, 25, 25, 25, cv2.BORDER_CONSTANT, value=255)
     bina_image = cv2.adaptiveThreshold(
-        gray_image1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)  # Gaussian binar
+        gray_image1, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 10)  # Gaussian binar
 
     bina_image1 = cv2.bitwise_not(bina_image)  # invert the image
 
@@ -599,11 +601,10 @@ def TiltCorrection(img):
 
     image_rotate = ImageRotate(img, angle)
 
-    if abs(angle)>25:
+    if abs(angle) > 25:
         image_rotate = WhiteBordersRemove(image_rotate)
 
     return image_rotate
-
 
 
 def SizeNormalize(img):
@@ -668,13 +669,13 @@ def PositionTable(img_1024, img_path, model_used):
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
-        path = 'Development\models\unet100_180spe.pkl'
+        path = "Development\\models\\unet100_180spe.pkl"
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'tablenet':
 
         model = TableNet().to(device)
-        path = 'Development\\models\densenet_config_4_model_checkpoint.pth.tar'
+        path = 'Development\\models\\densenet_config_4_model_checkpoint.pth.tar'
 
         pop_list = ["column_decoder.conv_8_column.0.weight",
                     "column_decoder.conv_8_column.0.bias",
@@ -707,7 +708,7 @@ def PositionTable(img_1024, img_path, model_used):
     with torch.no_grad():
         image = image.to(device).unsqueeze(0)
         pred = model(image)
-        
+
         if model_used == 'unet':
             pred = (pred.cpu().detach().numpy().squeeze())
         else:
@@ -756,7 +757,8 @@ def PositionTable(img_1024, img_path, model_used):
     table_contours = []
     # remove bad contours
     for c in contours:
-        if cv2.contourArea(c) > 100000:  # the size of table must be bigger than 100000 pixels
+        # the size of table must be bigger than 100000 pixels
+        if cv2.contourArea(c) > 100000:
             table_contours.append(c)
 
     table_boundRect = [None]*len(table_contours)
@@ -851,7 +853,7 @@ def DeletLines(img):
 
     '''
     img1 = cv2.adaptiveThreshold(
-        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 20)
     # _, img1 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY|cv2.THRESH_OTSU)
     img2 = FLDGetLines(img1, minLong=18)[0]
 
@@ -904,9 +906,9 @@ def GetCell(image_table, img_deletline):
         x, y, w, h = cv2.boundingRect(cnt)
         if w > 4 and h > 4:
             x = int(x - size)
-            y = int(y - size // 3)
+            y = int(y - size // 2)
             w = int(w + 2 * size)
-            h = int(h + 2 * (size // 3))
+            h = int(h + 2 * (size // 2))
             list_contours.append((x, y, w, h))
             average_cellsize[0] = average_cellsize[0] + w
             average_cellsize[1] = average_cellsize[1] + h
@@ -1031,13 +1033,13 @@ def Extrakt_Tesseract(image_cell):
     '''
 
     pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
-    result = pytesseract.image_to_string(image_cell, lang='deu')
+    result = pytesseract.image_to_string(image_cell, lang='deu', config='--psm 7')
     # print(result)
 
     if '\n' in result:
         result = result.replace('\n', '')
     if result == '':
-        result = '----'
+        result = '(unknown)'
     return result
 
 
@@ -1087,7 +1089,7 @@ def GetDataframe(list_info, label_list, tablesize):
     - output: Dataframe
 
     '''
-    keys = ['col%s' % s for s in range(tablesize[1])]
+    keys = ['col%s'%s for s in range(tablesize[1])]
 
     values = [None]*len(keys)
     for i, key in enumerate(keys):
@@ -1101,25 +1103,13 @@ def GetDataframe(list_info, label_list, tablesize):
         values[i] = pd.Series(col_info, index=index)
         values[i] = values[i].to_dict()  # Deduplizierung
         values[i] = pd.Series(values[i])
-        
+
     dict_info = dict(zip(keys, values))
     # print(dict_info)
     df = pd.DataFrame(dict_info)
-    df = df.fillna('')
+    df = df.fillna('(empty_cell)')
     return df
 
-
-def MergeRow(df_dict):
-    '''
-    Merge cells across rows
-
-    - input: dict
-
-    - output: dict
-
-    '''
-
-    return df_dict
 
 
 def Umform(df_dict):
@@ -1134,56 +1124,92 @@ def Umform(df_dict):
     # {'0': {'col0': 'Project', 'col1': '2019.12.31', 'col2': '2020.9.30'},
     # '1': {'col0': 'Total Assets', 'col1': '10,991,903,55', 'col2': '12,049,642,76'},
     # '2': {'col0': 'Net Assets', 'col1': '1,044,954,84', 'col2': '1,053,487,14'},
-    # '3': {'col0': 'Project', 'col1': '2019.1-12', 'col2': '2020.1-9'},
-    # '4': {'col0': 'Operating Revenues', 'col1': '286,039,95', 'col2': '211,058,\\/75'},
-    # '5': {'col0': 'Net Profit', 'col1': '105,444, 74', 'col2': '91,193,39'}}
+    # '3': {'col0': 'Operating Revenues', 'col1': '286,039,95', 'col2': '211,058,75'},
+    # '4': {'col0': 'Net Profit', 'col1': '105,444,74', 'col2': '91,193,39'}}
 
-    # let 'index'= value of 'col0' ==> '1' is 'Total Assets'
-    # let 'col1' = value of 'col1' in '0' ==> 'col1' in '1' is '2019.12.31'
-    # wie tun bei 'Projekt'?
+    # let values in '0' be header
 
-    # {'Total Assets': {'2019.12.31': '10,991,903,55', '2020.9.30': '12,049,642,76'},
-    # 'Net Assets': {'2019.12.31': '1,044,954,84', '2020.9.30': '1,053,487,14'},
-    # 'Operating Revenues': {'2019.12.31': '286,039,95', '2020.9.30': '211,058,75'},
-    # 'Net Profit': {'2019.12.31': '105,444,74', '2020.9.30': '91,193,39'}}
+    #{"Projekt": "Total Assets", "Net Assets", "Operating Revenues", "Net Profit"
+    # "2019.12.31": "10,911,903,55", "1,044,954,84", "286,039,95", "105,444,74"
+    # '2020.9.30': '12,049,642,76', '1,053,487,14', '2020.1-9', '211,058,75', '91,193,39'}
 
-    '''
-    für komplexe Tabellen
+    first_three_lines = [list(dict(pp).values()) for pp in list(df_dict.values())[0:3]]
+    # hier z.b. 
+    # [['Project', '2019.12.31', '2020.9.30'], 
+    #  ['Total Assets', '10,991,903,55', '12,049,642,76'], 
+    #  ['Net Assets', '1,044,954,84', '1,053,487,14']]
+    type_judge = first_three_lines[0] + first_three_lines[1] + first_three_lines[2]
 
-    angenommen 1: header liegt immer in den ersten drei Zeilen
-    angenommen 2: main-header liegt immer ober sub-header
-    angenommen 3: (row0, col0) ist immer leer
-    angenommen 4: es gibt keine leere Zellen in der erste Zeile unter header
+    if '(empty_cell)' not in type_judge:  # die Tabelle ist einfache Tabelle
 
-    Ich plane, basierend auf dem Zeileninhalt, main-header auf sub-header zu addieren.
+        header_items = list(dict(list(df_dict.items())[0][1]).items())
+        newDictKeys = [header[1] for header in header_items]
+        zeile_nummer = 1
 
-    '''
-    header_items = list(df_dict.items())[0:3]
-    # ['Meldewscher3!', '', 'MelgewöcherL4)', '', 'IAnuErißeFimivereleich', '']
-    main_header = list(dict(header_items[0][1]).values())[1:]
-    # print(first_item)
-    if '' not in main_header:  # die Tabelle ist einfache Tabelle
-        # print(df_dict)
-        newDictKeys = [None]*(len(list(df_dict.keys()))-1)
-        newSubKeys = list(dict(list(df_dict.values())[0]).values())[1:]
+    elif '(empty_cell)' in type_judge:  # die Tabelle ist komplexe Tabelle
+        '''
+        für komplexe Tabellen
 
-        newDictValues = [None]*(len(newDictKeys))
-        for i, (key, value) in enumerate(list(df_dict.items())[1:]):
-            newDictKeys[i] = list(dict(value).values())[0]
-            newSubValues = list(dict(value).values())[1:]
-            newDictValues[i] = dict(zip(newSubKeys, newSubValues))
+        angenommen 1: header liegt immer in den ersten drei Zeilen
+        angenommen 2: minimal 1 Zeile der header-Zeilen ist voll
+        angenommen 3: die erste Zeile unter header-Zeilen ist voll
 
-        newDict = dict(zip(newDictKeys, newDictValues))
+        '''
+        col_summe = [None]*len(first_three_lines)
+        ftl_copy = copy.deepcopy(first_three_lines)
+        for i, values in enumerate(ftl_copy):
+            while '(empty_cell)' in values:
+                values.remove('(empty_cell)')
+            col_summe[i] = len(values)
 
-        # print(newDict)
 
-        return newDict
+        # 1 means voll, 0 nicht voll also gibt es (empty_cell)
+        # alle Möglichkeiten: 100, 110, 010, 001, 101, 011
+        # hierbei sind 101 und 011 die Möglichkeit, dass die dritte Zeile nicht header ist.
 
-    elif '' in main_header:  # die Tabelle ist komplexe Tabelle
+        '''
+        see issue 'instraciton to function Umform()'
+        über 001 muss man nocht überlegen!! denke vielleicht gibt es bugs dabei.
 
-        # if len(main_header) % 2 == 0:
+        '''
 
-        return df_dict
+        if col_summe[2] == max(col_summe): # if Zeile 3 voll, also 101, 011, 001
+            if col_summe[0] != max(col_summe) and col_summe[1] !=max(col_summe): # is 001, also 3 Zeilen header
+                newDictKeys = [list((a, b, c)) for (a,b,c) in zip(first_three_lines[0], first_three_lines[1], first_three_lines[2])]
+                zeile_nummer = 3
+            else: # is 101, 011, also 2 Zeilen header
+                newDictKeys = [list((a, b)) for (a,b) in zip(first_three_lines[0], first_three_lines[1])]
+                zeile_nummer = 2
+        else: # if Zeile 3 nicht voll, also 100, 110, 010, aslo 3 Zeilen header
+
+            newDictKeys = [list((a, b, c)) for (a,b,c) in zip(first_three_lines[0], first_three_lines[1], first_three_lines[2])]
+            zeile_nummer = 3
+
+        # für die Möglichkeit 011, 010 sollten die leeren Zellen in erster Zeile ausgefüllt werden.
+        # weil Zeile 1 ist Primärtitel, Zeile 2 ist Sekundärtitel. 
+        
+        for i, item in enumerate(newDictKeys):
+            if i > 1:
+                if item[0] == '(empty_cell)':
+                    item[0] = newDictKeys[i-1][0]
+
+        newDictKeys = [' '.join(item) for item in newDictKeys]
+        newDictKeys = [pp.replace('(empty_cell) ', '') for pp in newDictKeys]
+        newDictKeys = [pp.replace(' (empty_cell)', '') for pp in newDictKeys]
+        newDictKeys = [pp.replace('- ', '-') for pp in newDictKeys]
+
+    newDictValues = [None]*len(newDictKeys)
+    for n, v in enumerate(newDictValues):
+        newDictValues[n] = [None]*(len(df_dict)-zeile_nummer)
+        # kann hier nicht newDictValues = [[None]*(len(df_dict)-1)]*len(newDictKeys) schreiben, weil shallow copy gibt es bug
+
+    for i, (key, value) in enumerate(list(df_dict.items())[zeile_nummer:]):
+        for ii, (col, info) in enumerate(list(dict(value).items())):
+            newDictValues[int(col[3:])][int(key)-zeile_nummer] = info
+
+    newDict = dict(zip(newDictKeys, newDictValues))
+       
+    return newDict
 
 
 def WriteData(df, img_path, nummer):
@@ -1201,7 +1227,7 @@ def WriteData(df, img_path, nummer):
         orient='index')  # str like {index -> {column -> value}}。
     df_dict = eval(df_json)  # chance str to dict
 
-    # df_dict = Umform(df_dict)
+    df_dict = Umform(df_dict)
 
     body_ = {
         "uniqueId": label_.lower(),
@@ -1249,18 +1275,18 @@ def Search(index_, label_):
 
 
 def SaveTable(nummer, table, img_path):
-    '''
-    This function is the analysis and writing of the table area.
-    The purpose of the function is to make multiple tables in the same graph not affect each other. 
-    The failure of table 1 will not affect the processing of subsequent table 2.
+        '''
+        This function is the analysis and writing of the table area.
+        The purpose of the function is to make multiple tables in the same graph not affect each other. 
+        The failure of table 1 will not affect the processing of subsequent table 2.
 
-    - input 1: nummer of table
-    - input 2: infos of table
-    - input 3: is a parameter for WriteData()
+        - input 1: nummer of table
+        - input 2: infos of table
+        - input 3: is a parameter for WriteData()
 
-    - output: None
-    '''
-    try:
+        - output: None
+        '''
+    #try:
         table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
         table_ol = DeletLines(table_gray)  # bina_image ohne Linien
 
@@ -1295,18 +1321,17 @@ def SaveTable(nummer, table, img_path):
             print(df)
 
         WriteData(df, img_path, nummer)
-    except Exception as e:
-        print('ERROR: ' + ' ' + str(e) + ' ==> table ' + str(nummer))
-    else:
-        print('successful save table ' + str(nummer))
+    #except Exception as e:
+    #    print('ERROR: ' + ' ' + str(e) + ' ==> table ' + str(nummer))
+    #else:
+    #    print('successful save table ' + str(nummer))
 
 #---------------------------------------------------------------------------------------------------------------#
 
 
 def Main(img_path, model, error_info):
-    start = time.time()
-    try:
-
+        start = time.time()
+    #try:
         image = cv2.imread(img_path, 0)
         image_rotate = TiltCorrection(image)  # got gray
         # text_zone = WhiteBordersRemove(image_rotate)  # got gray
@@ -1346,20 +1371,20 @@ def Main(img_path, model, error_info):
 
         for nummer, table in enumerate(table_zone):
             SaveTable(nummer, table, img_path)
-
-    except Exception as e:
-        error_info.append('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
-        print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
-        end = time.time()
-        print('runtime: %s' % (end - start))
-    else:
-        print('successfully done: ' + str(img_path))
-        end = time.time()
-        print('runtime: %s' % (end - start))
+    
+    #except Exception as e:
+    #    error_info.append('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
+    #    print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
+    #    end = time.time()
+    #    print('runtime: %s' % (end - start))
+    #else:
+    #    print('successfully done: ' + str(img_path))
+    #    end = time.time()
+    #    print('runtime: %s' % (end - start))
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test17.png'
+    img_path = 'Development\\imageTest\\test2.PNG'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
@@ -1374,7 +1399,7 @@ if __name__ == '__main__':
     # show in dataframe
     results = json.loads(results)
     for result in results['hits']['hits']:
-        df = pd.DataFrame(result['_source']['content']).stack().unstack(0)
+        df = pd.DataFrame(result['_source']['content'])
         print('--------------------')
         table_uniqueId = result['_source']['uniqueId']
         print(table_uniqueId)
