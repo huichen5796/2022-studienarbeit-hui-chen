@@ -557,22 +557,6 @@ def ImageRotate(image, angle):
         image, M, (new_w, new_h), borderValue=(255, 255, 255))
     return image_rotate
 
-
-def TiltCorrection(img):
-    '''
-    - input: the image we want to tilt correct, must be gray image
-    - output: the tilt corrected image
-
-    '''
-    angle = GetLineAngle(img)
-    if angle == 'nolines':  # if no lines in image, then use GetBoxAngle
-        angle = GetBoxAngle(img)
-
-    image_rotate = ImageRotate(img, angle)
-
-    return image_rotate
-
-
 def WhiteBordersRemove(gray_image):
     '''
     remove excess white edges of image
@@ -601,6 +585,25 @@ def WhiteBordersRemove(gray_image):
                             (x-thickness):(x+w+thickness)]
 
     return text_zone
+
+
+def TiltCorrection(img):
+    '''
+    - input: the image we want to tilt correct, must be gray image
+    - output: the tilt corrected image
+
+    '''
+    angle = GetLineAngle(img)
+    if angle == 'nolines':  # if no lines in image, then use GetBoxAngle
+        angle = GetBoxAngle(img)
+
+    image_rotate = ImageRotate(img, angle)
+
+    if abs(angle)>25:
+        image_rotate = WhiteBordersRemove(image_rotate)
+
+    return image_rotate
+
 
 
 def SizeNormalize(img):
@@ -1300,33 +1303,33 @@ def SaveTable(nummer, table, img_path):
 #---------------------------------------------------------------------------------------------------------------#
 
 
-def Main(img_path, model):
+def Main(img_path, model, error_info):
     start = time.time()
     try:
 
         image = cv2.imread(img_path, 0)
         image_rotate = TiltCorrection(image)  # got gray
-        text_zone = WhiteBordersRemove(image_rotate)  # got gray
+        # text_zone = WhiteBordersRemove(image_rotate)  # got gray
         img_3channel = cv2.cvtColor(
-            text_zone, cv2.COLOR_GRAY2BGR)  # gray to 3 channel
+            image_rotate, cv2.COLOR_GRAY2BGR)  # gray to 3 channel
 
         img_1024 = SizeNormalize(img_3channel)
 
         if __name__ == '__main__':
             plt.suptitle('Vorbreitung')
-            plt.subplot(141)
+            plt.subplot(131)
             plt.title('Original Image')
             plt.imshow(image, cmap='gray')
             plt.xticks([]), plt.yticks([])
-            plt.subplot(142)
+            plt.subplot(132)
             plt.title('Tilt Correction')
             plt.imshow(image_rotate, cmap='gray')
             plt.xticks([]), plt.yticks([])
-            plt.subplot(143)
-            plt.title('White Borders Remove')
-            plt.imshow(img_3channel)
-            plt.xticks([]), plt.yticks([])
-            plt.subplot(144)
+            # plt.subplot(143)
+            # plt.title('White Borders Remove')
+            # plt.imshow(img_3channel)
+            # plt.xticks([]), plt.yticks([])
+            plt.subplot(133)
             plt.title('Resize if not 1024x1024')
             plt.imshow(img_1024)
             plt.xticks([]), plt.yticks([])
@@ -1345,6 +1348,7 @@ def Main(img_path, model):
             SaveTable(nummer, table, img_path)
 
     except Exception as e:
+        error_info.append('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
         print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
         end = time.time()
         print('runtime: %s' % (end - start))
@@ -1355,11 +1359,12 @@ def Main(img_path, model):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test16.png'
+    img_path = 'Development\\imageTest\\test17.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    Main(img_path, model='densenet')
+    error_info = []
+    Main(img_path, model='densenet', error_info=error_info)
     # model: 'tablenet', 'densenet' or 'unet'
 
     time.sleep(2)

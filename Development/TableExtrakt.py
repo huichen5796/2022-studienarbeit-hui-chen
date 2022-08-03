@@ -327,6 +327,7 @@ def ImageReformat(dir):
 
 def StapelVerbreitung(dir, model):
 
+    error_info = []
     image_list = GetImageList(dir)
     print('---------------------------')
     print('There are %s images in total. -- include unprocessed Pdfs.' %
@@ -337,8 +338,9 @@ def StapelVerbreitung(dir, model):
     path_images = [os.path.normpath(os.path.join(dir, fn))
                    for fn in image_list]
     for image in path_images:
-        Main(image, model)
+        Main(image, model, error_info)
     print('done')
+    print('ERROR ==>%s' %error_info)
 
 
 if __name__ == '__main__':
