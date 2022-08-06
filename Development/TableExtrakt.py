@@ -74,7 +74,7 @@ class TableDecoder(nn.Module):
         out = torch.cat((out, pool_4_out), dim=1)  # [1, 640, 64, 64]
         out = self.upsample_2_table(out)  # [1, 256, 128, 128]
         out = torch.cat((out, pool_3_out), dim=1)  # [1, 512, 128, 128]
-        out = self.upsample_3_table(out)  # [1, 3, 1024, 1024]
+        out = self.upsample_3_table(out)  # [1, 1, 1024, 1024]
         return out
 
 
@@ -347,8 +347,8 @@ if __name__ == '__main__':
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    dir_path = 'Development\\successControl'
-    StapelVerbreitung(dir_path, model = 'densenet')
+    dir_path = 'Development\\imageTest'
+    StapelVerbreitung(dir_path, model = 'unet')
     # model: 'tablenet', 'densenet' or 'unet'
 
     time.sleep(1)
@@ -357,7 +357,7 @@ if __name__ == '__main__':
     # show in dataframe
     results = json.loads(results)
     for result in results['hits']['hits']:
-        df = pd.DataFrame(result['_source']['content']).stack().unstack(0)
+        df = pd.DataFrame(result['_source']['content'])
         print('--------------------')
         table_label = result['_source']['uniqueId']
         print(table_label)

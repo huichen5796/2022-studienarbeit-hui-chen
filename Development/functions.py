@@ -665,7 +665,7 @@ def PositionTable(img_1024, img_path, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = 'Development\\models\\densenet_100spe.pkl'
+        path = 'Development\\models\\densenet_130spe.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
@@ -904,7 +904,7 @@ def GetCell(image_table, img_deletline):
     size = 6
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 4 and h > 4:
+        if w > 4 and h > 4 and w < 0.7*img_deletline_inv.shape[1]:
             x = int(x - size)
             y = int(y - size // 2)
             w = int(w + 2 * size)
@@ -952,7 +952,7 @@ def PointCorrection(location, average_cellsize):
     # Disrupted the ordering and caused the region to not be closed
     # Can't get correct cells with intersections that are not aligned, need to correction
 
-    parameter = 1
+    parameter = 0.8
 
     location = sorted(location, key=lambda x: x[0])
 
@@ -961,7 +961,7 @@ def PointCorrection(location, average_cellsize):
             continue
         else:
             # suppose there are no two cells with distance less than - in x axis
-            if abs(location[i+1][0]-location[i][0]) < int(average_cellsize[0]*parameter):
+            if abs(location[i+1][0]-location[i][0]) < int(average_cellsize[0]):
                 location[i+1][0] = location[i][0]
             else:
                 continue
@@ -990,7 +990,7 @@ def GetLabel(location, average_cellsize):
 
     - input: the location of cells (not aligned), [[x,y,w,h], ..] here x and y are the locaiton of top left point of cell
 
-    - output1: the center locationn of cells (aligned), [[center_x, center_y, w, h, x, y], ..]
+    - output1: cells (aligned), [[(center_x + left_x)//2, center_y, w, h, x, y], ..]
     - output2: the label of each cell, [[row?, col?], ..]
     - output3: the size of table, [[row_number, col_number], [...], ...]
 
@@ -1001,7 +1001,7 @@ def GetLabel(location, average_cellsize):
     # get center of cells
     center_list = [None]*len(location)
     for iii, (x, y, w, h) in enumerate(location):
-        center_list[iii] = [x+w//2, y+h//2, w, h, x, y]
+        center_list[iii] = [x+w//4, y+h//2, w, h, x, y]
 
     center_list = PointCorrection(center_list, average_cellsize)
     # print(center_list)
@@ -1033,7 +1033,8 @@ def Extrakt_Tesseract(image_cell):
     '''
 
     pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
-    result = pytesseract.image_to_string(image_cell, lang='deu', config='--psm 7')
+    result = pytesseract.image_to_string(
+        image_cell, lang='deu', config='--psm 7')
     # print(result)
 
     if '\n' in result:
@@ -1089,7 +1090,7 @@ def GetDataframe(list_info, label_list, tablesize):
     - output: Dataframe
 
     '''
-    keys = ['col%s'%s for s in range(tablesize[1])]
+    keys = ['col%s' % s for s in range(tablesize[1])]
 
     values = [None]*len(keys)
     for i, key in enumerate(keys):
@@ -1111,8 +1112,7 @@ def GetDataframe(list_info, label_list, tablesize):
     return df
 
 
-
-def Umform(df_dict):
+def HeaderNormalize(df_dict):
     '''
     Beurteilen: Überschrift, Zeilenüberschrift, Subüberschrift, Value
 
@@ -1120,7 +1120,7 @@ def Umform(df_dict):
 
     - output: dict
     '''
-
+    # einfach table:
     # {'0': {'col0': 'Project', 'col1': '2019.12.31', 'col2': '2020.9.30'},
     # '1': {'col0': 'Total Assets', 'col1': '10,991,903,55', 'col2': '12,049,642,76'},
     # '2': {'col0': 'Net Assets', 'col1': '1,044,954,84', 'col2': '1,053,487,14'},
@@ -1129,74 +1129,114 @@ def Umform(df_dict):
 
     # let values in '0' be header
 
-    #{"Projekt": "Total Assets", "Net Assets", "Operating Revenues", "Net Profit"
+    # {"Projekt": "Total Assets", "Net Assets", "Operating Revenues", "Net Profit"
     # "2019.12.31": "10,911,903,55", "1,044,954,84", "286,039,95", "105,444,74"
     # '2020.9.30': '12,049,642,76', '1,053,487,14', '2020.1-9', '211,058,75', '91,193,39'}
+    header_rN = 3 
+    predict_header = [list(dict(pp).values())
+                         for pp in list(df_dict.values())[0:header_rN]]
+    # hier z.B.
+    # [['Project', '2019.12.31', '2020.9.30'],
+    #  ['Total Assets', '10,991,903,55', '12,049,642,76']
 
-    first_three_lines = [list(dict(pp).values()) for pp in list(df_dict.values())[0:3]]
-    # hier z.b. 
-    # [['Project', '2019.12.31', '2020.9.30'], 
-    #  ['Total Assets', '10,991,903,55', '12,049,642,76'], 
-    #  ['Net Assets', '1,044,954,84', '1,053,487,14']]
-    type_judge = first_three_lines[0] + first_three_lines[1] + first_three_lines[2]
+    if predict_header[0][0] == '(empty_cell)':
+        predict_header[0][0] = '#col0row0#'
 
-    if '(empty_cell)' not in type_judge:  # die Tabelle ist einfache Tabelle
+    judge_list = [] # in list will store the index of row who has empty cell, col0 row0 is voll now
+    for i,row in enumerate(predict_header):
+        if '(empty_cell)' in row:
+            judge_list.append(i)
 
-        header_items = list(dict(list(df_dict.items())[0][1]).items())
-        newDictKeys = [header[1] for header in header_items]
+    if len(judge_list) == 0:  # die Tabelle ist einfache Tabelle
+
+        newDictKeys = list(dict(list(df_dict.values())[0]).values())
+ 
+        newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
+
         zeile_nummer = 1
 
-    elif '(empty_cell)' in type_judge:  # die Tabelle ist komplexe Tabelle
+    else:  # die Tabelle ist komplexe Tabelle
         '''
         für komplexe Tabellen
 
-        angenommen 1: header liegt immer in den ersten drei Zeilen
-        angenommen 2: minimal 1 Zeile der header-Zeilen ist voll
-        angenommen 3: die erste Zeile unter header-Zeilen ist voll
-
-        '''
-        col_summe = [None]*len(first_three_lines)
-        ftl_copy = copy.deepcopy(first_three_lines)
-        for i, values in enumerate(ftl_copy):
-            while '(empty_cell)' in values:
-                values.remove('(empty_cell)')
-            col_summe[i] = len(values)
-
-
-        # 1 means voll, 0 nicht voll also gibt es (empty_cell)
-        # alle Möglichkeiten: 100, 110, 010, 001, 101, 011
-        # hierbei sind 101 und 011 die Möglichkeit, dass die dritte Zeile nicht header ist.
-
-        '''
         see issue 'instraciton to function Umform()'
         über 001 muss man nocht überlegen!! denke vielleicht gibt es bugs dabei.
 
         '''
 
-        if col_summe[2] == max(col_summe): # if Zeile 3 voll, also 101, 011, 001
-            if col_summe[0] != max(col_summe) and col_summe[1] !=max(col_summe): # is 001, also 3 Zeilen header
-                newDictKeys = [list((a, b, c)) for (a,b,c) in zip(first_three_lines[0], first_three_lines[1], first_three_lines[2])]
-                zeile_nummer = 3
-            else: # is 101, 011, also 2 Zeilen header
-                newDictKeys = [list((a, b)) for (a,b) in zip(first_three_lines[0], first_three_lines[1])]
+        if len(judge_list) == 1: # eine Zeile ist nicht voll, zwei voll, möglich ==> 0, 1, 2
+            if judge_list[0] == 0: # Nicht voll, voll, voll  ====> see Form 1 in issue
+                                   # => Es ist sehr wahrscheinlich, dass der Header nur zwei Zeilen einnimmt
+                copy = True
                 zeile_nummer = 2
-        else: # if Zeile 3 nicht voll, also 100, 110, 010, aslo 3 Zeilen header
 
-            newDictKeys = [list((a, b, c)) for (a,b,c) in zip(first_three_lines[0], first_three_lines[1], first_three_lines[2])]
+            elif judge_list[0] == 1: # Es ist sehr wahrscheinlich, dass die nicht voll Zeile generiert wird, 
+                  # weil die Wörter in der oben Zeile zu lang sind
+                copy = False
+                zeile_nummer = 2
+            elif judge_list[0] == 2:
+                copy = False
+                zeile_nummer = 3
+        elif len(judge_list) == 2:
+            if 0 not in judge_list: # voll, nicht, nicht 
+                copy = False
+                zeile_nummer = 3
+            elif 1 not in judge_list: # nicht, voll, nicht
+                copy = True
+                zeile_nummer = 3
+            elif 2 not in judge_list: # nicht, nicht, voll
+                copy = True
+                zeile_nummer = 2
+        elif len(judge_list) == 3:
+            copy = True
             zeile_nummer = 3
 
-        # für die Möglichkeit 011, 010 sollten die leeren Zellen in erster Zeile ausgefüllt werden.
-        # weil Zeile 1 ist Primärtitel, Zeile 2 ist Sekundärtitel. 
-        
-        for i, item in enumerate(newDictKeys):
-            if i > 1:
-                if item[0] == '(empty_cell)':
-                    item[0] = newDictKeys[i-1][0]
+        header_rows = [list(dict(pp).values())
+                         for pp in list(df_dict.values())[0:zeile_nummer]]
+        if header_rows[0][0] == '(empty_cell)':
+            header_rows[0][0] = '#col0row0#'
 
-        newDictKeys = [' '.join(item) for item in newDictKeys]
-        newDictKeys = [pp.replace('(empty_cell) ', '') for pp in newDictKeys]
-        newDictKeys = [pp.replace(' (empty_cell)', '') for pp in newDictKeys]
-        newDictKeys = [pp.replace('- ', '-') for pp in newDictKeys]
+        if copy == True:
+            empty_cell = []   # hier sind die indexs von der Zellen, die aufgefüllt werden muss.
+            first_header = []  # hier sind die indexs von primär header, die coppiert werden muss.
+            for col, value_row0 in enumerate(header_rows[0][1:]):
+                if value_row0 == '(empty_cell)':
+                    empty_cell.append(col+1)
+                else:
+                    first_header.append(col+1)
+
+            row_2 = header_rows[1]
+
+            for col in first_header:
+                if row_2[col] == '(empty_cell)':
+                    del first_header[first_header.index(col)]
+            # The first-level title will dilate to the left and right
+            # If a empty cell receives an update request from both the left and the right, the left takes precedence.
+            while '(empty_cell)' in header_rows[0][1:]:
+                for col in empty_cell:
+                        if col-1 in first_header:
+                            header_rows[0][col] = header_rows[0][col-1]
+                            first_header.append(col)
+                        else:
+                            if col+1 in first_header:
+                                header_rows[0][col] = header_rows[0][col+1]
+                                first_header.append(col)
+                    
+
+        if zeile_nummer == 2:
+            newDictKeys = [key for key in zip(header_rows[0], header_rows[1])]
+        elif zeile_nummer == 3:
+            newDictKeys = [key for key in zip(header_rows[0], header_rows[1], header_rows[2])]
+
+        newDictKeys = ['_'.join(item) for item in newDictKeys]
+        newDictKeys = [pp.replace('(empty_cell)_', '') for pp in newDictKeys]
+        newDictKeys = [pp.replace('_(empty_cell)', '') for pp in newDictKeys]
+        newDictKeys = [pp.replace('#col0row0#_', '') for pp in newDictKeys]
+        newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
+        newDictKeys = [pp.replace('-', '_') for pp in newDictKeys]
+        # in keys should not have '.', ' ', '-' etc.
+        newDictKeys = [pp.replace('.', '') for pp in newDictKeys]
+        newDictKeys = [pp.replace('__', '_') for pp in newDictKeys]
 
     newDictValues = [None]*len(newDictKeys)
     for n, v in enumerate(newDictValues):
@@ -1208,8 +1248,58 @@ def Umform(df_dict):
             newDictValues[int(col[3:])][int(key)-zeile_nummer] = info
 
     newDict = dict(zip(newDictKeys, newDictValues))
-       
+
     return newDict
+
+def NachNormalize(df_dict):
+    '''
+    1. leerer Zellen normalizieren
+    2. Zeilenindex normalizieren
+    
+    '''
+
+    row_list = []
+    number = len(list(list(df_dict.values())[0]))
+
+    for i in range(number):
+        if i >= 2:  # angenomme: Zeilenindex liegt immer in der ersten zweiten Columens
+            row_i = []
+            
+            for value in list(df_dict.values()):
+                row_i.append(value[i])
+            row_list.append(row_i)
+    
+    str_set = ['(empty_cell)']
+    empty_row = []
+    for i, row in enumerate(row_list):
+        result = all([cell in str_set for cell in row]) # if all cell are empty, result = True
+        if result == True:
+            empty_row.append(i+2)
+    if len(empty_row) != 0:
+        
+        Keys = list(df_dict.keys())
+        NewValues = list(df_dict.values())
+        for n in empty_row:
+            if n == 0: 
+                print('ERROR NachNormalize')
+                return df_dict
+            else:
+                NewValues[n-1] = NewValues[n-1] + '_' + NewValues[n]
+                NewValues[n-1].replace('_(empty_cell)', '')
+                del NewValues[n]
+            
+        df_dict = dict(zip(Keys, NewValues))
+    
+
+    # nun Zeilenindex normalizieren
+
+    Keys = list(df_dict.keys())
+    Values = list(df_dict.values())
+
+
+
+
+    return df_dict
 
 
 def WriteData(df, img_path, nummer):
@@ -1219,6 +1309,7 @@ def WriteData(df, img_path, nummer):
     - input 1: dataframe
     - input 2: path
     - input 3: table nummer
+    - input 4: size of table, also col number and row number
 
     '''
 
@@ -1227,28 +1318,30 @@ def WriteData(df, img_path, nummer):
         orient='index')  # str like {index -> {column -> value}}。
     df_dict = eval(df_json)  # chance str to dict
 
-    df_dict = Umform(df_dict)
+    df_dict = HeaderNormalize(df_dict)
+    df_dict = NachNormalize(df_dict)
 
     body_ = {
         "uniqueId": label_.lower(),
         "fileName": os.path.basename(img_path),
         "content": df_dict
+
     }
 
-    es.index(index='table', body=body_)
+    es.index(index='table', id=label_.lower(), body=body_)
 
 
-def Search(index_, label_):
+def Search(index_, uniqueId):
     '''
-    Searches for data in ES-index, for example: table_2_of_test3_0.png
+    Searches for data in ES-index, for example: table_2_of_xxx.png
 
     - input 1: index_ is 'table'
-    - input 2: label of table, for example: table_2_of_table2_rotate_0
-                if label_ is all --> back all datas
+    - input 2: uniqueId of table, for example: table_2_of_xxx.png
+                if uniqueId is all --> back all datas
 
     - output: result
     '''
-    if label_ == 'all':
+    if uniqueId == 'all':
         reqBody = {
             "size": 1000,  # no. of hits that will be sent
             "query": {
@@ -1260,7 +1353,9 @@ def Search(index_, label_):
             "size": 1000,  # No. of hits that will be sent
             "query": {
                 "match": {
-                    label_: {
+                    'uniqueId': {
+                        'query': uniqueId,
+                        'operator': 'and'
                     }
                 }
             }
@@ -1371,7 +1466,7 @@ def Main(img_path, model, error_info):
 
         for nummer, table in enumerate(table_zone):
             SaveTable(nummer, table, img_path)
-    
+
     #except Exception as e:
     #    error_info.append('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
     #    print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
@@ -1384,12 +1479,12 @@ def Main(img_path, model, error_info):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test2.PNG'
+    img_path = 'Development\\imageTest\\test5.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     error_info = []
-    Main(img_path, model='densenet', error_info=error_info)
+    Main(img_path, model='unet', error_info=error_info)
     # model: 'tablenet', 'densenet' or 'unet'
 
     time.sleep(2)
