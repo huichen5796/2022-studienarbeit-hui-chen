@@ -894,13 +894,12 @@ def GetCell(image_table, img_deletline):
 
     mask_image = np.zeros(
         (img_deletline_inv.shape[0], img_deletline_inv.shape[1], 1), np.uint8)
-    size = 6
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         if w > 4 and h > 5 and w < 0.7*img_deletline_inv.shape[1]:
-            x = int(x - size)
+            x = int(x)
             y = int(y)
-            w = int(w + 2 * size)
+            w = int(w)
             h = int(h)
 
             # cv2.rectangle(color_image, (x, y), (x+w, y+h), 0, 2)  # round the text zone by rect
@@ -915,37 +914,30 @@ def GetCell(image_table, img_deletline):
     contours, _ = cv2.findContours(
         mask_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)  # round the text zone by rect
     list_contours = []
-    average_cellsize = [0, 0]
+    size = 2
     color = (255, 0, 0)
     color_image = np.ones(
         (img_deletline_inv.shape[0], img_deletline_inv.shape[1], 3), np.uint8)*255
-    i = 0
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         if w < 0.7*img_deletline_inv.shape[1]:
-
-            y = int(y-1)
-
-            h = int(h+2)
+            x = int(x - size)
+            y = int(y - size)
+            w = int(w + 2 * size)
+            h = int(h + 2 * size)
             list_contours.append((x, y, w, h))
-            average_cellsize[0] = average_cellsize[0] + w
-            average_cellsize[1] = average_cellsize[1] + h
-            i += 1
             # cv2.rectangle(color_image, (x, y), (x+w, y+h), 0, 2)  # round the text zone by rect
             triangle = np.array([[x, y], [x, y+h], [x+w, y+h], [x+w, y]])
             cv2.fillConvexPoly(color_image, triangle, color)
     # image_table = cv2.cvtColor(image_table, cv2.COLOR_GRAY2BGR)
     image_add = cv2.addWeighted(image_table, 0.9, color_image, 0.5, 0)
-    average_cellsize = [average_cellsize[0] // i, average_cellsize[1] // i]
-    if __name__ == '__main__':
-        print('average_cellsize [w, h] --> ' + str(average_cellsize))
 
     location = np.array(list_contours)
 
-    return location, average_cellsize, image_add  # image_add is used only for show
+    return location, image_add  # image_add is used only for show
 
 
-def PointCorrection(location, average_cellsize):
+def PointCorrection(location):
     '''
     align the points
 
@@ -969,8 +961,6 @@ def PointCorrection(location, average_cellsize):
     # Disrupted the ordering and caused the region to not be closed
     # Can't get correct cells with intersections that are not aligned, need to correction
 
-    parameter = 1
-
     location = sorted(location, key=lambda x: x[0])
 
     for i in range(len(location)-1):
@@ -978,7 +968,7 @@ def PointCorrection(location, average_cellsize):
             continue
         else:
             # suppose there are no two cells with distance less than - in x axis
-            if abs(location[i+1][0]-location[i][0]) < int(average_cellsize[0]*parameter):
+            if abs(location[i+1][0]-location[i][0]) <= int(location[i+1][2]*0.2+location[i][2]*0.8):
                 location[i+1][0] = location[i][0]
             else:
                 continue
@@ -990,7 +980,7 @@ def PointCorrection(location, average_cellsize):
             continue
         else:
             # suppose there are no two cells with distance less than - in y axis
-            if abs(location[i+1][1]-location[i][1]) < int(average_cellsize[1]*parameter):
+            if abs(location[i+1][1]-location[i][1]) <= int(location[i+1][3]*0.2+location[i][3]*0.8):
                 location[i+1][1] = location[i][1]
             else:
                 continue
@@ -1001,7 +991,7 @@ def PointCorrection(location, average_cellsize):
     return location
 
 
-def GetLabel(location, average_cellsize):
+def GetLabel(location):
     '''
     Assign row and column labels to each cell
 
@@ -1018,9 +1008,9 @@ def GetLabel(location, average_cellsize):
     # get center of cells
     center_list = [None]*len(location)
     for iii, (x, y, w, h) in enumerate(location):
-        center_list[iii] = [x+w//4, y+h//2, w, h, x, y]
+        center_list[iii] = [x+w//2, y+h//2, w, h, x, y]
 
-    center_list = PointCorrection(center_list, average_cellsize)
+    center_list = PointCorrection(center_list)
     # print(center_list)
     cols_list = list(set([pp[0] for pp in center_list]))  # alle x axis
     cols_list.sort()
@@ -1055,7 +1045,7 @@ def Extrakt_Tesseract(image_cell):
     # print(result)
 
     if '\n' in result:
-        result = result.replace('\n', '')
+        result = result.replace('\n', '').replace('|', '').replace('/', '')
     if result == '':
         result = '(unknown)'
     return result
@@ -1129,7 +1119,7 @@ def GetDataframe(list_info, label_list, tablesize):
     return df
 
 
-def HeaderNormalize(df_dict):
+def TableType(df_dict):
     '''
     Beurteilen: Überschrift, Zeilenüberschrift, Subüberschrift, Value
 
@@ -1139,21 +1129,10 @@ def HeaderNormalize(df_dict):
     - output 2: table_type -- einfach oder nicht
 
     '''
-    # einfach table:
-    # {'0': {'col0': 'Project', 'col1': '2019.12.31', 'col2': '2020.9.30'},
-    # '1': {'col0': 'Total Assets', 'col1': '10,991,903,55', 'col2': '12,049,642,76'},
-    # '2': {'col0': 'Net Assets', 'col1': '1,044,954,84', 'col2': '1,053,487,14'},
-    # '3': {'col0': 'Operating Revenues', 'col1': '286,039,95', 'col2': '211,058,75'},
-    # '4': {'col0': 'Net Profit', 'col1': '105,444,74', 'col2': '91,193,39'}}
 
-    # let values in '0' be header
-
-    # {"Projekt": "Total Assets", "Net Assets", "Operating Revenues", "Net Profit"
-    # "2019.12.31": "10,911,903,55", "1,044,954,84", "286,039,95", "105,444,74"
-    # '2020.9.30': '12,049,642,76', '1,053,487,14', '2020.1-9', '211,058,75', '91,193,39'}
-    header_rN = 3
+    header_rN = len(df_dict)//2
     predict_header = [list(dict(pp).values())
-                         for pp in list(df_dict.values())[0:header_rN]]
+                      for pp in list(df_dict.values())[0:header_rN]]
     # hier z.B.
     # [['Project', '2019.12.31', '2020.9.30'],
     #  ['Total Assets', '10,991,903,55', '12,049,642,76']
@@ -1169,202 +1148,251 @@ def HeaderNormalize(df_dict):
 
     if len(judge_list) == 0:  # die Tabelle ist einfache Tabelle
 
-        newDictKeys = list(dict(list(df_dict.values())[0]).values())
-
-        newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
-
-        zeile_nummer = 1
         table_type = 'einfach'
 
     else:  # die Tabelle ist komplexe Tabelle
         table_type = 'komplex'
-        '''
-        für komplexe Tabellen
 
-        see issue 'instraciton to function Umform()'
-        über 001 muss man nocht überlegen!! denke vielleicht gibt es bugs dabei.
+    return table_type
 
-        '''
 
-        if len(judge_list) == 1:  # eine Zeile ist nicht voll, zwei voll, möglich ==> 0, 1, 2
-            if judge_list[0] == 0:  # Nicht voll, voll, voll  ====> see Form 1 in issue
-                                   # => Es ist sehr wahrscheinlich, dass der Header nur zwei Zeilen einnimmt
-                copy = True
-                zeile_nummer = 2
+def Einfachverarbeitung(df_dict):
+    newDictKeys = list(dict(list(df_dict.values())[0]).values())
+    newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
 
-            # Es ist sehr wahrscheinlich, dass die nicht voll Zeile generiert wird,
-            elif judge_list[0] == 1:
-                  # weil die Wörter in der oben Zeile zu lang sind
-                copy = False
-                zeile_nummer = 2
-            elif judge_list[0] == 2:
-                copy = False
-                zeile_nummer = 3
-        elif len(judge_list) == 2:
-            if 0 not in judge_list:  # voll, nicht, nicht
-                copy = False
-                zeile_nummer = 3
-            elif 1 not in judge_list:  # nicht, voll, nicht
-                copy = True
-                zeile_nummer = 3
-            elif 2 not in judge_list:  # nicht, nicht, voll
-                copy = True
-                zeile_nummer = 2
-        elif len(judge_list) == 3:
-            copy = True
-            zeile_nummer = 3
-
-        header_rows = [list(dict(pp).values())
-                         for pp in list(df_dict.values())[0:zeile_nummer]]
-        if header_rows[0][0] == '(empty_cell)':
-            header_rows[0][0] = '#col0row0#'
-
-        if copy == True:
-            # hier sind die indexs von der Zellen, die aufgefüllt werden muss.
-            empty_cell = []
-            # hier sind die indexs von primär header, die coppiert werden muss.
-            first_header = []
-            for col, value_row0 in enumerate(header_rows[0][1:]):
-                if value_row0 == '(empty_cell)':
-                    empty_cell.append(col+1)
-                else:
-                    first_header.append(col+1)
-
-            row_2 = header_rows[1]
-            row_3 = header_rows[2]
-            if zeile_nummer == 2:
-                for col in first_header:
-                    if row_2[col] == '(empty_cell)':
-                        del first_header[first_header.index(col)]
-
-                for col in empty_cell:
-                    if row_2[col] == '(empty_cell)':
-                        del empty_cell[empty_cell.index(col)]
-            elif zeile_nummer ==3:
-                for col in first_header:
-                    if row_2[col] == '(empty_cell)' and row_3[col] == '(empty_cell)':
-                        del first_header[first_header.index(col)]
-
-                for col in empty_cell:
-                    if row_2[col] == '(empty_cell)' and row_3[col] == '(empty_cell)':
-                        del empty_cell[empty_cell.index(col)]
-            # The first-level title will dilate to the left and right
-            # If a empty cell receives an update request from both the left and the right, the left takes precedence.
-            b = 0
-            while len(empty_cell) != 0:
-                for col in empty_cell:
-                        if col-1 in first_header:
-                            header_rows[0][col] = header_rows[0][col-1]
-                            first_header.append(col)
-                            del empty_cell[empty_cell.index(col)]
-                        else:
-                            if col+1 in first_header:
-                                header_rows[0][col] = header_rows[0][col+1]
-                                first_header.append(col)
-                                del empty_cell[empty_cell.index(col)]
-                b+=1
-                if b >=40:
-                    
-                    print('ERROR HeaderNormalize Infinite Loop')
-                    break
-            if b >= 40:
-                return df_dict, 'einfach'
-
-        if zeile_nummer == 2:
-            newDictKeys = [key for key in zip(header_rows[0], header_rows[1])]
-        elif zeile_nummer == 3:
-            newDictKeys = [key for key in zip(
-                header_rows[0], header_rows[1], header_rows[2])]
-
-        newDictKeys = ['_'.join(item) for item in newDictKeys]
-        newDictKeys = [pp.replace('(empty_cell)_', '') for pp in newDictKeys]
-        newDictKeys = [pp.replace('_(empty_cell)', '') for pp in newDictKeys]
-        newDictKeys = [pp.replace('#col0row0#_', '') for pp in newDictKeys]
-        newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
-        newDictKeys = [pp.replace('-', '_') for pp in newDictKeys]
-        # in keys should not have '.', ' ', '-' etc.
-        newDictKeys = [pp.replace('.', '') for pp in newDictKeys]
-        newDictKeys = [pp.replace('__', '_') for pp in newDictKeys]
+    if newDictKeys[0][0] == '(empty_cell)':
+        newDictKeys[0][0] = '#col0row0#'
 
     newDictValues = [None]*len(newDictKeys)
     for n, v in enumerate(newDictValues):
-        newDictValues[n] = [None]*(len(df_dict)-zeile_nummer)
+        newDictValues[n] = [None]*(len(df_dict)-1)
         # kann hier nicht newDictValues = [[None]*(len(df_dict)-1)]*len(newDictKeys) schreiben, weil shallow copy gibt es bug
 
-    for i, (key, value) in enumerate(list(df_dict.items())[zeile_nummer:]):
+    for i, (key, value) in enumerate(list(df_dict.items())[1:]):
         for ii, (col, info) in enumerate(list(dict(value).items())):
-            newDictValues[int(col[3:])][int(key)-zeile_nummer] = info
+            newDictValues[int(col[3:])][int(key)-1] = info
 
     newDict = dict(zip(newDictKeys, newDictValues))
 
-    return newDict, table_type
+    return newDict
 
 
-def NachNormalize(df_dict, table_type):
-    '''
-    1. leerer Zellen normalizieren
-    2. Zeilenindex normalizieren
+def Transform(df_dict):
 
-    '''
-    if table_type == 'einfach':
-        return df_dict
+    df_list = [None]*len(list(dict(list(df_dict.values())[0]).values()))
 
-    elif table_type == 'komplex':
-        row_list = []
-        number = len(list(list(df_dict.values())[0]))
+    for n, v in enumerate(df_list):
+        df_list[n] = [None]*(len(df_dict))
+        # kann hier nicht newDictValues = [[None]*(len(df_dict)-1)]*len(newDictKeys) schreiben, weil shallow copy gibt es bug
 
-        for i in range(number):
-            row_i = []
+    for i, (key, value) in enumerate(list(df_dict.items())):
+        for ii, (col, info) in enumerate(list(dict(value).items())):
+            df_list[int(col[3:])][int(key)] = info
 
-            for value in list(df_dict.values()):
-                row_i.append(value[i])
-            row_list.append(row_i)
+    if df_list[0][0] == '(empty_cell)':
+        df_list[0][0] = '#col0row0#'
+
+    return df_list
+
+
+def VertikalSchmelzen(df_list):
+
+    row_list = []
+    number = len(df_list[0])
+
+    for i in range(number):
+        row_i = []
+
+        for row in df_list:
+            row_i.append(row[i])
+        row_list.append(row_i)
+
+    str_set = ['(empty_cell)']
+    empty_row = []
+    for i, row in enumerate(row_list):
+        # if all cell are empty, result = True
+        result = all([cell in str_set for cell in row[2:]])
+        # for [2:] - angenommen [0:1] ist zeilenindex
+        if result == True:
+            empty_row.append(i)
+
+    if len(empty_row) != 0:
+
+        for n in empty_row:
+            if n == 0:
+                for spalt in df_list:
+                    spalt[1] = (spalt[0] + '_' + spalt[1]
+                                ).replace('(empty_cell)_', '').replace('-_', '-')
+
+            else:
+                for spalt in df_list:
+                    spalt[n-1] = (spalt[n-1] + '_' + spalt[n]
+                                  ).replace('_(empty_cell)', '').replace('-_', '-')
+
+        df_list_new = [None]*len(df_list)
+        for i, col in enumerate(df_list):
+            df_list_new[i] = [cell for i, cell in enumerate(
+                col) if i not in empty_row]
+
+        return df_list_new
+    else:
+        return df_list
+
+
+def ZeilenIndexSchmelzen(df_list):
+
+    halb_rN = len(df_list[0])//2
+
+    if '(empty_cell)' in df_list[0][halb_rN] + df_list[1][halb_rN]:
+        for i, ind in enumerate(df_list[0]):
+            df_list[0][i] = (df_list[0][i] + '_' + df_list[1][i]
+                             ).replace('_(empty_cell)', '').replace('(empty_cell)_', '')
+        del df_list[1]
+
+    return df_list
+
+
+def BestimmenZeilNummer(df_list):
+
+    row_list = []
+    number = len(df_list[0])
+
+    for i in range(number):
+        row_i = []
+
+        for row in df_list:
+            row_i.append(row[i])
+        row_list.append(row_i)
+
+    str_set = ['(empty_cell)']
+    voll_row = []
+    empty_row = []
+    for i, row in enumerate(row_list):
+        # if any cell is empty, result = True, d.h. empty row
+        result = any([cell in str_set for cell in row])
+        if result == True:
+            empty_row.append(i)
+        else:
+            if i != 0 and i != 1:  # Die ersten beiden Zeilen nehmen nicht am Urteil teil
+                voll_row.append(i)
+
+    if len(voll_row) != 0:
+        zeile_nummer = voll_row[0]
+    else:
+        zeile_nummer = number//3 + 1
+
+    return zeile_nummer, empty_row, row_list
+
+
+def HeaderSchmelzen(df_list, zeile_nummer, empty_row, row_list):
+
+    if 0 in empty_row:
+
+        empty_cell = []
+        # hier sind die indexs von der Zellen, die aufgefüllt werden muss.
+        first_header = []
+        # hier sind die indexs von primär header, die coppiert werden muss.
+
+        for col, value_row0 in enumerate(row_list[0][1:]):
+            if value_row0 == '(empty_cell)':
+                empty_cell.append(col+1)
+            else:
+                first_header.append(col+1)
+
+        header_zeile = row_list[:zeile_nummer]
+
+        headercol_list = []
+        for i in range(len(row_list[0])):
+            col_i = []
+
+            for row in header_zeile:
+                col_i.append(row[i])
+            headercol_list.append(col_i)
 
         str_set = ['(empty_cell)']
-        empty_row = []
-        for i, row in enumerate(row_list):
+        no_quali = []
+        for i, col in enumerate(headercol_list):
             # if all cell are empty, result = True
-            result = all([cell in str_set for cell in row[2:]])
-                                                                # for [2:] - angenommen [0:1] ist zeilenindex
+            result = all([cell in str_set for cell in col[1:]])
             if result == True:
-                empty_row.append(i)
+                no_quali.append(i)
 
-        if len(empty_row) != 0:
+        first_header = [pri for pri in first_header if pri not in no_quali]
+        empty_cell = [emp for emp in empty_cell if emp not in no_quali]
 
-            Keys = list(df_dict.keys())
-            NewValues = list(df_dict.values())
-            for n in empty_row:
-                if n == 0:
-                    print('ERROR NachNormalize')
-                    return df_dict
+        # The first-level title will dilate to the left and right
+        # If a empty cell receives an update request from both the left and the right, the left takes precedence.
+
+        b = 0
+        while len(empty_cell) != 0:
+            for col in empty_cell:
+                if col-1 in first_header:
+                    headercol_list[col][0] = headercol_list[col-1][0]
+                    first_header.append(col)
+                    del empty_cell[empty_cell.index(col)]
                 else:
-                    for spalt in NewValues:
-                        spalt[n-1] = (spalt[n-1] + '_' + spalt[n]
-                                    ).replace('_(empty_cell)', '').replace('-_', '-')
-                        del spalt[n]
+                    if col+1 in first_header:
+                        headercol_list[col][0] = headercol_list[col+1][0]
+                        first_header.append(col)
+                        del empty_cell[empty_cell.index(col)]
+            b += 1
+            if b >= 40:
+                if __name__ == '__main__':
+                    print('ERROR HeaderSchmelzen Infinite Loop')
+                break
 
-            df_dict = dict(zip(Keys, NewValues))
+    else:
+        header_zeile = row_list[:zeile_nummer]
 
-        # nun Zeilenindex normalizieren
+        headercol_list = []
+        for i in range(len(row_list[0])):
+            col_i = []
 
-        Keys = list(df_dict.keys())
-        Values = list(df_dict.values())
+            for row in header_zeile:
+                col_i.append(row[i])
+            headercol_list.append(col_i)
 
-        if '(empty_cell)' in Values[0] + Values[1]:
-            for i, ind in enumerate(Values[0]):
-                Values[0][i] = (Values[0][i]+'_'+Values[1][i]
-                                ).replace('_(empty_cell)', '').replace('(empty_cell)_', '')
-            del Values[1]
-            Keys[0] = (Keys[0]+'_'+Keys[1]).replace('_(empty_cell)',
-                    '').replace('(empty_cell)_', '')
-            del Keys[1]
+    newDictKeys = ['_'.join(item) for item in headercol_list]
+    newDictKeys = [pp.replace('(empty_cell)_', '') for pp in newDictKeys]
+    newDictKeys = [pp.replace('_(empty_cell)', '') for pp in newDictKeys]
+    newDictKeys = [pp.replace('#col0row0#_', '') for pp in newDictKeys]
+    newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
+    newDictKeys = [pp.replace('-', '_') for pp in newDictKeys]
+    # in keys should not have  ' ', '-' etc.
+    newDictKeys = [pp.replace('__', '_') for pp in newDictKeys]
 
-            df_dict = dict(zip(Keys, Values))
+    newDictValues = [col[zeile_nummer:] for col in df_list]
 
-        return df_dict
+    newDict = dict(zip(newDictKeys, newDictValues))
+
+    return newDict
 
 
-def WriteData(df, img_path, nummer):
+def Umform(df_dict, label_):
+    try:
+        table_type = TableType(df_dict)
+
+        if table_type == 'einfach':
+            df_dict = Einfachverarbeitung(df_dict)
+
+            return df_dict
+
+        else:
+            df_list = Transform(df_dict)
+            df_list = VertikalSchmelzen(df_list)
+            df_list = ZeilenIndexSchmelzen(df_list)
+
+            zeile_nummer, empty_row, row_list = BestimmenZeilNummer(df_list)
+            df_dict = HeaderSchmelzen(
+                df_list, zeile_nummer, empty_row, row_list)
+
+            return df_dict
+
+    except Exception as e:
+        error_info.append((label_, 'Umform' ,str(e)))
+
+
+def WriteData(df, img_path, nummer, error_info):
     '''
     write dataframe to elasticsearch
 
@@ -1374,24 +1402,78 @@ def WriteData(df, img_path, nummer):
     - input 4: size of table, also col number and row number
 
     '''
+    try:
+        label_ = 'table_' + str(nummer+1) + '_of_' + os.path.basename(img_path)
+        df_json = df.to_json(
+            orient='index')  # str like {index -> {column -> value}}。
+        df_dict = eval(df_json)  # chance str to dict
 
-    label_ = 'table_' + str(nummer+1) + '_of_' + os.path.basename(img_path)
-    df_json = df.to_json(
-        orient='index')  # str like {index -> {column -> value}}。
-    df_dict = eval(df_json)  # chance str to dict
+        df_dict = Umform(df_dict, label_)
 
-    df_dict, table_type = HeaderNormalize(df_dict)
-    df_dict = NachNormalize(df_dict, table_type)
+        body_ = {
+            "uniqueId": label_.lower(),
+            "fileName": os.path.basename(img_path),
+            "content": df_dict
 
-    body_ = {
-        "uniqueId": label_.lower(),
-        "fileName": os.path.basename(img_path),
-        "content": df_dict
+        }
 
-    }
+        es.index(index='table', id=label_.lower(), body=body_)
+    except Exception as e:
+        error_info.append(('table_' + str(nummer+1) + '_of_' +
+                          os.path.basename(img_path), 'WriteData', str(e)))
 
-    es.index(index='table', id=label_.lower(), body=body_)
 
+
+def SaveTable(nummer, table, img_path, error_info):
+    '''
+    This function is the analysis and writing of the table area.
+    The purpose of the function is to make multiple tables in the same graph not affect each other.
+    The failure of table 1 will not affect the processing of subsequent table 2.
+
+    - input 1: nummer of table
+    - input 2: infos of table
+    - input 3: is a parameter for WriteData()
+
+    - output: None
+    '''
+    try:
+        table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
+        table_ol = DeletLines(table_gray)  # bina_image ohne Linien
+
+        location, image_add = GetCell(
+            table, table_ol)  # hier subplot(224)
+
+        if __name__ == '__main__':
+            plt.suptitle('table ' + str(nummer+1) + ' of ' + str(img_path))
+            plt.subplot(131), plt.imshow(table)
+            plt.xticks([]), plt.yticks([])
+            plt.subplot(132), plt.imshow(table_ol, cmap='gray')
+            plt.xticks([]), plt.yticks([])
+            plt.subplot(133), plt.imshow(image_add)
+            plt.xticks([]), plt.yticks([])
+            plt.show()
+
+        cv2.imwrite('.\\Development\\imageSave\\{}'.format(
+            'table_' + str(nummer+1) + '_of_' + str(os.path.basename(img_path))), image_add)
+
+        center_list, label_list, tablesize = GetLabel(
+            location)
+
+        list_info = ReadCell(center_list, table)
+
+        df = GetDataframe(list_info, label_list, tablesize)
+
+        if __name__ == '__main__':
+            print('--------------------------------------------------')
+            print('table %s' % (nummer+1))
+            # print(list_info)
+            # print(label_list)
+            print(df)
+
+        WriteData(df, img_path, nummer, error_info)
+    except Exception as e:
+        error_info.append(('table_' + str(nummer+1) + '_of_' +
+                          os.path.basename(img_path), str(e)))
 
 def Search(index_, uniqueId):
     '''
@@ -1430,64 +1512,11 @@ def Search(index_, uniqueId):
     # print(data_print.decode()) # pretty-print with indent level
     return data_print.decode()
 
-
-def SaveTable(nummer, table, img_path):
-    '''
-    This function is the analysis and writing of the table area.
-    The purpose of the function is to make multiple tables in the same graph not affect each other.
-    The failure of table 1 will not affect the processing of subsequent table 2.
-
-    - input 1: nummer of table
-    - input 2: infos of table
-    - input 3: is a parameter for WriteData()
-
-    - output: None
-    '''
-    try:
-        table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
-        table_ol = DeletLines(table_gray)  # bina_image ohne Linien
-
-        location, average_cellsize, image_add = GetCell(
-            table, table_ol)  # hier subplot(224)
-
-        if __name__ == '__main__':
-            plt.suptitle('table ' + str(nummer+1) + ' of ' + str(img_path))
-            plt.subplot(131), plt.imshow(table)
-            plt.xticks([]), plt.yticks([])
-            plt.subplot(132), plt.imshow(table_ol, cmap='gray')
-            plt.xticks([]), plt.yticks([])
-            plt.subplot(133), plt.imshow(image_add)
-            plt.xticks([]), plt.yticks([])
-            plt.show()
-
-        cv2.imwrite('.\\Development\\imageSave\\{}'.format(
-            'table_' + str(nummer+1) + '_of_' + str(os.path.basename(img_path))), image_add)
-
-        center_list, label_list, tablesize = GetLabel(
-            location, average_cellsize)
-
-        list_info = ReadCell(center_list, table)
-
-        df = GetDataframe(list_info, label_list, tablesize)
-
-        if __name__ == '__main__':
-            print('--------------------------------------------------')
-            print('table %s' % (nummer+1))
-            # print(list_info)
-            # print(label_list)
-            print(df)
-
-        WriteData(df, img_path, nummer)
-    except Exception as e:
-        print('ERROR: ' + ' ' + str(e) + ' ==> table ' + str(nummer))
-    else:
-        print('successful save table ' + str(nummer))
-
 #---------------------------------------------------------------------------------------------------------------#
 
 
 def Main(img_path, model, error_info):
-    start = time.time()
+
     try:
         image = cv2.imread(img_path, 0)
         image_rotate = TiltCorrection(image)  # got gray
@@ -1523,32 +1552,27 @@ def Main(img_path, model, error_info):
 
         table_zone = GetTableZone(table_boundRect, img_1024)
 
-        print('image ' + str(img_path) + ' has ' +
-              str(len(table_zone)) + ' table(s)')
+        #print('image ' + str(img_path) + ' has ' +
+        #      str(len(table_zone)) + ' table(s)')
 
         for nummer, table in enumerate(table_zone):
-            SaveTable(nummer, table, img_path)
+            SaveTable(nummer, table, img_path, error_info)
 
     except Exception as e:
-       error_info.append('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
-       print('ERROR: ' + ' ' + str(e) + ' ==> ' + str(img_path))
-       end = time.time()
-       print('runtime: %s' % (end - start))
-    else:
-       print('successfully done: ' + str(img_path))
-       end = time.time()
-       print('runtime: %s' % (end - start))
+        error_info.append((os.path.basename(img_path), 'Main', str(e)))
 
 
 if __name__ == '__main__':
     img_path = 'Development\\successControl\\Wochenbericht_2022-04-07_6.png'
 
-    es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
+    # es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     error_info = []
     Main(img_path, model='unet', error_info=error_info)
     # model: 'tablenet', 'densenet' or 'unet'
+    print(error_info)
 
+    '''
     time.sleep(2)
     results = Search('table', 'all')
     print(results)
@@ -1561,3 +1585,4 @@ if __name__ == '__main__':
         table_uniqueId = result['_source']['uniqueId']
         print(table_uniqueId)
         print(df)
+    '''

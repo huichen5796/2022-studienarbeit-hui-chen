@@ -273,7 +273,10 @@ def PdfToPng(pdf_path, save_path):
     '''
     try:
         doc = fitz.open(pdf_path)
+        print('%s has %d pages' % (os.path.basename(pdf_path), doc.pageCount))
+        start = time.perf_counter()
         for pg in range(doc.pageCount):  # pg ist die Seitenummer
+        
             page = doc[pg]
             rotate = int(0)
             zoom_x = 2.0
@@ -283,7 +286,14 @@ def PdfToPng(pdf_path, save_path):
             pm.save(save_path + '\\' +
                     os.path.splitext(os.path.basename(pdf_path))[0] + '_%s.png' % pg)
 
-        print('%s has %d pages' % (os.path.basename(pdf_path), pg+1))
+            finish = '▓' * (pg+1)
+            need_do = '-' * (doc.pageCount-pg-1)
+            dur = time.perf_counter() - start
+            if pg == doc.pageCount-1:
+                print("\r{}/{}|{}{}|{:.2f}s".format((pg+1), doc.pageCount, finish, need_do, dur))
+            else:
+                print("\r{}/{}|{}{}|{:.2f}s".format((pg+1), doc.pageCount, finish, need_do, dur), end = '')
+            
     except:
         print('ERROR BY PdfToPng OF %s' % (pdf_path))
 
@@ -303,8 +313,7 @@ def ImageReformat(dir):
         pdf_list = GetImageList('Development\\PDF')
         if len(pdf_list) == 0:
             image_list = GetImageList(dir)
-            print('There are %s images in total, including the images from the pdfs.' % len(
-                image_list))
+            print('%s images in total. -- includes processed Pdfs.' % len(image_list))
             print('---------------------------')
             # print(image_list)
             return image_list
@@ -316,8 +325,7 @@ def ImageReformat(dir):
                 PdfToPng(pdf_path, save_path)
 
             image_list = GetImageList(dir)
-            print('There are %s images in total, including the images from the pdfs.' % len(
-                image_list))
+            print('%s images in total. -- includes processed Pdfs.' % len(image_list))
             print('---------------------------')
             # print(image_list)
             return image_list
@@ -330,17 +338,27 @@ def StapelVerbreitung(dir, model):
     error_info = []
     image_list = GetImageList(dir)
     print('---------------------------')
-    print('There are %s images in total. -- include unprocessed Pdfs.' %
+    print('%s images in total. -- includes unprocessed Pdfs.' %
           len(image_list))
     image_list = ImageReformat(dir)
 
     # print(image_list)
     path_images = [os.path.normpath(os.path.join(dir, fn))
                    for fn in image_list]
-    for image in path_images:
+    start = time.perf_counter()
+
+    for i, image in enumerate(path_images):
+        
         Main(image, model, error_info)
-    print('done')
-    print('ERROR ==>%s' %error_info)
+
+        finish = '▓' * int((i+1)*(50/len(path_images)))
+        need_do = '-' * (50-int((i+1)*(50/len(path_images))))
+        dur = time.perf_counter() - start
+        if i == len(path_images)-1:
+            print("\r{}/{}|{}{}|{:.2f}s".format((i+1), len(path_images), finish, need_do, dur)+' done: ' + os.path.basename(image)+' ERROR: %s'%len(error_info), flush = True)
+        else:
+            print("\r{}/{}|{}{}|{:.2f}s".format((i+1), len(path_images), finish, need_do, dur)+' done: ' + os.path.basename(image)+' ERROR: %s'%len(error_info), end = '', flush = True)
+    print('ERROR: %s'%error_info)
 
 
 if __name__ == '__main__':
@@ -350,15 +368,3 @@ if __name__ == '__main__':
     dir_path = 'Development\\successControl'
     StapelVerbreitung(dir_path, model = 'unet')
     # model: 'tablenet', 'densenet' or 'unet'
-
-    time.sleep(1)
-    results = Search('table', 'all')
-
-    # show in dataframe
-    results = json.loads(results)
-    for result in results['hits']['hits']:
-        df = pd.DataFrame(result['_source']['content'])
-        print('--------------------')
-        table_label = result['_source']['uniqueId']
-        print(table_label)
-        print(df)
