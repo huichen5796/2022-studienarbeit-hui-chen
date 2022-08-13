@@ -4,7 +4,7 @@ es = Elasticsearch()
 import pandas as pd
 import json
 from functions import Search
-results = Search('table', 'table_1_of_Wochenbericht_2022-04-07_6.png')
+results = Search('table', 'all')
 # print(results)
 
 # show in dataframe
