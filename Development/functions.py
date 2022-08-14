@@ -1,3 +1,4 @@
+import gc
 from elasticsearch import Elasticsearch
 import os
 import cv2
@@ -20,7 +21,6 @@ import copy
 import taichi as ti
 ti.init()
 es = Elasticsearch()
-import gc 
 
 #---------------------------------------------------------------------------------------------------------------#
 '''
@@ -112,7 +112,7 @@ import gc
 
 
 class DenseNet(nn.Module):
-    def __init__(self, pretrained = True, requires_grad = True):
+    def __init__(self, pretrained=True, requires_grad=True):
         super(DenseNet, self).__init__()
         denseNet = torchvision.models.densenet121(pretrained=True).features
         self.densenet_out_1 = torch.nn.Sequential()
@@ -121,82 +121,87 @@ class DenseNet(nn.Module):
 
         for x in range(8):
             self.densenet_out_1.add_module(str(x), denseNet[x])
-        for x in range(8,10):
+        for x in range(8, 10):
             self.densenet_out_2.add_module(str(x), denseNet[x])
-        
+
         self.densenet_out_3.add_module(str(10), denseNet[10])
-        
+
         if not requires_grad:
             for param in self.parameters():
                 param.requires_grad = False
 
     def forward(self, x):
-        
-        out_1 = self.densenet_out_1(x) #torch.Size([1, 256, 64, 64])
-        out_2 = self.densenet_out_2(out_1) #torch.Size([1, 512, 32, 32])
-        out_3 = self.densenet_out_3(out_2) #torch.Size([1, 1024, 32, 32])
+
+        out_1 = self.densenet_out_1(x)  # torch.Size([1, 256, 64, 64])
+        out_2 = self.densenet_out_2(out_1)  # torch.Size([1, 512, 32, 32])
+        out_3 = self.densenet_out_3(out_2)  # torch.Size([1, 1024, 32, 32])
         return out_1, out_2, out_3
+
 
 class TableDecoder(nn.Module):
     def __init__(self, channels, kernels, strides):
         super(TableDecoder, self).__init__()
         self.conv_7_table = nn.Conv2d(
-                        in_channels = 256,
-                        out_channels = 256,
-                        kernel_size = kernels[0], 
-                        stride = strides[0])
+            in_channels=256,
+            out_channels=256,
+            kernel_size=kernels[0],
+            stride=strides[0])
         self.upsample_1_table = nn.ConvTranspose2d(
-                        in_channels = 256,
-                        out_channels=128,
-                        kernel_size = kernels[1],
-                        stride = strides[1])
+            in_channels=256,
+            out_channels=128,
+            kernel_size=kernels[1],
+            stride=strides[1])
         self.upsample_2_table = nn.ConvTranspose2d(
-                        in_channels = 128 + channels[0],
-                        out_channels = 256,
-                        kernel_size = kernels[2],
-                        stride = strides[2])
+            in_channels=128 + channels[0],
+            out_channels=256,
+            kernel_size=kernels[2],
+            stride=strides[2])
         self.upsample_3_table = nn.ConvTranspose2d(
-                        in_channels = 256 + channels[1],
-                        out_channels = 1,
-                        kernel_size = kernels[3],
-                        stride = strides[3])
+            in_channels=256 + channels[1],
+            out_channels=1,
+            kernel_size=kernels[3],
+            stride=strides[3])
 
     def forward(self, x, pool_3_out, pool_4_out):
-        x = self.conv_7_table(x)  #[1, 256, 32, 32]
-        out = self.upsample_1_table(x) #[1, 128, 64, 64]
-        out = torch.cat((out, pool_4_out), dim=1) #[1, 640, 64, 64]
-        out = self.upsample_2_table(out) #[1, 256, 128, 128]
-        out = torch.cat((out, pool_3_out), dim=1) #[1, 512, 128, 128]
-        out = self.upsample_3_table(out) #[1, 1, 1024, 1024]
+        x = self.conv_7_table(x)  # [1, 256, 32, 32]
+        out = self.upsample_1_table(x)  # [1, 128, 64, 64]
+        out = torch.cat((out, pool_4_out), dim=1)  # [1, 640, 64, 64]
+        out = self.upsample_2_table(out)  # [1, 256, 128, 128]
+        out = torch.cat((out, pool_3_out), dim=1)  # [1, 512, 128, 128]
+        out = self.upsample_3_table(out)  # [1, 1, 1024, 1024]
         return out
 
+
 class TableNet(nn.Module):
-    def __init__(self,encoder = 'densenet', use_pretrained_model = True, basemodel_requires_grad = True):
+    def __init__(self, encoder='densenet', use_pretrained_model=True, basemodel_requires_grad=True):
         super(TableNet, self).__init__()
-        
-        self.base_model = DenseNet(pretrained = use_pretrained_model, requires_grad = basemodel_requires_grad)
+
+        self.base_model = DenseNet(
+            pretrained=use_pretrained_model, requires_grad=basemodel_requires_grad)
         self.pool_channels = [512, 256]
         self.in_channels = 1024
-        self.kernels = [(1,1), (1,1), (2,2),(16,16)]
-        self.strides = [(1,1), (1,1), (2,2),(16,16)]
-        
-        #common layer
+        self.kernels = [(1, 1), (1, 1), (2, 2), (16, 16)]
+        self.strides = [(1, 1), (1, 1), (2, 2), (16, 16)]
+
+        # common layer
         self.conv6 = nn.Sequential(
-            nn.Conv2d(in_channels = self.in_channels, out_channels = 256, kernel_size=(1,1)),
+            nn.Conv2d(in_channels=self.in_channels,
+                      out_channels=256, kernel_size=(1, 1)),
             nn.ReLU(inplace=True),
             nn.Dropout(0.8),
-            nn.Conv2d(in_channels = 256, out_channels = 256, kernel_size=(1,1)),
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=(1, 1)),
             nn.ReLU(inplace=True),
             nn.Dropout(0.8))
 
-        self.table_decoder = TableDecoder(self.pool_channels, self.kernels, self.strides)
-
+        self.table_decoder = TableDecoder(
+            self.pool_channels, self.kernels, self.strides)
 
     def forward(self, x):
 
         pool_3_out, pool_4_out, pool_5_out = self.base_model(x)
-        conv_out = self.conv6(pool_5_out) #[1, 256, 32, 32]
-        table_out = self.table_decoder(conv_out, pool_3_out, pool_4_out) #torch.Size([1, 1, 1024, 1024])
+        conv_out = self.conv6(pool_5_out)  # [1, 256, 32, 32]
+        # torch.Size([1, 1, 1024, 1024])
+        table_out = self.table_decoder(conv_out, pool_3_out, pool_4_out)
         return table_out
 
 # encoder-decoder model U-Net
@@ -666,7 +671,7 @@ def PositionTable(img_1024, img_path, model_used):
 
     elif model_used == 'unet':
         path = "Development\\models\\unet100_180spe.pkl"
-        
+
         model = torch.load(path, map_location=torch.device(device))
     '''
     elif model_used == 'tablenet':
@@ -679,6 +684,7 @@ def PositionTable(img_1024, img_path, model_used):
     '''
 
     transform = A.Compose([
+        A.Resize(1024, 1024),
         A.Normalize(
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225],
@@ -704,7 +710,6 @@ def PositionTable(img_1024, img_path, model_used):
             pred = model(image)[0]
             pred = torch.sigmoid(pred)
             pred = (pred.cpu().detach().numpy().squeeze())
-
 
     pred[:][pred[:] > 0.5] = 255.0
     pred[:][pred[:] < 0.5] = 0.0
@@ -932,11 +937,11 @@ def GetColumn(table, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = 'Development\\models\\densecol_50.pkl'
+        path = 'Development\\models\\densecol_140.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
-        path = "Development\\models\\unetcol_155.pkl"
+        path = "Development\\models\\unetcol_290.pkl"
         model = torch.load(path, map_location=torch.device(device))
     elif model_used == 'tablenet':
 
@@ -949,10 +954,10 @@ def GetColumn(table, model_used):
 
     h = table.shape[0]
     w = table.shape[1]
-    top = 0
-    bottom = 1024-h
-    left = 0
-    right = 1024-w
+    top = int((1024-h)//2)
+    bottom = 1024-h-top
+    left = int((1024-w)//2)
+    right = 1024-w-left
     img_1024 = cv2.copyMakeBorder(
         table, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(255, 255, 255))
 
@@ -960,6 +965,7 @@ def GetColumn(table, model_used):
         cv2.cvtColor(img_1024, cv2.COLOR_BGR2RGB)))
 
     transform = A.Compose([
+        A.Resize(1024, 1024),
         A.Normalize(
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225],
@@ -973,11 +979,10 @@ def GetColumn(table, model_used):
     with torch.no_grad():
         image = image.to(device).unsqueeze(0)
 
-
         if model_used == 'unet':
             pred = model(image)
             pred = (pred.cpu().detach().numpy().squeeze())
-        
+
         elif model_used == 'densenet':
             pred = model(image)
             pred = torch.sigmoid(pred)
@@ -995,7 +1000,7 @@ def GetColumn(table, model_used):
     pred = pred.astype('uint8')
 
     # get contours of the prognose to get tables
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 37))
     pred = cv2.erode(pred, kernel, iterations=1)
     pred = cv2.dilate(pred, kernel, iterations=1)  # remove small zone
 
@@ -1006,7 +1011,7 @@ def GetColumn(table, model_used):
     for c in contours:
         if cv2.contourArea(c) > 500:  # the size of table must be bigger than 500 pixels
             x, y, w, h = cv2.boundingRect(c)
-            col_contours.append((int(x+w//2), int(w)))
+            col_contours.append((int(x+w//2)-left, int(w)))
 
             cv2.line(img_1024, (int(x+w//2), int(y)), (int(x+w//2), int(y+h)), color=(255, 0, 0),
                      thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
@@ -1018,21 +1023,25 @@ def GetColumn(table, model_used):
         plt.imshow(img_1024)
 
     col_contours = sorted(col_contours, key=lambda x: x[0])
-
-    for i in range(len(col_contours)-1):
-        if abs(col_contours[i+1][0]-col_contours[i][0]) <= (col_contours[i+1][1]+col_contours[i][1])//2:
-            col_contours[i] = ((col_contours[i+1][0]+col_contours[i][0])//2, (col_contours[i+1][1]+col_contours[i][1])//2)
-            col_contours[i+1] = col_contours[i]
-        else:
-            continue
-
-    col_contours = list(set(col_contours))
-
-    col_contours = sorted(col_contours, key=lambda x: x[0])
+    n = 0
+    while n <= 4:
+        # print(col_contours)
+        for i in range(len(col_contours)-1):
+            if abs(col_contours[i+1][0]-col_contours[i][0]) <= (col_contours[i+1][1]+col_contours[i][1])//2:
+                col_contours[i] = ((col_contours[i+1][0]+col_contours[i][0]) //
+                                2, (col_contours[i+1][1]+col_contours[i][1])//2)
+                col_contours[i+1] = col_contours[i]
+            else:
+                continue
+        n+=1
+        # print(n)
+        col_contours = list(set(col_contours))
+        col_contours = sorted(col_contours, key=lambda x: x[0])
+        # print(col_contours)
 
     if __name__ == '__main__':
         for col, w in col_contours:
-            cv2.line(img_1024, (col, 0), (col, 500), color=(0, 0, 255),
+            cv2.line(img_1024, (col+left, top), (col+left, 1024-bottom), color=(0, 0, 255),
                      thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
         plt.subplot(133)
         plt.imshow(img_1024)
@@ -1062,15 +1071,13 @@ def PointCorrection(location, col_contours):
     #                                                            [ 64 640]
     #                                                            [ 64 906]
     #                                                            [ 65  18]  <------- bug !!!
-    # Disrupted the ordering and caused the region to not be closed
-    # Can't get correct cells with intersections that are not aligned, need to correction
 
     location = sorted(location, key=lambda x: x[0])
     processed = []
     k = 0
     while len(processed) != len(location):
-        for col,w in col_contours:
-            for i,cell in enumerate(location):
+        for col, w in col_contours:
+            for i, cell in enumerate(location):
                 if i not in processed:
                     if abs(cell[0] - col - k) <= w//2:
                         cell[0] = col
@@ -1079,15 +1086,14 @@ def PointCorrection(location, col_contours):
                         continue
                 else:
                     continue
-        k+=1
+        k += 1
 
         if k > 30:
-            for i,cell in enumerate(location):
+            for i, cell in enumerate(location):
                 if i not in processed:
                     cell[0] = 0
 
             break
-    
 
     location = sorted(location, key=lambda x: (x[1], x[0]))
 
@@ -1096,7 +1102,7 @@ def PointCorrection(location, col_contours):
             continue
         else:
             # suppose there are no two cells with distance less than - in y axis
-            if abs(location[i+1][1]-location[i][1]) <= int(location[i+1][3]*0.2+location[i][3]*0.8 - 6):
+            if abs(location[i+1][1]-location[i][1]) < int(location[i+1][3]*0.3 + location[i][3]*0.7 - 2):
                 location[i+1][1] = location[i][1]
             else:
                 continue
@@ -1194,9 +1200,9 @@ def ReadCell(center_list, image):
 
         result = Extrakt_Tesseract(cell)
 
-        cv2.imshow('',cell)
-        cv2.waitKey()
-        print(result)
+        # cv2.imshow('',cell)
+        # cv2.waitKey()
+        # print(result)
         list_info.append(result)
 
     return list_info
@@ -1359,7 +1365,7 @@ def ZeilenIndexSchmelzen(df_list):
 
     halb_rN = len(df_list[0])//2
 
-    if '(empty_cell)' in df_list[0][halb_rN] + df_list[1][halb_rN]:
+    if '(empty_cell)' in df_list[0][halb_rN:] + df_list[1][halb_rN:]:
         for i, ind in enumerate(df_list[0]):
             df_list[0][i] = (df_list[0][i] + '_' + df_list[1][i]
                              ).replace('_(empty_cell)', '').replace('(empty_cell)_', '')
@@ -1568,11 +1574,14 @@ def SaveTable(nummer, table, img_path, error_info, model):
             plt.xticks([]), plt.yticks([])
             plt.show()
 
-
         col_contours = GetColumn(table, model)
 
         for col, w in col_contours:
             cv2.line(image_add, (col, 0), (col, 500), color=(0, 0, 255),
+                     thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
+            cv2.line(image_add, (col-w//2, 0), (col-w//2, 500), color=(0, 255, 0),
+                     thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
+            cv2.line(image_add, (col+w//2, 0), (col+w//2, 500), color=(0, 255, 0),
                      thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
         cv2.imwrite('.\\Development\\imageSave\\{}'.format(
             'table_' + str(nummer+1) + '_of_' + str(os.path.basename(img_path))), image_add)
@@ -1594,7 +1603,7 @@ def SaveTable(nummer, table, img_path, error_info, model):
         WriteData(df, img_path, nummer, error_info)
     except Exception as e:
         error_info.append(('table_' + str(nummer+1) + '_of_' +
-                          os.path.basename(img_path), str(e)))
+                          os.path.basename(img_path), 'SaveTable', str(e)))
 
 
 def Search(index_, uniqueId):
@@ -1685,7 +1694,7 @@ def Main(img_path, model, error_info):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test7.png'
+    img_path = 'Development\\successControl\\Wochenbericht_2022-04-07_21.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 

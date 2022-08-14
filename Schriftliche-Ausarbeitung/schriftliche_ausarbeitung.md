@@ -8,36 +8,77 @@
 
 Name: Hui Chen
 Matr.-Nr.: 10048521
+## Abstrakt
+- Problematik 
+    - freie automatische Erfassung der Tabellen in Bildern
+- Thema/Ziel: Fragestellung und/oder Hypothese
+    - oben genannt
+- Vorgehen/Methodik
+    - Kooperation von traditionellen Methoden und ML
+- Wichtigste Ergebnisse
+    - Genauigkeit von Wiederaufbau der Tabellenstruktur und von der Erfassung des Inhalts
+- Keywords
 
 ## Einleitung
+- Kontext, Motivation, Zusammenhang mit anderen Arbeiten
+- Problemstellung
+- Ziel
+- Überblick der Arbeit, hierbei kurz die Vorgehensweise
 
-## Grundlagen
-
-- Daten, Informationen, Wissen (--> Pyramide)
-- Tabellen
-- Python
-- Maschinen Learning
 
 ![Pyramide](./_images/wissenspyramide_derwirtschaftsinformatiker.png)
 
 ## Stand der Technik
+### Grundlagen der Datenverarbeitung
+- Daten, Informationen, Wissen (--> Pyramide)
+- Tabellen
 
-- [OpenCV][1]
-- Tesseract
-- Maschinen Learning
+### Traditionelle digitale Bildverarbeitung
+- grundliegende Erkenntnisse
+- [OpenCV][1] sowie ggf. Matlab
+
+### Maschinen Learning
+- Grundlagen Maschinen Learning
+- Classifizieren, Objekt Detection, Sematische Sigmentation, hierbei einige bekannte Modelle nennen sollte.
+- OCR basierende auf ML z.B. Tesseract
 - GOOGLE COLAB
 
 ## Implementierung
 
 ### Idee & Planung
-
 - mit idealem Bild starten und wenn Extraktion erfolgreich ist, auch nicht-optimale Bilder erproben
+- mehr Robustness durch ML, mehr Genauigkeit durch traditionelle DB
+
+#### Vergleichung Methoden Binärization
+- 'Grundlagen_Erkenntinesse\Traditionell\functionsDebug\Binarization.py'
+
+#### Vergleichung Methoden von TiltCorrection
+- hierbei Vergleichung Methoden von Linienerkennung
+    - issue 'LinienErkennung HOUGH, LSD, FLD'
+- issue 'Bug bei TiltCorrection'
+
+#### Detection von Tabellenbreich
+- Vergleichung traditionell DB(Linienerkennung) und ML
+- Vergleichung Unet, Tablenet(also wesentlich VGG19) und Densenet
+    - Modellstruktur
+    - Ergebinisse, also loss, acc, runtime in CPU
+
+#### Vergleichung Methoden Detektion von Zellen
+- Wiederaufbau aller Linien dann Erkennung der Zellen mittels Erkennung der Linien
+- Delete aller Linien dann direkte Erkennung der Textblock in jeder Zellen
+
+#### Analyse der Tabellenstruktur und normalizierte Einschreibung in Elasticsearch
+- Vorgehensweise see isse 'instraction to funciton Umform()'
+    - hierbei auch PositionCorrection see issue 'PositionCorrection'
+    - hierbei ist ML genutzt für columen detection
+        - Modellevergleichung unet und densenet
 
 #### Ablauf
 
 - ggf. Korrektur von Fehlern (z.B. tilt, Artefakte)
-- Binärisierung
+- Normalize der Bilder
 - Detektion von Tabellenbreich
+- Analyse der Tabellenstruktur
 - Detektion von Zellen
 - OCR auf Zelle
   - Oberste Zeile (header) --> keys (= Feldnamen; z.B. "Datum", "Name", ...)
@@ -90,7 +131,9 @@ Matr.-Nr.: 10048521
 
 
 ## Ausblick
-- Die Einfernung von Weißrand wäre mittels ML robuster. Dadurch könnte Schwarzrand sowie komplexer Rand auch entfernt werden.
+- Genauigkeit der Modell
+- die Auswahl einiger Schwellen bei traditionell DB hat ggf. keinen genugen Robustness
+- Analyse der Struktur kann durch ML durchführen
 
 
 ## Quellen

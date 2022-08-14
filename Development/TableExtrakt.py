@@ -348,7 +348,7 @@ def StapelVerbreitung(dir, model):
         need_do = '-' * (50-int((i+1)*(50/len(path_images))))
         dur = time.perf_counter() - start
         if i == len(path_images)-1:
-            print("\r{}/{}|{}{}|{:.2f}s".format((i+1), len(path_images), finish, need_do, dur)+' done: ' + os.path.basename(image)+' ERROR: %s'%len(error_info), flush = True)
+            print("\r{}/{}|{}{}|{:.2f}s".format((i+1), len(path_images), finish, need_do, dur)+' done: ' + os.path.basename(image)+' ERROR: %s, finish'%len(error_info), flush = True)
         else:
             print("\r{}/{}|{}{}|{:.2f}s".format((i+1), len(path_images), finish, need_do, dur)+' done: ' + os.path.basename(image)+' ERROR: %s'%len(error_info), end = '', flush = True)
     print('ERROR: %s'%error_info)
