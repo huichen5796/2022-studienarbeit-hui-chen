@@ -1195,8 +1195,15 @@ def ReadCell(center_list, image):
         cell_zone = cv2.resize(
             cell_zone, (cell_zone.shape[1]*4, cell_zone.shape[0]*4))
 
+        value = [None, None, None]
+        for cha in range(3):
+            value[cha] = (np.mean(cell_zone[cha], axis = 0)[0]
+                            + np.mean(cell_zone[cha], axis = 0)[-1] 
+                            + np.mean(cell_zone[cha], axis = 1)[0] 
+                            + np.mean(cell_zone[cha], axis = 1)[-1]) //4
+
         cell = cv2.copyMakeBorder(
-            cell_zone, 40, 40, 40, 40, cv2.BORDER_REPLICATE)
+            cell_zone, 40, 40, 40, 40, cv2.BORDER_CONSTANT, value= value)
 
         result = Extrakt_Tesseract(cell)
 
@@ -1694,7 +1701,7 @@ def Main(img_path, model, error_info):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\successControl\\Wochenbericht_2022-04-07_21.png'
+    img_path = 'Development\\imageTest\\test17.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
