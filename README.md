@@ -31,8 +31,13 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
    ![cell](./Abbildungen/cell.png)
 
    - Rekonstruktion
+      - Columen Detection mittels ML Modell, somit werden Labels von Columen erstellt.
+      ![coldetc](./Abbildungen/col.jpg)
+      (Die rote Linie ist die Mittellinie der durch maschinelles Lernen erkannten Tabellenspalte, und die Zellen, die sich auf beiden Seiten der roten Linie innerhalb der grünen Linien befinden, werden in einer Spalte gruppiert.)
 
       - Zuweisung der Labels
+      
+      Labels von Rows werden durch Positon von jeder Zelle erstellt.
 
       ![LABELS](./Abbildungen/labels.jpg)
 
@@ -40,9 +45,9 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
       ![table](./Abbildungen/table.jpg)
 
-   - Einschreibung in Elasticsearch
+      - Strukturnormalize
 
-   ![elastic](./Abbildungen/table2.png)
+      (hier sollte es ein GIF geben, um Umform() zu zeigen.)
 
 - Stapelverarbeitung mehrer Bilder
 
@@ -57,8 +62,12 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
    ![tablesinelas](./Abbildungen/kibana.jpg)
 
 - Leistung bei komplexer Tabelle
-  ![ori](./Development/imageTest\test2.PNG)
+  ![ori](./Development/imageTest/test2.PNG)
   ![leistung](./Abbildungen/komplexbild.jpg)
+
+  nach Strukturnormalize:
+
+  ![sn](./Abbildungen/sn.jpg)
 
 ## Config
 - python 3.10.0
@@ -75,14 +84,17 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Pillow==9.1.0
 - pytesseract==0.3.9
 - tesseract-ocr==v5.2.0.20220712
+- fitz==0.0.1.dev2
 
 ## Setup
 
 - Install Python & pip
 - Install *packagename* package for Python: `pip install *packagename*`
-  packages: _Pillow_, _pandas_, _matplotlib_, _albumentations_, _numpy_, _opencv-contrib-python, _opencv-python_
+  packages: _Pillow_, _pandas_, _matplotlib_, _albumentations_, _numpy_, _opencv-contrib-python, _opencv-python_, _fitz_
   
   Die entsprechende empfohlene Version finden Sie in **Config** 
+
+  Oder einfach: `pip install -r requirements.txt`
   
   Achtung: Die Version von albumentations muss 0.4.6 sein, sowie opencv-python neuer als 4.5.x. 
 

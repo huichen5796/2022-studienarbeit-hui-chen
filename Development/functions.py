@@ -1,4 +1,3 @@
-import gc
 from elasticsearch import Elasticsearch
 import os
 import cv2
@@ -16,10 +15,6 @@ from PIL import Image
 import pandas as pd
 import json
 import pytesseract
-import time
-import copy
-import taichi as ti
-ti.init()
 es = Elasticsearch()
 
 #---------------------------------------------------------------------------------------------------------------#
@@ -35,30 +30,25 @@ es = Elasticsearch()
     at first call the function GetAngle(),witch basic of cv2.minAreaRect(), to get the tilt angle
     then call ImageRotate() to correct the tilt of image
 
-3. WhiteBordersRemove(image):
-    remove excess white edges of image
-    - input: must be gray image
-    - output: gray image with reasonably sized white border white border
-
-4. SizeNormalize(image):
+3. SizeNormalize(image):
     Normalize the input image size to 1024 x 1024
-    - input: image, 1 channel or 3 channel
-    - output: image 1024 x 1024
+    - input: image, 1 channel or 3 channels
+    - output: image 1024 x 1024m 3 channels
 
-5. PositionTable(img_1024, img_path):
-    get the position of table in a image
+4. PositionTable(img_1024, img_path):
+    get the position of table bigger than 100000 pixels in a image
     - input 1: image must be 3 channel, 1024 x 1024
     - input 2: the path of the image
-    - input 3: the used model ---> 'tabelnet', 'densenet' or 'unet'
+    - input 3: the used model ---> 'densenet' or 'unet'
     - output: the location of tables in image [[x, y, w, h], ..] here x and y are the locaiton of top left point
 
-6. GetTableZone(table_boundRect, img_1024):
+5. GetTableZone(table_boundRect, img_1024):
     ROI the table in image
     - input 1: location of tables in image
     - input 2: image
     - output: table_zone
 
-7. DeletLines(img)
+6. DeletLines(img)
     delet all the lines on image
     - input: gray image
     - output: bina image without lines
@@ -66,12 +56,12 @@ es = Elasticsearch()
     at first call the function LSDGetLines() to mark all lines on image
     then in function OrImage() mit cv2.bitwise_or to delet all the lines
 
-8. GetCell(img_deletline):
+7. GetCell(img_deletline):
     Get word blocks by dilate
     - input: bina image without lines
     - output: contour location of text blocks
 
-9. GetLabel(location):
+8. GetLabel(location):
     Assign row and column labels to each cell
     - input: the location of cells (not aligned), [[x,y,w,h], ..] here x and y are the locaiton of top left point of cell
     - output1: the center locationn of cells (aligned), [[center_x, center_y, w, h, x, y], ..]
@@ -80,23 +70,29 @@ es = Elasticsearch()
 
     during this function the function PointCorrection will be called to align the points
 
-10. ReadCell(center_list, image):
+9. ReadCell(center_list, image):
     ORI of each cell and OCR by tesseract
     - input 1: center_list of the table
     - input 2: the image with table
     - output: infos in each cell
 
-11. GetDataframe(list_info, label_list, tablesize):
+10. GetDataframe(list_info, label_list, tablesize):
     Rebuild the table in a Dataframe
     - input 1: list_info
     - input 2: label_list
     - input 3: tablesize
     - output: Dataframe
 
-12. WriteData(df, label_):
+11. WriteData(df, label_):
     write dataframe to elasticsearch
     - input 1: dataframe
     - input 2: label_, here is the table name, for example: table_2_of_table2_rotate_0
+
+12.Umform(df_dict, label_):
+    see issue: instraction to funciton Umform()
+    - input 1: df_dict is a dict, in it is detected table
+    - input 2: label_ is the quelle of the table
+    - output: processed table information, key is header, value is value in columen form
 
 13. Search(index_, label_):
     Searches for data in ES-index, for example: table_2_of_table2_rotate_0
@@ -206,7 +202,6 @@ class TableNet(nn.Module):
 
 # encoder-decoder model U-Net
 
-
 class conv_block(nn.Module):
 
     def __init__(self, input_channels, output_channels, down=True):
@@ -226,7 +221,6 @@ class conv_block(nn.Module):
 
         return x
 
-
 class up_conv(nn.Module):
     def __init__(self, ch_in, ch_out):
         super(up_conv, self).__init__()
@@ -241,7 +235,6 @@ class up_conv(nn.Module):
         x = self.up(x)
         return x
 
-
 class U_Net(nn.Module):
     def __init__(self, img_ch=3, output_ch=1):
         super(U_Net, self).__init__()
@@ -251,19 +244,15 @@ class U_Net(nn.Module):
         self.Conv1 = conv_block(img_ch, 32)
         self.Conv2 = conv_block(32, 64)
         self.Conv3 = conv_block(64, 128)
-
         self.Conv4 = conv_block(128, 256)
         self.Conv5 = conv_block(256, 512)
 
         self.Up5 = up_conv(512, 256)
         self.Up_conv5 = conv_block(512, 256)
-
         self.Up4 = up_conv(256, 128)
         self.Up_conv4 = conv_block(256, 128)
-
         self.Up3 = up_conv(128, 64)
         self.Up_conv3 = conv_block(128, 64)
-
         self.Up2 = up_conv(64, 32)
         self.Up_conv2 = conv_block(64, 32)
 
@@ -274,120 +263,31 @@ class U_Net(nn.Module):
     def forward(self, x):
 
         x1 = self.Conv1(x)
-
         x2 = self.Maxpool(x1)
         x2 = self.Conv2(x2)
-
         x3 = self.Maxpool(x2)
         x3 = self.Conv3(x3)
-
         x4 = self.Maxpool(x3)
         x4 = self.Conv4(x4)
-
         x5 = self.Maxpool(x4)
         x5 = self.Conv5(x5)
-
         d5 = self.Up5(x5)
         d5 = torch.cat((x4, d5), dim=1)
         d5 = self.Up_conv5(d5)
-
         d4 = self.Up4(d5)
         d4 = torch.cat((x3, d4), dim=1)
         d4 = self.Up_conv4(d4)
-
         d3 = self.Up3(d4)
         d3 = torch.cat((x2, d3), dim=1)
         d3 = self.Up_conv3(d3)
-
         d2 = self.Up2(d3)
         d2 = torch.cat((x1, d2), dim=1)
         d2 = self.Up_conv2(d2)
-
         d1 = self.Conv_1x1(d2)
 
         return d1
 #---------------------------------------------------------------------------------------------------------------#
 # functions
-
-
-def LSDGetLines(img, minLong):
-    '''
-    lines be marked by LSD
-
-    - input 1: is a bina image
-    - input 2: the min long of lines
-
-    - output 1: is a new black image with same shape of input image, on it is the lines of image, location to location
-                be used for DeleteLine
-    - output 2: list of lines, [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...], for tiltCorrection
-
-    '''
-
-    # make a new black image with the same shape of input img
-    copy_image = np.zeros((img.shape[0], img.shape[1]))
-
-    lsd = cv2.createLineSegmentDetector(0)
-    # get all the location of lines by LSD, if no line, dlines = None
-    dlines = lsd.detect(img)[0]
-    # print(dlines)
-    longLines = []
-    if dlines is not None:
-        for dline in dlines:
-            x0 = int(round(dline[0][0]))
-            y0 = int(round(dline[0][1]))
-            x1 = int(round(dline[0][2]))
-            y1 = int(round(dline[0][3]))
-            long = (y1-y0)*(y1-y0)+(x1-x0)*(x1-x0)
-            if long >= minLong*minLong:
-                # It is possible that the shorter lines are part of the letter, so filter out the longer lines.
-                cv2.line(copy_image, (x0, y0), (x1, y1), color=255,
-                         thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
-                longLines.append([x0, y0, x1, y1])
-
-    if __name__ == "__main__":
-        plt.subplot(121)
-        plt.imshow(img, cmap='gray')
-        plt.subplot(122)
-        plt.imshow(copy_image)
-        plt.show()
-
-    return copy_image, longLines
-
-
-def HoughGetLines(img, minLong):  # this function be used now not
-    '''
-    lines be marked by LSD
-
-    - input 1: is a bina image
-    - input 2: the min long of lines
-
-    - output 1: is a new black image with same shape of input image, on it is the lines of image, location to location
-    - output 2: list of lines, [[x0,y0,x1,y1],[x2,y2,x3,y3],[...],[...],...]
-
-    '''
-    # Line makieren durch HoughLines()
-    # apertureSize is the size of kernel, also soble
-    edges = cv2.Canny(img, 50, 250, apertureSize=3)
-    lines = cv2.HoughLinesP(edges, 1.0, np.pi/180, 50,
-                            minLineLength=minLong, maxLineGap=0)
-    copy_image = np.zeros((img.shape[0], img.shape[1]))
-    longLines = []
-    if lines is not None:
-        for line in lines:
-            x0, y0, x1, y1 = line[0]
-            longLines.append([x0, y0, x1, y1])
-            cv2.line(copy_image, (x0, y0), (x1, y1), color=255,
-                     thickness=3, lineType=cv2.LINE_AA)
-
-    if __name__ == "__main__":
-        plt.subplot(121)
-        plt.imshow(img, cmap='gray')
-        plt.subplot(122)
-        plt.imshow(copy_image)
-        plt.show()
-
-    return copy_image, longLines
-
 
 def FLDGetLines(img, minLong):
     '''
@@ -780,6 +680,7 @@ def PositionTable(img_1024, img_path, model_used):
 
     image_add = cv2.addWeighted(img_1024, 0.9, color_image, 0.5, 0)
 
+
     if __name__ == '__main__':
         plt.subplot(221)
         plt.title('Input Image 1024x1024')
@@ -890,12 +791,13 @@ def GetCell(image_table, img_deletline):
 
     mask_image = np.zeros(
         (img_deletline_inv.shape[0], img_deletline_inv.shape[1], 1), np.uint8)
+    size = 2
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         if w > 4 and h > 5 and w < 0.7*img_deletline_inv.shape[1]:
-            x = int(x)
+            x = int(x - size)
             y = int(y)
-            w = int(w)
+            w = int(w + 2 * size)
             h = int(h)
 
             # cv2.rectangle(color_image, (x, y), (x+w, y+h), 0, 2)  # round the text zone by rect
@@ -917,9 +819,9 @@ def GetCell(image_table, img_deletline):
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         if w < 0.7*img_deletline_inv.shape[1]:
-            x = int(x - size)
+            x = int(x)
             y = int(y - size)
-            w = int(w + 2 * size)
+            w = int(w)
             h = int(h + 2 * size)
             list_contours.append((x, y, w, h))
             # cv2.rectangle(color_image, (x, y), (x+w, y+h), 0, 2)  # round the text zone by rect
@@ -934,6 +836,14 @@ def GetCell(image_table, img_deletline):
 
 
 def GetColumn(table, model_used):
+    '''
+    use ML modell to get all the the center line of the table columns.
+    The red line is the center line of the table column detected by machine 
+    learning, and the cells that are inside the green lines on either 
+    side of the red line are grouped into one column.
+    
+    '''
+
     device = 'cpu'
 
     if model_used == 'densenet':
@@ -1052,7 +962,7 @@ def GetColumn(table, model_used):
 
 def PointCorrection(location, col_contours):
     '''
-    align the points
+    align the cells
 
     '''
 
@@ -1161,7 +1071,7 @@ def Extrakt_Tesseract(image_cell):
 
     '''
 
-    pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
+    # pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
     result = pytesseract.image_to_string(
         image_cell, lang='deu', config='--psm 7')
     # print(result)
@@ -1307,6 +1217,10 @@ def Einfachverarbeitung(df_dict):
 
 
 def Transform(df_dict):
+    '''
+    transform dict (infos in row form) to list (infos in columen form)
+
+    '''
 
     df_list = [None]*len(list(dict(list(df_dict.values())[0]).values()))
 
@@ -1382,6 +1296,10 @@ def ZeilenIndexSchmelzen(df_list):
 
 
 def BestimmenZeilNummer(df_list):
+    '''
+    in der Zukunft könnte die Function von ML modell ersetzt werden.
+    
+    '''
 
     row_list = []
     number = len(df_list[0])
@@ -1498,13 +1416,22 @@ def HeaderSchmelzen(df_list, zeile_nummer, empty_row, row_list):
 
 
 def Umform(df_dict, label_):
+    '''
+    see issue: instraction to funciton Umform()
+
+    - input 1: df_dict is a dict, in it is detected table
+    - input 2: label_ is the quelle of the table
+
+    - output: processed table information, key is header, value is value in columen form
+
+    '''
     try:
         table_type = TableType(df_dict)
 
         if table_type == 'einfach':
-            df_dict = Einfachverarbeitung(df_dict)
+            df_dict_done = Einfachverarbeitung(df_dict)
 
-            return df_dict
+            return df_dict_done
 
         else:
             df_list = Transform(df_dict)
@@ -1512,10 +1439,10 @@ def Umform(df_dict, label_):
             df_list = ZeilenIndexSchmelzen(df_list)
 
             zeile_nummer, empty_row, row_list = BestimmenZeilNummer(df_list)
-            df_dict = HeaderSchmelzen(
+            df_dict_done = HeaderSchmelzen(
                 df_list, zeile_nummer, empty_row, row_list)
 
-            return df_dict
+            return df_dict_done
 
     except Exception as e:
         error_info.append((label_, 'Umform', str(e)))
@@ -1701,7 +1628,7 @@ def Main(img_path, model, error_info):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test17.png'
+    img_path = 'Development\\imageTest\\test2.PNG'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
