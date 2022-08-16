@@ -11,16 +11,16 @@ Matr.-Nr.: 10048521
 ## Abstrakt
 - Problematik 
     - freie automatische Erfassung der Tabellen in Bildern
-- Thema/Ziel: Fragestellung und/oder Hypothese
+- Thema/Ziel
     - oben genannt
 - Vorgehen/Methodik
     - Kooperation von traditionellen Methoden und ML
 - Wichtigste Ergebnisse
-    - Genauigkeit von Wiederaufbau der Tabellenstruktur und von der Erfassung des Inhalts
+    - brauch Bewertungsindikatoren für Genauigkeit von Wiederaufbau der Tabellenstruktur und von der Erfassung des Inhalts
 - Keywords
 
 ## Einleitung
-- Kontext, Motivation, Zusammenhang mit anderen Arbeiten
+- Kontext, Zusammenhang mit anderen Arbeiten ?
 - Problemstellung
 - Ziel
 - Überblick der Arbeit, hierbei kurz die Vorgehensweise
@@ -36,10 +36,11 @@ Matr.-Nr.: 10048521
 ### Traditionelle digitale Bildverarbeitung
 - grundliegende Erkenntnisse
 - [OpenCV][1] sowie ggf. Matlab
+- Objekt Detection mittels tradition. DB 
 
 ### Maschinen Learning
 - Grundlagen Maschinen Learning
-- Classifizieren, Objekt Detection, Sematische Sigmentation, hierbei einige bekannte Modelle nennen sollte.
+- Classifizieren, Objekt Detection, Sematische Sigmentation, hierbei einige bekannte Modelle nennen sollten.
 - OCR basierende auf ML z.B. Tesseract
 - GOOGLE COLAB
 
@@ -59,7 +60,7 @@ Matr.-Nr.: 10048521
 
 #### Detection von Tabellenbreich
 - Vergleichung traditionell DB(Linienerkennung) und ML
-- Vergleichung Unet, Tablenet(also wesentlich VGG19) und Densenet
+- Einführung von (eine von Unet oder Tablenet(also wesentlich VGG19) oder Densenet)
     - Modellstruktur
     - Ergebinisse, also loss, acc, runtime in CPU
 
@@ -71,7 +72,7 @@ Matr.-Nr.: 10048521
 - Vorgehensweise see isse 'instraction to funciton Umform()'
     - hierbei auch PositionCorrection see issue 'PositionCorrection'
     - hierbei ist ML genutzt für columen detection
-        - Modellevergleichung unet und densenet
+        - Ergebinisse, also loss, acc, runtime in CPU
 
 #### Ablauf
 
