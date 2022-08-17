@@ -15,6 +15,7 @@ from PIL import Image
 import pandas as pd
 import json
 import pytesseract
+import time
 es = Elasticsearch()
 
 #---------------------------------------------------------------------------------------------------------------#
@@ -566,7 +567,7 @@ def PositionTable(img_1024, img_path, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = 'Development\\models\\densenet_130spe.pkl'
+        path = 'Development\\models\\densetable_100.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
@@ -851,7 +852,7 @@ def GetColumn(table, model_used):
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
-        path = "Development\\models\\unetcol_290.pkl"
+        path = "Development\\models\\unetcol_300.pkl"
         model = torch.load(path, map_location=torch.device(device))
     elif model_used == 'tablenet':
 
@@ -1459,6 +1460,7 @@ def WriteData(df, img_path, nummer, error_info):
 
     '''
     try:
+        
         label_ = 'table_' + str(nummer+1) + '_of_' + os.path.basename(img_path)
         df_json = df.to_json(
             orient='index')  # str like {index -> {column -> value}}。
@@ -1466,10 +1468,22 @@ def WriteData(df, img_path, nummer, error_info):
 
         df_dict = Umform(df_dict, label_)
 
+        # einschreibung in elasticsearch mit form in 17.08.2022.md
+        df = pd.DataFrame(df_dict)
+        df_json = df.to_json(
+            orient='index')  # str like {index -> {column -> value}}。
+        df = eval(df_json)  # chance str to dict
+        
+        values = []
+        for key, value in list(df.items()):
+            value = dict(value)
+
+            values.append(value)
+
         body_ = {
             "uniqueId": label_.lower(),
             "fileName": os.path.basename(img_path),
-            "content": df_dict
+            "content": values
 
         }
 
@@ -1613,7 +1627,7 @@ def Main(img_path, model, error_info):
             plt.close()
 
             # input image must be 3 channel 1024x1024. out img 1024x1024
-        table_boundRect = PositionTable(img_1024, img_path, model_used='unet')
+        table_boundRect = PositionTable(img_1024, img_path, model_used='unet') # unet besser
 
         table_zone = GetTableZone(table_boundRect, img_1024)
 
@@ -1621,14 +1635,14 @@ def Main(img_path, model, error_info):
         #      str(len(table_zone)) + ' table(s)')
 
         for nummer, table in enumerate(table_zone):
-            SaveTable(nummer, table, img_path, error_info, model)
+            SaveTable(nummer, table, img_path, error_info, model) # densecol besser
 
     except Exception as e:
         error_info.append((os.path.basename(img_path), 'Main', str(e)))
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test2.PNG'
+    img_path = 'Development\\imageTest\\test5.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
@@ -1637,7 +1651,7 @@ if __name__ == '__main__':
     # model: 'densenet' or 'unet'
     print(error_info)
 
-    '''
+    
     time.sleep(2)
     results = Search('table', 'all')
     print(results)
@@ -1650,4 +1664,4 @@ if __name__ == '__main__':
         table_uniqueId = result['_source']['uniqueId']
         print(table_uniqueId)
         print(df)
-    '''
+    
