@@ -574,15 +574,6 @@ def PositionTable(img_1024, img_path, model_used):
         path = "Development\\models\\unet100_180spe.pkl"
 
         model = torch.load(path, map_location=torch.device(device))
-    '''
-    elif model_used == 'tablenet':
-
-        model = TableNet().to(device)
-        path = 'Development\\models\\tablenet_config_4_model_checkpoint.pth.tar'
-        params = torch.load(path, map_location=torch.device(device))[
-            'state_dict']
-        model.load_state_dict(params)
-    '''
 
     transform = A.Compose([
         A.Resize(1024, 1024),
@@ -606,13 +597,8 @@ def PositionTable(img_1024, img_path, model_used):
             pred = model(image)
             pred = torch.sigmoid(pred)
             pred = (pred.cpu().detach().numpy().squeeze())
-
-        elif model_used == 'tablenet':
-            pred = model(image)[0]
-            pred = torch.sigmoid(pred)
-            pred = (pred.cpu().detach().numpy().squeeze())
-
-    pred[:][pred[:] > 0.5] = 255.0
+ 
+    pred[:][pred[:] > 0.4] = 255.0
     pred[:][pred[:] < 0.5] = 0.0
     pred = pred.astype('uint8')
 
@@ -655,7 +641,7 @@ def PositionTable(img_1024, img_path, model_used):
     # remove bad contours
     for c in contours:
         # the size of table must be bigger than 100000 pixels
-        if cv2.contourArea(c) > 80000:
+        if cv2.contourArea(c) > 30000:
             table_contours.append(c)
 
     table_boundRect = [None]*len(table_contours)
@@ -854,15 +840,7 @@ def GetColumn(table, model_used):
     elif model_used == 'unet':
         path = "Development\\models\\unetcol_300.pkl"
         model = torch.load(path, map_location=torch.device(device))
-    elif model_used == 'tablenet':
 
-        model = TableNet().to(device)
-        path = 'Development\\models\\tablenet_config_4_model_checkpoint.pth.tar'
-        params = torch.load(path, map_location=torch.device(device))[
-            'state_dict']
-
-        model.load_state_dict(params)
-    
     shape_list = list(table.shape)
     scaling_r =  1
     if max(shape_list) > 1024:
@@ -909,12 +887,6 @@ def GetColumn(table, model_used):
             pred = torch.sigmoid(pred)
             pred = (pred.cpu().detach().numpy().squeeze())
 
-        '''
-        elif model_used == 'tablenet':
-            pred = model(image)[1]
-            pred = torch.sigmoid(pred)
-            pred = (pred.cpu().detach().numpy().squeeze())
-        '''
 
     pred[:][pred[:] > 0.5] = 255.0
     pred[:][pred[:] < 0.5] = 0.0
@@ -1642,7 +1614,7 @@ def Main(img_path, model, error_info, list_output):
             plt.close()
 
             # input image must be 3 channel 1024x1024. out img 1024x1024
-        table_boundRect = PositionTable(img_1024, img_path, model_used='unet') # unet besser
+        table_boundRect = PositionTable(img_1024, img_path, model_used='densenet') # unet besser
                  
 
         table_zone = GetTableZone(table_boundRect, img_1024)
@@ -1658,7 +1630,7 @@ def Main(img_path, model, error_info, list_output):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\tablekomplex.jpg'
+    img_path = 'Development\\successControl\\Wochenbericht_2022-04-07_26.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 

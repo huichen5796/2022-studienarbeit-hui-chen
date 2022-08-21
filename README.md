@@ -4,7 +4,7 @@
 
 **Ein Tool zur Erkennung, Extraktion und Rekonstruktion von komplexen Tabellen aus Bilddokumenten**
 
-![er](.\Abbildungen\ablauf.gif)
+![er](./Abbildungen/ablauf.gif)
 ## Programmablauf
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Die Verarbeitung einzeles Bilds
@@ -122,7 +122,7 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
 
   - alle Sprache auswählen
 
-    ![language](./Abbildungen\installtesse.jpg)
+    ![language](./Abbildungen/installtesse.jpg)
   - den Installationspfad wählen
     
     ![install1](./Abbildungen/install1.jpg)
