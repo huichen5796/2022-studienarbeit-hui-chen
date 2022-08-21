@@ -1,10 +1,13 @@
 # 2022-studienarbeit-hui-chen
 
-![title](./Abbildungen/title.jpg)
+<div align=center><image = 'https://github.com/huichen5796/2022-studienarbeit-hui-chen/blob/main/Abbildungen/ablauf.gif'></div>
 
 **Ein Tool zur Erkennung, Extraktion und Rekonstruktion von komplexen Tabellen aus Bilddokumenten**
 
+<center>
 ![er](./Abbildungen/ablauf.gif)
+</center>
+
 ## Programmablauf
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Die Verarbeitung einzeles Bilds
