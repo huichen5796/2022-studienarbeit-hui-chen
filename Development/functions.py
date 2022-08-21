@@ -37,7 +37,7 @@ es = Elasticsearch()
     - output: image 1024 x 1024m 3 channels
 
 4. PositionTable(img_1024, img_path):
-    get the position of table bigger than 100000 pixels in a image
+    get the position of table bigger than 80000 pixels in a image
     - input 1: image must be 3 channel, 1024 x 1024
     - input 2: the path of the image
     - input 3: the used model ---> 'densenet' or 'unet'
@@ -640,8 +640,8 @@ def PositionTable(img_1024, img_path, model_used):
     table_contours = []
     # remove bad contours
     for c in contours:
-        # the size of table must be bigger than 100000 pixels
-        if cv2.contourArea(c) > 30000:
+        # the size of table must be bigger than 80000 pixels
+        if cv2.contourArea(c) > 80000:
             table_contours.append(c)
 
     table_boundRect = [None]*len(table_contours)
