@@ -655,7 +655,7 @@ def PositionTable(img_1024, img_path, model_used):
     # remove bad contours
     for c in contours:
         # the size of table must be bigger than 100000 pixels
-        if cv2.contourArea(c) > 100000:
+        if cv2.contourArea(c) > 80000:
             table_contours.append(c)
 
     table_boundRect = [None]*len(table_contours)
@@ -777,7 +777,7 @@ def GetCell(image_table, img_deletline):
     # reduce the noise
     '''
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 3))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 3))
     bina_image = cv2.dilate(img_deletline_inv, kernel, iterations=1)
     # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
     bina_image = cv2.erode(bina_image, kernel, iterations=1)
@@ -862,6 +862,16 @@ def GetColumn(table, model_used):
             'state_dict']
 
         model.load_state_dict(params)
+    
+    shape_list = list(table.shape)
+    scaling_r =  1
+    if max(shape_list) > 1024:
+        scaling_r = 1024/max(shape_list)
+        # w, h to avoid exceeding 1024, subtract one
+        shape_new = [int(shape_list[1]*scaling_r-1),
+                     int(shape_list[0]*scaling_r-1)]
+        shape_new[shape_new.index(max(shape_new))] = int(1024)
+        table = cv2.resize(table, shape_new)
 
     h = table.shape[0]
     w = table.shape[1]
@@ -957,7 +967,10 @@ def GetColumn(table, model_used):
         plt.subplot(133)
         plt.imshow(img_1024)
         plt.show()
-
+    # print(col_contours)
+    for i, (col, w) in enumerate(col_contours):
+        col_contours[i]=(int(col//scaling_r), int(w//scaling_r))
+    # print(col_contours)
     return col_contours
 
 
@@ -1416,7 +1429,7 @@ def HeaderSchmelzen(df_list, zeile_nummer, empty_row, row_list):
     return newDict
 
 
-def Umform(df_dict, label_):
+def Umform(df_dict, label_, error_info):
     '''
     see issue: instraction to funciton Umform()
 
@@ -1451,12 +1464,12 @@ def Umform(df_dict, label_):
 
 def WriteData(df, img_path, nummer, error_info):
     '''
-    write dataframe to elasticsearch
+        write dataframe to elasticsearch
 
-    - input 1: dataframe
-    - input 2: path
-    - input 3: table nummer
-    - input 4: size of table, also col number and row number
+        - input 1: dataframe
+        - input 2: path
+        - input 3: table nummer
+        - input 4: size of table, also col number and row number
 
     '''
     try:
@@ -1466,7 +1479,7 @@ def WriteData(df, img_path, nummer, error_info):
             orient='index')  # str like {index -> {column -> value}}。
         df_dict = eval(df_json)  # chance str to dict
 
-        df_dict = Umform(df_dict, label_)
+        df_dict = Umform(df_dict, label_, error_info)
 
         # einschreibung in elasticsearch mit form in 17.08.2022.md
         df = pd.DataFrame(df_dict)
@@ -1493,19 +1506,19 @@ def WriteData(df, img_path, nummer, error_info):
                           os.path.basename(img_path), 'WriteData', str(e)))
 
 
-def SaveTable(nummer, table, img_path, error_info, model):
-    '''
-    This function is the analysis and writing of the table area.
-    The purpose of the function is to make multiple tables in the same graph not affect each other.
-    The failure of table 1 will not affect the processing of subsequent table 2.
+def SaveTable(nummer, table, img_path, error_info, model, list_output):
+        '''
+        This function is the analysis and writing of the table area.
+        The purpose of the function is to make multiple tables in the same graph not affect each other.
+        The failure of table 1 will not affect the processing of subsequent table 2.
 
-    - input 1: nummer of table
-    - input 2: infos of table
-    - input 3: is a parameter for WriteData()
+        - input 1: nummer of table
+        - input 2: infos of table
+        - input 3: is a parameter for WriteData()
 
-    - output: None
-    '''
-    try:
+        - output: None
+        '''
+    #try:
         table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
         table_ol = DeletLines(table_gray)  # bina_image ohne Linien
 
@@ -1526,11 +1539,11 @@ def SaveTable(nummer, table, img_path, error_info, model):
 
         for col, w in col_contours:
             cv2.line(image_add, (col, 0), (col, 500), color=(0, 0, 255),
-                     thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
-            cv2.line(image_add, (col-w//2, 0), (col-w//2, 500), color=(0, 255, 0),
-                     thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
-            cv2.line(image_add, (col+w//2, 0), (col+w//2, 500), color=(0, 255, 0),
-                     thickness=3, lineType=cv2.LINE_AA)  # draw the white line on black image
+                     thickness=1, lineType=cv2.LINE_AA)  # draw the white line on black image
+            cv2.line(image_add, (col-w//2, 0), (col-w//2, 1100), color=(0, 255, 0),
+                     thickness=1, lineType=cv2.LINE_AA)  # draw the white line on black image
+            cv2.line(image_add, (col+w//2, 0), (col+w//2, 1100), color=(0, 255, 0),
+                     thickness=1, lineType=cv2.LINE_AA)  # draw the white line on black image
         cv2.imwrite('.\\Development\\imageSave\\{}'.format(
             'table_' + str(nummer+1) + '_of_' + str(os.path.basename(img_path))), image_add)
 
@@ -1549,9 +1562,11 @@ def SaveTable(nummer, table, img_path, error_info, model):
             print(df)
 
         WriteData(df, img_path, nummer, error_info)
-    except Exception as e:
-        error_info.append(('table_' + str(nummer+1) + '_of_' +
-                          os.path.basename(img_path), 'SaveTable', str(e)))
+        list_output.append('table_' + str(nummer+1) + '_of_' + \
+                          os.path.basename(img_path))
+    #except Exception as e:
+    #    error_info.append(('table_' + str(nummer+1) + '_of_' +
+    #                      os.path.basename(img_path), 'SaveTable', str(e)))
 
 
 def Search(index_, uniqueId):
@@ -1594,9 +1609,9 @@ def Search(index_, uniqueId):
 #---------------------------------------------------------------------------------------------------------------#
 
 
-def Main(img_path, model, error_info):
+def Main(img_path, model, error_info, list_output):
 
-    try:
+    #try:
         image = cv2.imread(img_path, 0)
         image_rotate = TiltCorrection(image)  # got gray
         # text_zone = WhiteBordersRemove(image_rotate)  # got gray
@@ -1628,26 +1643,28 @@ def Main(img_path, model, error_info):
 
             # input image must be 3 channel 1024x1024. out img 1024x1024
         table_boundRect = PositionTable(img_1024, img_path, model_used='unet') # unet besser
+                 
 
         table_zone = GetTableZone(table_boundRect, img_1024)
 
-        # print('image ' + str(img_path) + ' has ' +
-        #      str(len(table_zone)) + ' table(s)')
+            # print('image ' + str(img_path) + ' has ' +
+            #      str(len(table_zone)) + ' table(s)')
 
         for nummer, table in enumerate(table_zone):
-            SaveTable(nummer, table, img_path, error_info, model) # densecol besser
+            SaveTable(nummer, table, img_path, error_info, model, list_output) # densecol besser
 
-    except Exception as e:
-        error_info.append((os.path.basename(img_path), 'Main', str(e)))
+    #except Exception as e:
+    #    error_info.append((os.path.basename(img_path), 'Main', str(e)))
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test5.png'
+    img_path = 'Development\\imageTest\\tablekomplex.jpg'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     error_info = []
-    Main(img_path, model='densenet', error_info=error_info)
+    list_output = []
+    Main(img_path, model='densenet', error_info=error_info, list_output=list_output)
     # model: 'densenet' or 'unet'
     print(error_info)
 

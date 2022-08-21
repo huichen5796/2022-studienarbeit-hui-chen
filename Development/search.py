@@ -12,6 +12,7 @@ results = json.loads(results)
 for result in results['hits']['hits']:
     
     df = pd.DataFrame(result['_source']['content'])
+    df.to_excel('Development\\texst.xlsx', sheet_name='Sheet1')
     print('--------------------')
     table_label = result['_source']['uniqueId']
     print(table_label)

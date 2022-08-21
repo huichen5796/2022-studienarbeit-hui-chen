@@ -1,9 +1,10 @@
-# 2022-projektarbeit-hui-chen
+# 2022-studienarbeit-hui-chen
 
-Hier ist der Arbeitsplatz für die Studienarbeit “Automatische Erkennung und Konvertierung von Tabellen in Bilddokumenten”.
+![title](./Abbildungen/title.jpg)
 
-**Ein Tool zur Erkennung, Extraktion und Rekonstruktion von Tabellen aus Bilddokumenten**
-![er](./Abbildungen\/uebersehen.jpg)
+**Ein Tool zur Erkennung, Extraktion und Rekonstruktion von komplexen Tabellen aus Bilddokumenten**
+
+![er](.\Abbildungen\ablauf.gif)
 ## Programmablauf
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Die Verarbeitung einzeles Bilds
@@ -47,7 +48,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
       - Strukturnormalize
 
-      (hier sollte es ein GIF geben, um Umform() zu zeigen.)
+      ![umform](./Abbildungen/umform.gif)
 
 - Stapelverarbeitung mehrer Bilder
 
@@ -146,4 +147,4 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
 
   ![pytorchinstall](./Abbildungen/pytorch.jpg)
   
-  - füren den Command in Terminal durch wie z.B. `pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113`
+  - kopieren und füren den Command in Terminal durch wie z.B. `pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113`
