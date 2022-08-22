@@ -18,9 +18,9 @@ import torchvision.models as models
 device = 'cuda'
 
 transform = A.Compose([
-                A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.50, rotate_limit=0, p=.75),
-                A.HorizontalFlip(p = 0.5),
-                A.VerticalFlip(p = 0.5),
+                A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.70, rotate_limit=0, p=.75),
+                #A.HorizontalFlip(p = 0.5),
+                #A.VerticalFlip(p = 0.5),
                 A.Normalize(
                     mean=[0.485, 0.456, 0.406],
                     std=[0.229, 0.224, 0.225],
