@@ -1,74 +1,87 @@
 # 2022-studienarbeit-hui-chen
 
-![title](./Abbildungen/title.jpg)
+<div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/blob/main/Abbildungen/title.jpg?raw=true"></div>
 
-**Ein Tool zur Erkennung, Extraktion und Rekonstruktion von komplexen Tabellen aus Bilddokumenten**
+<div style="font-weight:bold"; align = "center">Ein Tool zur Erkennung, Extraktion und Rekonstruktion von komplexen Tabellen aus Bilddokumenten</div>
 
-![er](./Abbildungen/ablauf.gif)
+<div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/blob/main/Abbildungen/ablauf.gif?raw=true"></div>
+
 ## Programmablauf
 Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Die Verarbeitung einzeles Bilds
 
-  ![pa_ein_bild](./Abbildungen/programmablauf.svg)
+  <div style="text-align:center"><img src="https://raw.githubusercontent.com/huichen5796/2022-studienarbeit-hui-chen/ef331e16781c82319720821132f3dacb0779aef3/Abbildungen/programmablauf.svg"></div>
 
 
 - Stapelverarbeitung mehrer Bilder
 
-  ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.svg)
+  <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/stapelverarbeitung.svg"></div>
 
 
 ## Ergebniss
 - Die Verarbeitung einzeles Bilds
    - Vorbreitung und Normalizierung
 
-   ![Vorbreitung](./Abbildungen/vorverarbeitung.png)
+   <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/vorverarbeitung.png"></div>
 
    - Erkennung des Tablebreichs
 
-   ![Erkennung](./Abbildungen/erkennung.png)
+   <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/erkennung.png"></div>
 
    - Erkennung der Zelle
 
-   ![cell](./Abbildungen/cell.png)
+   <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/cell.png"></div>
 
    - Rekonstruktion
       - Columen Detection mittels ML Modell, somit werden Labels von Columen erstellt.
-      ![coldetc](./Abbildungen/col.jpg)
+
+      <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/blob/main/Development/imageSave/table_1_of_test3.png?raw=true"></div>
+
       (Die rote Linie ist die Mittellinie der durch maschinelles Lernen erkannten Tabellenspalte, und die Zellen, die sich auf beiden Seiten der roten Linie innerhalb der grünen Linien befinden, werden in einer Spalte gruppiert.)
 
       - Zuweisung der Labels
       
       Labels von Rows werden durch Positon von jeder Zelle erstellt.
 
-      ![LABELS](./Abbildungen/labels.jpg)
+      <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/labels.jpg"></div>
 
       - Rekonstruktion
 
-      ![table](./Abbildungen/table.jpg)
+      <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/table.jpg"></div>
 
       - Strukturnormalize
+        - vertikales Schmelzen von leeren Zeilen
+        - horizonales Schmelzen von der ersten und zweiten Spalte
+        - Bestimmen der Zeilennummer von header
+        - Bestimmen der Qualifikationen der Zellen in erster Zeile, dilatiert zu werden und ausgefüllt zu werden
+        - Verarbeitung der erster Zeile
+        - Schmelzen von header
 
-      ![umform](./Abbildungen/umform.gif)
+      <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/umform.gif"></div>
+
+      
 
 - Stapelverarbeitung mehrer Bilder
 
    - Die Bilder im Verzeichnis werden zuerst formatiert,  alle PDFs werden Seite für Seite in das PNG-Dateiformat konvertiert.
 
-   ![stapel_vor](./Abbildungen/stapel_vor.jpg)
+   <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/stapel_vor.jpg"></div>
 
    - Dann wird jedes Bild verarbeitet und in Elasticsearch geschrieben.
 
-   ![stapelverarbeitung](./Abbildungen/stapelverarbeitung.jpg)
+   <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/stapelverarbeitung.jpg"></div>
 
-   ![tablesinelas](./Abbildungen/kibana.jpg)
+   <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/kibana.jpg"></div>
 
 - Leistung bei komplexer Tabelle
-  ![ori](./Development/imageTest/test2.PNG)
-  ![leistung](./Abbildungen/komplexbild.jpg)
+
+  <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Development/imageTest/test2.PNG"></div>
+
+  <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/komplexbild.jpg"></div>
 
   nach Strukturnormalize:
 
-  ![sn](./Abbildungen/sn.jpg)
+  <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/sn.jpg"></div>
 
 ## Config
 - python 3.10.0
@@ -118,24 +131,25 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
   - die entsprechende Version herunterladen
   - Tesseract-OCR installieren
 
-    ![install](./Abbildungen/install0.jpg)
+    <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/install0.jpg"></div>
 
   - alle Sprache auswählen
 
-    ![language](./Abbildungen/installtesse.jpg)
+    <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/installtesse.jpg"></div>
+
   - den Installationspfad wählen
     
-    ![install1](./Abbildungen/install1.jpg)
+    <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/install1.jpg"></div>
 
   - zu den Systemvariablen (PATH) der Umgebungsvariablen hinzufügen
 
-    ![zu PATH](./Abbildungen/zupathadd.jpg)
+    <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/zupathadd.jpg"></div>
     
   - eine neue Systemvariable erstellen
     - Variablename: TESSDATA_PREFIX 
     - Variablenwert ist Installationspfad, z.B. C:\Program Files\Tesseract-OCR\tessdata
 
-    ![tessdata](./Abbildungen/tesserdata.jpg)
+    <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/tesserdata.jpg"></div>
 
   - in der Datei _pytesseract.py_ (unter dem Pfad, den Sie gerade installiert haben) ändern `tesseract_cmd = 'tesseract'`  in `tesseract_cmd =r'C:\Program Files\Tesseract-OCR\tesseract.exe"`
     
@@ -145,6 +159,6 @@ Dies kann im Terminal durch folgenden Befehl getan werden: `pip install elastics
 - Install pytorch
   - bekommen Command for Installation hier [Pytorch](https://pytorch.org/get-started/locally/)
 
-  ![pytorchinstall](./Abbildungen/pytorch.jpg)
+  <div style="text-align:center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/pytorch.jpg"></div>
   
   - kopieren und füren den Command in Terminal durch wie z.B. `pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113`
