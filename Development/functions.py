@@ -204,6 +204,7 @@ class TableNet(nn.Module):
 #---------------------------------------------------------------------------------------------------------------#
 # functions
 
+
 def FLDGetLines(img, minLong):
     '''
     lines be marked by FLD
@@ -483,7 +484,7 @@ def PositionTable(img_1024, img_path, model_used):
     if model_used == 'densenet':
         path = 'Development\\models\\densetable_210.pkl'
         model = torch.load(path, map_location=torch.device(device))
-    
+
     elif model_used == 'unet':
         path = "Development\\models\\unet100_180spe.pkl"
 
@@ -511,7 +512,7 @@ def PositionTable(img_1024, img_path, model_used):
             pred = model(image)
             pred = torch.sigmoid(pred)
             pred = (pred.cpu().detach().numpy().squeeze())
- 
+
     pred[:][pred[:] > 0.5] = 255.0
     pred[:][pred[:] < 0.5] = 0.0
     pred = pred.astype('uint8')
@@ -555,7 +556,7 @@ def PositionTable(img_1024, img_path, model_used):
     # remove bad contours
     for c in contours:
         # the size of table must be bigger than 80000 pixels
-        if cv2.contourArea(c) > 30000:
+        if cv2.contourArea(c) > 40000:
             table_contours.append(c)
 
     table_boundRect = [None]*len(table_contours)
@@ -580,7 +581,6 @@ def PositionTable(img_1024, img_path, model_used):
             i = 0
 
     image_add = cv2.addWeighted(img_1024, 0.9, color_image, 0.5, 0)
-
 
     if __name__ == '__main__':
         plt.subplot(221)
@@ -695,7 +695,7 @@ def GetCell(image_table, img_deletline):
     size = 2
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 4 and h > 5 and w < 0.7*img_deletline_inv.shape[1]:
+        if w > 4 and h > 5 and w < 0.5*img_deletline_inv.shape[1]:
             x = int(x - size)
             y = int(y)
             w = int(w + 2 * size)
@@ -742,13 +742,13 @@ def GetColumn(table, model_used):
     The red line is the center line of the table column detected by machine 
     learning, and the cells that are inside the green lines on either 
     side of the red line are grouped into one column.
-    
+
     '''
 
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = 'Development\\models\\densecol_240.pkl'
+        path = 'Development\\models\\densecol_140.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
@@ -756,7 +756,7 @@ def GetColumn(table, model_used):
         model = torch.load(path, map_location=torch.device(device))
 
     shape_list = list(table.shape)
-    scaling_r =  1
+    scaling_r = 1
     if max(shape_list) > 1024:
         scaling_r = 1024/max(shape_list)
         # w, h to avoid exceeding 1024, subtract one
@@ -801,14 +801,13 @@ def GetColumn(table, model_used):
             pred = torch.sigmoid(pred)
             pred = (pred.cpu().detach().numpy().squeeze())
 
-
     pred[:][pred[:] > 0.5] = 255.0
     pred[:][pred[:] < 0.5] = 0.0
     pred = pred.astype('uint8')
 
     # get contours of the prognose to get tables
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 37))
-    pred = cv2.erode(pred, kernel, iterations=1)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 19))
+    pred = cv2.erode(pred, kernel, iterations=2)
     pred = cv2.dilate(pred, kernel, iterations=1)  # remove small zone
 
     contours, _ = cv2.findContours(
@@ -834,13 +833,13 @@ def GetColumn(table, model_used):
     while n <= 4:
         # print(col_contours)
         for i in range(len(col_contours)-1):
-            if abs(col_contours[i+1][0]-col_contours[i][0]) <= (col_contours[i+1][1]+col_contours[i][1])//2:
+            if abs(col_contours[i+1][0]-col_contours[i][0]) < 0.7*(col_contours[i+1][1]+col_contours[i][1])//2:
                 col_contours[i] = ((col_contours[i+1][0]+col_contours[i][0]) //
-                                2, (col_contours[i+1][1]+col_contours[i][1])//2)
+                                   2, (col_contours[i+1][1]+col_contours[i][1])//2)
                 col_contours[i+1] = col_contours[i]
             else:
                 continue
-        n+=1
+        n += 1
         # print(n)
         col_contours = list(set(col_contours))
         col_contours = sorted(col_contours, key=lambda x: x[0])
@@ -855,7 +854,7 @@ def GetColumn(table, model_used):
         plt.show()
     # print(col_contours)
     for i, (col, w) in enumerate(col_contours):
-        col_contours[i]=(int(col//scaling_r), int(w//scaling_r))
+        col_contours[i] = (int(col//scaling_r), int(w//scaling_r))
     # print(col_contours)
     return col_contours
 
@@ -886,23 +885,18 @@ def PointCorrection(location, col_contours):
     processed = []
     k = 0
     while len(processed) != len(location):
-        for col, w in col_contours:
-            for i, cell in enumerate(location):
-                if i not in processed:
+        for i, cell in enumerate(location):
+            if i not in processed:
+                for col, w in col_contours:
                     if abs(cell[0] - col - k) <= w//2:
                         cell[0] = col
                         processed.append(i)
-                    else:
-                        continue
-                else:
-                    continue
+                        break
         k += 1
-
-        if k > 30:
+        if k > 4:
             for i, cell in enumerate(location):
                 if i not in processed:
                     cell[0] = 0
-
             break
 
     location = sorted(location, key=lambda x: (x[1], x[0]))
@@ -1007,13 +1001,13 @@ def ReadCell(center_list, image):
 
         value = [None, None, None]
         for cha in range(3):
-            value[cha] = (np.mean(cell_zone[cha], axis = 0)[0]
-                            + np.mean(cell_zone[cha], axis = 0)[-1] 
-                            + np.mean(cell_zone[cha], axis = 1)[0] 
-                            + np.mean(cell_zone[cha], axis = 1)[-1]) //4
+            value[cha] = (np.mean(cell_zone[cha], axis=0)[0]
+                          + np.mean(cell_zone[cha], axis=0)[-1]
+                          + np.mean(cell_zone[cha], axis=1)[0]
+                          + np.mean(cell_zone[cha], axis=1)[-1]) // 4
 
         cell = cv2.copyMakeBorder(
-            cell_zone, 40, 40, 40, 40, cv2.BORDER_CONSTANT, value= value)
+            cell_zone, 40, 40, 40, 40, cv2.BORDER_CONSTANT, value=value)
 
         result = Extrakt_Tesseract(cell)
 
@@ -1198,7 +1192,7 @@ def ZeilenIndexSchmelzen(df_list):
 def BestimmenZeilNummer(df_list):
     '''
     in der Zukunft könnte die Function von ML modell ersetzt werden.
-    
+
     '''
 
     row_list = []
@@ -1359,7 +1353,7 @@ def WriteData(df, img_path, nummer, error_info):
 
     '''
     try:
-        
+
         label_ = 'table_' + str(nummer+1) + '_of_' + os.path.basename(img_path)
         df_json = df.to_json(
             orient='index')  # str like {index -> {column -> value}}。
@@ -1372,7 +1366,7 @@ def WriteData(df, img_path, nummer, error_info):
         df_json = df.to_json(
             orient='index')  # str like {index -> {column -> value}}。
         df = eval(df_json)  # chance str to dict
-        
+
         values = []
         for key, value in list(df.items()):
             value = dict(value)
@@ -1393,7 +1387,7 @@ def WriteData(df, img_path, nummer, error_info):
 
 
 def SaveTable(nummer, table, img_path, error_info, model, list_output):
-        '''
+    '''
         This function is the analysis and writing of the table area.
         The purpose of the function is to make multiple tables in the same graph not affect each other.
         The failure of table 1 will not affect the processing of subsequent table 2.
@@ -1403,8 +1397,8 @@ def SaveTable(nummer, table, img_path, error_info, model, list_output):
         - input 3: is a parameter for WriteData()
 
         - output: None
-        '''
-    #try:
+    '''
+    try:
         table_gray = cv2.cvtColor(table, cv2.COLOR_BGR2GRAY)  # gray image
         table_ol = DeletLines(table_gray)  # bina_image ohne Linien
 
@@ -1448,11 +1442,11 @@ def SaveTable(nummer, table, img_path, error_info, model, list_output):
             print(df)
 
         WriteData(df, img_path, nummer, error_info)
-        list_output.append('table_' + str(nummer+1) + '_of_' + \
-                          os.path.basename(img_path))
-    #except Exception as e:
-    #    error_info.append(('table_' + str(nummer+1) + '_of_' +
-    #                      os.path.basename(img_path), 'SaveTable', str(e)))
+        list_output.append('table_' + str(nummer+1) + '_of_' +
+                           os.path.basename(img_path))
+    except Exception as e:
+        error_info.append(('table_' + str(nummer+1) + '_of_' +
+                          os.path.basename(img_path), 'SaveTable', str(e)))
 
 
 def Search(index_, uniqueId):
@@ -1497,7 +1491,7 @@ def Search(index_, uniqueId):
 
 def Main(img_path, model, error_info, list_output):
 
-    #try:
+    try:
         image = cv2.imread(img_path, 0)
         image_rotate = TiltCorrection(image)  # got gray
         # text_zone = WhiteBordersRemove(image_rotate)  # got gray
@@ -1528,23 +1522,24 @@ def Main(img_path, model, error_info, list_output):
             plt.close()
 
             # input image must be 3 channel 1024x1024. out img 1024x1024
-        table_boundRect = PositionTable(img_1024, img_path, model) # unet besser
-                 
+        table_boundRect = PositionTable(
+            img_1024, img_path, model)  # unet besser
 
         table_zone = GetTableZone(table_boundRect, img_1024)
 
-            # print('image ' + str(img_path) + ' has ' +
-            #      str(len(table_zone)) + ' table(s)')
+        # print('image ' + str(img_path) + ' has ' +
+        #      str(len(table_zone)) + ' table(s)')
 
         for nummer, table in enumerate(table_zone):
-            SaveTable(nummer, table, img_path, error_info, model, list_output) # densecol besser
+            SaveTable(nummer, table, img_path, error_info,
+                      model, list_output)  # densecol besser
 
-    #except Exception as e:
-    #    error_info.append((os.path.basename(img_path), 'Main', str(e)))
+    except Exception as e:
+        error_info.append((os.path.basename(img_path), 'Main', str(e)))
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\successControl\\Wochenbericht_2022-04-07_26.png'
+    img_path = 'Development\\successControl\\Wochenbericht_2022-06-16_23.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
@@ -1554,7 +1549,6 @@ if __name__ == '__main__':
     # model: 'densenet' or 'unet'
     print(error_info)
 
-    
     time.sleep(2)
     results = Search('table', 'all')
     print(results)
@@ -1567,4 +1561,3 @@ if __name__ == '__main__':
         table_uniqueId = result['_source']['uniqueId']
         print(table_uniqueId)
         print(df)
-    

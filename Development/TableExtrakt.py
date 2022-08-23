@@ -263,10 +263,11 @@ def StapelVerbreitung(dir, model, list_output):
 
 if __name__ == '__main__':
 
-    #es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
+    es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    dir_path = 'Development\\successControl'
+    dir_paths= ['Development\\successControl', 'Development\\imageTest']
     model = 'densenet'
 
-    StapelVerbreitung(dir_path, model, list_output=[])
-    # model: 'tablenet', 'densenet' or 'unet'
+    for dir_path in dir_paths:
+        StapelVerbreitung(dir_path, model, list_output=[])
+        # model: 'tablenet', 'densenet' or 'unet'
