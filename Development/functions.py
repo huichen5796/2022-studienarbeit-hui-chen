@@ -1,4 +1,5 @@
 from elasticsearch import Elasticsearch
+from elasticsearch import helpers
 import os
 import cv2
 import numpy as np
@@ -739,8 +740,8 @@ def GetCell(image_table, img_deletline):
 def GetColumn(table, model_used):
     '''
     use ML modell to get all the the center line of the table columns.
-    The red line is the center line of the table column detected by machine 
-    learning, and the cells that are inside the green lines on either 
+    The red line is the center line of the table column detected by machine
+    learning, and the cells that are inside the green lines on either
     side of the red line are grouped into one column.
 
     '''
@@ -1368,19 +1369,19 @@ def WriteData(df, img_path, nummer, error_info):
         df = eval(df_json)  # chance str to dict
 
         values = []
+        actions = []
         for key, value in list(df.items()):
             value = dict(value)
 
             values.append(value)
+        for bulk in values:
 
-        body_ = {
-            "uniqueId": label_.lower(),
-            "fileName": os.path.basename(img_path),
-            "content": values
+            bulk["uniqueId"] = label_.lower()
+            bulk["fileName"] = os.path.basename(img_path)
 
-        }
-
-        es.index(index='table', id=label_.lower(), body=body_)
+            
+            actions.append(bulk)
+        helpers.bulk(es, actions, index='table')
     except Exception as e:
         error_info.append(('table_' + str(nummer+1) + '_of_' +
                           os.path.basename(img_path), 'WriteData', str(e)))
@@ -1553,11 +1554,3 @@ if __name__ == '__main__':
     results = Search('table', 'all')
     print(results)
 
-    # show in dataframe
-    results = json.loads(results)
-    for result in results['hits']['hits']:
-        df = pd.DataFrame(result['_source']['content'])
-        print('--------------------')
-        table_uniqueId = result['_source']['uniqueId']
-        print(table_uniqueId)
-        print(df)
