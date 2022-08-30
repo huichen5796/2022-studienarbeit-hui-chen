@@ -884,21 +884,23 @@ def PointCorrection(location, col_contours):
 
     location = sorted(location, key=lambda x: x[0])
     processed = []
-    k = 0
-    while len(processed) != len(location):
-        for i, cell in enumerate(location):
-            if i not in processed:
-                for col, w in col_contours:
-                    if abs(cell[0] - col - k) <= w//2:
-                        cell[0] = col
-                        processed.append(i)
-                        break
-        k += 1
-        if k > 4:
-            for i, cell in enumerate(location):
-                if i not in processed:
-                    cell[0] = 0
-            break
+
+    for i, cell in enumerate(location):    
+        # die Zellen, derren Zentrum sich auf beiden Seiten der roten Linie innerhalb 
+        # der grünen Linien befinden, werden in einer Spalte gruppiert
+        for col, w in col_contours:
+            if abs(cell[0] - col) <= w//2:
+                cell[0] = col
+                processed.append(i)
+                break
+
+    for i, cell in enumerate(location):
+        # die Zellen, derren Zentrum sich außer grün Linien, werden nach links verschoben.
+        if i not in processed:
+            if i == 0:
+                cell[0] = location[1][0]
+            else:
+                cell[0] = location[i-1][0]
 
     location = sorted(location, key=lambda x: (x[1], x[0]))
 
@@ -1145,33 +1147,27 @@ def VertikalSchmelzen(df_list):
             row_i.append(row[i])
         row_list.append(row_i)
 
-    str_set = ['(empty_cell)']
-    empty_row = []
-    for i, row in enumerate(row_list):
-        # if all cell are empty, result = True
-        result = all([cell in str_set for cell in row[2:]])
-        # for [2:] - angenommen [0:1] ist zeilenindex
+    sch_row = []
+
+    for i in range(len(row_list)-1):
+        zwei_rows = [row_list[i][m]+row_list[i+1][m] for m in range(len(row_list[i]))]
+        result = all(['(empty_cell)' in cell for cell in zwei_rows[2:]])
         if result == True:
-            empty_row.append(i)
+            if i-1 not in sch_row:
+                sch_row.append(i)
 
-    if len(empty_row) != 0:
+    if len(sch_row) != 0:
 
-        for n in empty_row:
-            if n == 0:
-                for spalt in df_list:
-                    spalt[1] = (spalt[0] + '_' + spalt[1]
-                                ).replace('(empty_cell)_', '').replace('-_', '-')
+        for n in sch_row:
 
-            else:
-                for spalt in df_list:
-                    spalt[n-1] = (spalt[n-1] + '_' + spalt[n]
-                                  ).replace('_(empty_cell)', '').replace('-_', '-')
+            for spalt in df_list:
+                spalt[n] = (spalt[n] + '_' + spalt[n+1]
+                              ).replace('_(empty_cell)', '').replace('(empty_cell)_', '').replace('-_', '-')
 
         df_list_new = [None]*len(df_list)
-        for i, col in enumerate(df_list):
-            df_list_new[i] = [cell for i, cell in enumerate(
-                col) if i not in empty_row]
-
+        for i in range(len(df_list_new)):
+            df_list_new[i] = [cell for ii, cell in enumerate(df_list[i]) if ii-1 not in sch_row]
+ 
         return df_list_new
     else:
         return df_list
@@ -1179,7 +1175,7 @@ def VertikalSchmelzen(df_list):
 
 def ZeilenIndexSchmelzen(df_list):
 
-    halb_rN = len(df_list[0])//2
+    halb_rN = len(df_list[0])//3 + 1
 
     if '(empty_cell)' in df_list[0][halb_rN:] + df_list[1][halb_rN:]:
         for i, ind in enumerate(df_list[0]):
@@ -1259,28 +1255,45 @@ def HeaderSchmelzen(df_list, zeile_nummer, empty_row, row_list):
             if result == True:
                 no_quali.append(i)
 
+        for col in first_header:
+            if col+1 not in empty_cell:
+                no_quali.append(col)
+
         first_header = [pri for pri in first_header if pri not in no_quali]
         empty_cell = [emp for emp in empty_cell if emp not in no_quali]
 
         # The first-level title will dilate to the left and right
         # If a empty cell receives an update request from both the left and the right, the left takes precedence.
 
-        b = 0
-        while len(empty_cell) != 0:
-            for col in empty_cell:
-                if col-1 in first_header:
-                    headercol_list[col][0] = headercol_list[col-1][0]
-                    first_header.append(col)
-                    del empty_cell[empty_cell.index(col)]
+        b = 1
+        while len(first_header) != 0:
+            delete = []
+
+            for col in first_header:
+                # expand to the right
+                if col+b in empty_cell:
+                    headercol_list[col+b][0] = headercol_list[col][0]
+                    del empty_cell[empty_cell.index(col+b)]
                 else:
-                    if col+1 in first_header:
-                        headercol_list[col][0] = headercol_list[col+1][0]
-                        first_header.append(col)
-                        del empty_cell[empty_cell.index(col)]
+                    # basierend auf PositionCorrection ist die rechte Seite unbedingt leer, falls nicht leer ist es ein Fehler.
+                    delete.append(col)
+
+            for col in first_header:    
+                if col-b in empty_cell:
+                    headercol_list[col-b][0] = headercol_list[col][0]
+                    del empty_cell[empty_cell.index(col-b)]
+                else:
+                    # In der vorherigen for-Schleife wurde die leere Zelle auf der rechten Seite der Titelzelle gefüllt.
+                    # Wenn die linke Seite zu diesem Zeitpunkt nicht gefüllt werden kann, sollte die Titelzelle deaktiviert werden.
+                    delete.append(col)
+
+            delete = list(set(delete))
+            for col in delete:
+                del first_header[first_header.index(col)]
+
             b += 1
-            if b >= 40:
-                if __name__ == '__main__':
-                    print('ERROR HeaderSchmelzen Infinite Loop')
+
+            if b >= 20:
                 break
 
     else:
@@ -1312,12 +1325,12 @@ def HeaderSchmelzen(df_list, zeile_nummer, empty_row, row_list):
 
 def Umform(df_dict, label_, error_info):
     '''
-    see issue: instraction to funciton Umform()
+        see issue: instraction to funciton Umform()
 
-    - input 1: df_dict is a dict, in it is detected table
-    - input 2: label_ is the quelle of the table
+        - input 1: df_dict is a dict, in it is detected table
+        - input 2: label_ is the quelle of the table
 
-    - output: processed table information, key is header, value is value in columen form
+        - output: processed table information, key is header, value is value in columen form
 
     '''
     try:
@@ -1540,7 +1553,7 @@ def Main(img_path, model, error_info, list_output):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\successControl\\Wochenbericht_2022-06-16_23.png'
+    img_path = 'Development\\successControl\\Wochenbericht_2022-04-07_28.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
@@ -1549,8 +1562,8 @@ if __name__ == '__main__':
     Main(img_path, model='densenet', error_info=error_info, list_output=list_output)
     # model: 'densenet' or 'unet'
     print(error_info)
-
+    
     time.sleep(2)
     results = Search('table', 'all')
     print(results)
-
+    

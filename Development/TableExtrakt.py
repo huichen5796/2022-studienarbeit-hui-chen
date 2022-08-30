@@ -9,7 +9,9 @@ import fitz
 import time
 import copy
 import shutil
+from saveTableExcel import SaveExcel
 from functions import Main, Search
+from saveTableExcel import SaveExcel
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
 
@@ -270,4 +272,7 @@ if __name__ == '__main__':
 
     for dir_path in dir_paths:
         StapelVerbreitung(dir_path, model, list_output=[])
-        # model: 'tablenet', 'densenet' or 'unet'
+        # model: 'densenet'
+
+    time.sleep(2)
+    SaveExcel()
