@@ -1402,7 +1402,7 @@ def WriteData(df, img_path, nummer, error_info):
 
             
             actions.append(bulk)
-        helpers.bulk(es, actions, index='table')
+            helpers.bulk(es, actions, index='table')
     except Exception as e:
         error_info.append(('table_' + str(nummer+1) + '_of_' +
                           os.path.basename(img_path), 'WriteData', str(e)))
