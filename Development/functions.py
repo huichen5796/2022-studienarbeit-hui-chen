@@ -1314,7 +1314,9 @@ def HeaderSchmelzen(df_list, zeile_nummer, empty_row, row_list):
     newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
     newDictKeys = [pp.replace('-', '_') for pp in newDictKeys]
     # in keys should not have  ' ', '-' etc.
+    newDictKeys = [pp.replace('.', '_') for pp in newDictKeys]
     newDictKeys = [pp.replace('__', '_') for pp in newDictKeys]
+    
 
     newDictValues = [col[zeile_nummer:] for col in df_list]
 
@@ -1390,13 +1392,13 @@ def WriteData(df, img_path, nummer, error_info):
         df = eval(df_json)  # chance str to dict
 
         values = []
-        actions = []
+        # actions = []
         for key, value in list(df.items()):
             value = dict(value)
 
             values.append(value)
         for bulk in values:
-
+            actions = []
             bulk["uniqueId"] = label_.lower()
             bulk["fileName"] = os.path.basename(img_path)
 
