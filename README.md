@@ -50,7 +50,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
       <div align="center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/table.jpg"></div>
 
       - Strukturnormalize
-        - vertikales Schmelzen von leeren Zeilen
+        - vertikales Schmelzen von zwei geschmelzbaren Zeilen
         - horizonales Schmelzen von der ersten und zweiten Spalte
         - Bestimmen der Zeilennummer von header
         - Bestimmen der Qualifikationen der Zellen in erster Zeile, dilatiert zu werden und ausgefüllt zu werden

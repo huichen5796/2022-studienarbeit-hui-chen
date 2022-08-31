@@ -1343,8 +1343,16 @@ def Umform(df_dict, label_, error_info):
 
         else:
             df_list = Transform(df_dict)
-            df_list = VertikalSchmelzen(df_list)
-            df_list = ZeilenIndexSchmelzen(df_list)
+            
+            i = 0
+            while i < 3:
+                df_list = VertikalSchmelzen(df_list)
+                i += 1
+            
+            m = 0
+            while m < 2:
+                df_list = ZeilenIndexSchmelzen(df_list)
+                m += 1
 
             zeile_nummer, empty_row, row_list = BestimmenZeilNummer(df_list)
             df_dict_done = HeaderSchmelzen(
@@ -1553,7 +1561,7 @@ def Main(img_path, model, error_info, list_output):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\successControl\\Wochenbericht_2022-04-07_28.png'
+    img_path = 'Development\\imageTest\\test6.png'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
