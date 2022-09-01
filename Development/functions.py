@@ -29,19 +29,19 @@ es = Elasticsearch()
     - input: the image we want to tilt correct, must be gray image
     - output: the tilt corrected image
 
-    at first call the function GetAngle(),witch basic of cv2.minAreaRect(), to get the tilt angle
+    at first call the function GetAngle(), witch basic of FLDGetLines() and cv2.minAreaRect(), to get the tilt angle
     then call ImageRotate() to correct the tilt of image
 
 3. SizeNormalize(image):
     Normalize the input image size to 1024 x 1024
     - input: image, 1 channel or 3 channels
-    - output: image 1024 x 1024m 3 channels
+    - output: image 1024 x 1024, 3 channels
 
 4. PositionTable(img_1024, img_path):
-    get the position of table bigger than 80000 pixels in a image
+    get the position of table bigger than 40000 pixels in a image
     - input 1: image must be 3 channel, 1024 x 1024
     - input 2: the path of the image
-    - input 3: the used model ---> 'densenet' or 'unet'
+    - input 3: the used model ---> 'densenet'
     - output: the location of tables in image [[x, y, w, h], ..] here x and y are the locaiton of top left point
 
 5. GetTableZone(table_boundRect, img_1024):
@@ -55,7 +55,7 @@ es = Elasticsearch()
     - input: gray image
     - output: bina image without lines
 
-    at first call the function LSDGetLines() to mark all lines on image
+    at first call the function FLDGetLines() to mark all lines on image
     then in function OrImage() mit cv2.bitwise_or to delet all the lines
 
 7. GetCell(img_deletline):
@@ -85,20 +85,18 @@ es = Elasticsearch()
     - input 3: tablesize
     - output: Dataframe
 
-11. WriteData(df, label_):
+11. WriteData():
     write dataframe to elasticsearch
-    - input 1: dataframe
-    - input 2: label_, here is the table name, for example: table_2_of_table2_rotate_0
 
-12.Umform(df_dict, label_):
+12. Umform():
     see issue: instraction to funciton Umform()
     - input 1: df_dict is a dict, in it is detected table
-    - input 2: label_ is the quelle of the table
+    - input 2: label is the quelle of the table
     - output: processed table information, key is header, value is value in columen form
 
-13. Search(index_, label_):
+13. Search(index, label):
     Searches for data in ES-index, for example: table_2_of_table2_rotate_0
-    - input 1: index_ is 'table'
+    - input 1: index is 'table'
     - input 2: label of table, for example: table_2_of_table2_rotate_0, if label_ is all --> back all datas
     - output: result
 
@@ -556,7 +554,7 @@ def PositionTable(img_1024, img_path, model_used):
     table_contours = []
     # remove bad contours
     for c in contours:
-        # the size of table must be bigger than 80000 pixels
+        # the size of table must be bigger than 40000 pixels
         if cv2.contourArea(c) > 40000:
             table_contours.append(c)
 
@@ -1325,12 +1323,12 @@ def HeaderSchmelzen(df_list, zeile_nummer, empty_row, row_list):
     return newDict
 
 
-def Umform(df_dict, label_, error_info):
+def Umform(df_dict, label, error_info):
     '''
         see issue: instraction to funciton Umform()
 
         - input 1: df_dict is a dict, in it is detected table
-        - input 2: label_ is the quelle of the table
+        - input 2: label is the quelle of the table
 
         - output: processed table information, key is header, value is value in columen form
 
@@ -1363,7 +1361,7 @@ def Umform(df_dict, label_, error_info):
             return df_dict_done
 
     except Exception as e:
-        error_info.append((label_, 'Umform', str(e)))
+        error_info.append((label, 'Umform', str(e)))
 
 
 def WriteData(df, img_path, nummer, error_info):
@@ -1373,7 +1371,7 @@ def WriteData(df, img_path, nummer, error_info):
         - input 1: dataframe
         - input 2: path
         - input 3: table nummer
-        - input 4: size of table, also col number and row number
+        - input 4: error_info
 
     '''
     try:
@@ -1570,7 +1568,7 @@ if __name__ == '__main__':
     error_info = []
     list_output = []
     Main(img_path, model='densenet', error_info=error_info, list_output=list_output)
-    # model: 'densenet' or 'unet'
+    # model: 'densenet'
     print(error_info)
     
     time.sleep(2)

@@ -1,16 +1,12 @@
-from tkinter.ttk import Progressbar
 import torch.nn as nn
 import torch
 import torchvision
-import json
-import pandas as pd
 import os
 import fitz
 import time
-import copy
 import shutil
 from saveTableExcel import SaveExcel
-from functions import Main, Search
+from functions import Main
 from saveTableExcel import SaveExcel
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
@@ -274,5 +270,5 @@ if __name__ == '__main__':
         StapelVerbreitung(dir_path, model, list_output=[])
         # model: 'densenet'
 
-    time.sleep(2)
+    time.sleep(1)
     SaveExcel()

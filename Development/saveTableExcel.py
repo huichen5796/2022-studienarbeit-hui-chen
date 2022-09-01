@@ -4,10 +4,18 @@ import pandas as pd
 import os
 import json
 from functions import Search
+
 def SaveExcel():
     writer = pd.ExcelWriter('Development\\saveTable.xlsx', engine='xlsxwriter')
-    file_list = os.listdir('Development\\imageSave')
-    for i, label in enumerate(file_list):
+
+    uniqueId_list = []
+    res = Search('table', 'all')
+    res = json.loads(res)['hits']['hits']
+    for re in res:
+        uniqueId_list.append(re['_source']['uniqueId'])
+    uniqueId_list = list(set(uniqueId_list))
+    
+    for i, label in enumerate(uniqueId_list):
 
         table = []
         results = Search('table', str(label))
