@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import pandas as pd
 import json
+import copy
 import pytesseract
 import time
 es = Elasticsearch()
@@ -977,6 +978,43 @@ def Extrakt_Tesseract(image_cell):
         result = '(unknown)'
     return result
 
+def StrToNr(result):
+    '''
+    in germany means '1,234' float, '1.234' tausand
+    Ziel ist es, Dezimal, Ganze Zahl und String voneinander zu unterscheiden.
+    
+    Charaktor sind: 
+    1. in Dezimal gibt es unbedingt ein ',', keinen oder mehr als eins Komma bedeuten kein Dezimal
+    - Dezimal muss 'float' sein wie '12132123.45'
+    # Achtung: bei dem ganzen-Zahl-Teil von Dezimal gibt es manchmal auch 'Tausendertrennzeichen' also '.'
+    
+    2. in Ganze Zahl gibt es nur '.' als 'Tausendertrennzeichen', die Summe ist aber nicht bestimmt.
+    - ganze Zahl muss 'int' sein wie '564123168456'
+
+    3. bei String machen wir nichts.
+    - man muss aber sicher, dass in String gibt es manchmal auch möglicherweise ein Komma !!
+
+    '''
+    
+    result_copy = copy.deepcopy(result)
+
+    try:
+        result = result.replace('.', '').replace(' ','') # entfernen Tausendertrennzeichen
+
+        if result.count(',')  == 1: # if ein Komma darin
+            result = result.replace(',', '.')
+            result = float(result) # try converting string to float
+
+        else:
+            result = int(result) # try converting string to int
+
+        # result = str(result).replace('.', ',') # The German version of the decimal is using ','
+        return result
+
+    except:
+        # If both attempts to convert to int and float fail, return String
+        return result_copy
+
 
 def ReadCell(center_list, image):
     '''
@@ -1011,6 +1049,7 @@ def ReadCell(center_list, image):
             cell_zone, 40, 40, 40, 40, cv2.BORDER_CONSTANT, value=value)
 
         result = Extrakt_Tesseract(cell)
+        # result = StrToNr(result)
 
         # cv2.imshow('',cell)
         # cv2.waitKey()
@@ -1382,6 +1421,10 @@ def WriteData(df, img_path, nummer, error_info):
         df_dict = eval(df_json)  # chance str to dict
 
         df_dict = Umform(df_dict, label_, error_info)
+
+        for key, value in df_dict.items():
+            for i, cell in enumerate(value):
+                df_dict[key][i] = StrToNr(cell)
 
         # einschreibung in elasticsearch mit form in 17.08.2022.md
         df = pd.DataFrame(df_dict)
