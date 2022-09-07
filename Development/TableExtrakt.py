@@ -135,11 +135,11 @@ def GetImageList(dir_name):
 
 def PDFRemover(dir_name):
     '''
-    remove the PDFs unter dir_name to 'Development\\PDF'
+        remove the PDFs unter dir_name to 'Development\\PDF'
 
-    - input: the path of directory
+        - input: the path of directory
 
-    - output: None
+        - output: None
 
     '''
     try:
@@ -165,22 +165,22 @@ def PDFRemover(dir_name):
 
 def PdfToPng(pdf_path, save_path):
     '''
-    change all PDFs unter dir to PNG
+        change all PDFs unter dir to PNG
 
-    - input 1: the path of pdf
-    - input 2: the path to save the pdf
+        - input 1: the path of pdf
+        - input 2: the path to save the pdf
 
-    - output: None
+        - output: None
 
     '''
     try:
         doc = fitz.open(pdf_path)
 
-        print('%s has %d pages' % (os.path.basename(pdf_path), doc.pageCount))
+        print('%s has %d pages' % (os.path.basename(pdf_path), doc.page_count))
 
         start = time.perf_counter()
 
-        for pg in range(doc.pageCount):  # pg ist die Seitenummer
+        for pg in range(doc.page_count):  # pg ist die Seitenummer
 
             page = doc[pg]
             rotate = int(0)
@@ -192,15 +192,15 @@ def PdfToPng(pdf_path, save_path):
                     os.path.splitext(os.path.basename(pdf_path))[0] + '_%s.png' % pg)
 
             finish = '▓' * (pg+1)
-            need_do = '-' * (doc.pageCount-pg-1)
+            need_do = '-' * (doc.page_count-pg-1)
             dur = time.perf_counter() - start
 
-            if pg == doc.pageCount-1:
+            if pg == doc.page_count-1:
                 print("\r{}/{}|{}{}|{:.2f}s".format((pg+1),
-                      doc.pageCount, finish, need_do, dur))
+                      doc.page_count, finish, need_do, dur))
             else:
                 print("\r{}/{}|{}{}|{:.2f}s".format((pg+1),
-                      doc.pageCount, finish, need_do, dur), end='')
+                      doc.page_count, finish, need_do, dur), end='')
 
     except:
         print('ERROR BY PdfToPng OF %s' % (pdf_path))
