@@ -1,6 +1,7 @@
 # 2022-studienarbeit-hui-chen
 
-<div align="center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/blob/main/Abbildungen/title.jpg?raw=true"></div>
+![title](./Abbildungen/title.jpg)
+<!-- <div align="center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/blob/main/Abbildungen/title.jpg?raw=true"></div> -->
 
 **<div align = "center">Ein Tool zur Erkennung, Extraktion und Rekonstruktion von komplexen Tabellen aus Bilddokumenten</div>**
 
