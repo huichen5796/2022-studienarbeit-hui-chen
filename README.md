@@ -72,17 +72,16 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 
 ![neue Systemvaiable](Abbildungen/tesserdata.jpg)
 
-- In der Datei *pytesseract.py* (Installationspfad, z.B. `C:\Program Files\Tesseract-OCR\tessdata`) ändern `tesseract_cmd = 'tesseract'`  in `tesseract_cmd =r'C:\Program Files\Tesseract-OCR\tesseract.exe"`
+<!-- - In der Datei *pytesseract.py* (Installationspfad, z.B. `C:\Program Files\Tesseract-OCR\tessdata`) ändern `tesseract_cmd = 'tesseract'`  in `tesseract_cmd =r'C:\Program Files\Tesseract-OCR\tesseract.exe"` -->
 
-    oder: Bei Verwendung der Tesseract-OCR in python-code einfach `pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'` nutzen
-  - Install Tesseract package for Python: `pip install pytesseract`
+<!-- oder: Bei Verwendung der Tesseract-OCR in python-code einfach `pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'` nutzen -->
 
-- Install pytorch
-  - bekommen Command for Installation hier [Pytorch](https://pytorch.org/get-started/locally/)
+<!-- - Install pytorch -->
+  <!-- - bekommen Command for Installation hier [Pytorch](https://pytorch.org/get-started/locally/) -->
 
-  <ddiv align="center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/pytorch.jpg"></div>
+  <!-- <ddiv align="center"><img src="https://github.com/huichen5796/2022-studienarbeit-hui-chen/raw/main/Abbildungen/pytorch.jpg"></div> -->
   
-  - kopieren und füren den Command in Terminal durch wie z.B. `pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113`
+  <!-- - kopieren und füren den Command in Terminal durch wie z.B. `pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113` -->
 
 ## Programmablauf
 
