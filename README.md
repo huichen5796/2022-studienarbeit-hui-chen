@@ -10,7 +10,7 @@ Die ist ein Tool zur...
 
 ... von komplexen Tabellen aus Bilddokumenten.
 
-![principle](Abbildungen\ablauf.gif)
+![principle](Abbildungen/ablauf.gif)
 
 Es basiert auf:
 
@@ -44,8 +44,8 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 - Elasticsearch kann nach folgender Anleitung installiert werden: [Installation Elasticsearch](https://youtu.be/Tn6zkPz-qHc?t=553)
 
 1. *Elasticsearch* [hier](https://www.elastic.co/de/downloads/elasticsearch) herunterladen (getestet für *Version 7.17.1*).
-2. Archiv entpacken (z.B. nach `D:\elasticsearch\`)
-3. Navigation in den Ordner `elasticsearch\bin`
+2. Archiv entpacken (z.B. nach `D:/elasticsearch/`)
+3. Navigation in den Ordner `elasticsearch/bin`
 4. `elasticsearch.bat` ausführen, um die Installation zu starten.
 5. `localhost:9200` im Browser eingeben, um erfolgreiche Installation zu testen. &rarr; Folgender Text sollte im Browser lesbar sein: "You know you search."
 
@@ -57,20 +57,20 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 - Installationsdateien [hier](https://github.com/UB-Mannheim/tesseract/wiki) runterladen (`tesseract-ocr-w64-setup-$VERSION$.exe`) und ausführen.
 - "Additional script data (doiwnload)" und "Additional language data (download)" auswählen.
 
-![alle Sprachen](Abbildungen\installtesse.jpg)
+![alle Sprachen](Abbildungen/installtesse.jpg)
 
 - Installationspfad wählen.
 - Installationspfad zu Systemumgebungsvariable `PATH` hinzufügen.
 
-![Sysvars](Abbildungen\systemumgebungsvariablen.png)
+![Sysvars](Abbildungen/systemumgebungsvariablen.png)
 
-![Pfad hinzufügen](Abbildungen\zupathadd.jpg)
+![Pfad hinzufügen](Abbildungen/zupathadd.jpg)
 
 - Neue Systemvariable erstellen:
   - Variablename: `TESSDATA_PREFIX`
-  - Variablenwert ist Installationspfad, z.B. `C:\Program Files\Tesseract-OCR\tessdata`
+  - Variablenwert ist Installationspfad, z.B. `C:/Program Files/Tesseract-OCR/tessdata`
 
-![neue Systemvaiable](Abbildungen\tesserdata.jpg)
+![neue Systemvaiable](Abbildungen/tesserdata.jpg)
 
 ### Installation von *pytorch* 
 
@@ -78,7 +78,7 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 
 - Ihre Einstellungen auswählen und den Installationscommand durchführen.
 
-![pytorch_command](Abbildungen\pytorch.jpg)
+![pytorch_command](Abbildungen/pytorch.jpg)
 
 - den Command in Terminal kopieren und durchführen.
 
@@ -91,11 +91,11 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
 - Die Verarbeitung einzeles Bilds
 
-![verarbeitung einbild](Abbildungen\programmablauf.svg)
+![verarbeitung einbild](Abbildungen/programmablauf.svg)
 
 - Stapelverarbeitung mehrer Bilder
 
-![stapelverarbeitung einbild](Abbildungen\stapelverarbeitung.svg)
+![stapelverarbeitung einbild](Abbildungen/stapelverarbeitung.svg)
 
 
 ## Ergebnisse
@@ -103,21 +103,21 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 - Die Verarbeitung einzeles Bilds
   - Vorbreitung und Normalizierung
 
-  ![vorbreitung](Abbildungen\vorverarbeitung.png)
+  ![vorbreitung](Abbildungen/vorverarbeitung.png)
    
 
   - Erkennung des Tablebreichs
 
-  ![erkennung table](Abbildungen\erkennung.png)
+  ![erkennung table](Abbildungen/erkennung.png)
 
   - Erkennung der Zelle
 
-  ![erkennung cells](Abbildungen\cell.png)
+  ![erkennung cells](Abbildungen/cell.png)
 
   - Rekonstruktion
     - Columen Detection mittels ML Modell, somit werden Labels von Columen erstellt.
 
-    ![ml for cols](Development\imageSave\table_1_of_test3.png)
+    ![ml for cols](Development/imageSave/table_1_of_test3.png)
 
       (Die rote Linie ist die Mittellinie der durch maschinelles Lernen erkannten Tabellenspalte, und die Zellen, die sich auf beiden Seiten der roten Linie innerhalb der grünen Linien befinden, werden in einer Spalte gruppiert.)
 
@@ -125,11 +125,11 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
       Labels werden anhand Positon von jeder Zelle erstellt.
 
-      ![labels](Abbildungen\labels.jpg)
+      ![labels](Abbildungen/labels.jpg)
 
     - Rekonstruktion
 
-      ![wiederaufbau](Abbildungen\table.jpg)
+      ![wiederaufbau](Abbildungen/table.jpg)
 
     - Strukturnormalize
       - vertikales Schmelzen von zwei geschmelzbaren Zeilen
@@ -139,25 +139,25 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
       - Verarbeitung der erster Zeile
       - Schmelzen von header
 
-      ![umform](Abbildungen\umform.gif)
+      ![umform](Abbildungen/umform.gif)
 
 - Stapelverarbeitung mehrer Bilder
 
   - Die Bilder im Verzeichnis werden zuerst formatiert, alle PDFs werden Seite für Seite in das PNG-Dateiformat konvertiert.
 
-  ![stapel](Abbildungen\stapel_vor.jpg)
+  ![stapel](Abbildungen/stapel_vor.jpg)
 
   - Dann wird jedes Bild verarbeitet und in Elasticsearch geschrieben.
 
-  ![einschreiben](Abbildungen\stapelverarbeitung.jpg)
+  ![einschreiben](Abbildungen/stapelverarbeitung.jpg)
 
 - Leistung bei komplexer Tabelle
 
-![1](Development\imageTest\test2.PNG)
+![1](Development/imageTest/test2.PNG)
 
-![2](Abbildungen\komplexbild.jpg)
+![2](Abbildungen/komplexbild.jpg)
 
   nach Strukturnormalize:
 
-![3](Abbildungen\sn.jpg)
+![3](Abbildungen/sn.jpg)
 
