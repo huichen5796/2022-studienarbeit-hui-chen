@@ -43,9 +43,10 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 
 - Elasticsearch kann nach folgender Anleitung installiert werden: [Installation Elasticsearch](https://youtu.be/Tn6zkPz-qHc?t=553)
 
-1. *Elasticsearch* [hier](https://www.elastic.co/de/downloads/elasticsearch) herunterladen (getestet für *Version 7.17.1*).
-2. Archiv entpacken (z.B. nach `D:/elasticsearch/`)
-3. Navigation in den Ordner `elasticsearch/bin`
+
+1. *Elasticsearch* [hier](https://www.elastic.co/de/downloads/elasticsearch) herunterladen (bitte **_Version 7.17.1_** verwenden, andernfalls müssen das Package elasticsearch 7.17.1 deinstalliert werden und entsprechende Package mit entsprechenen Version heruntergeladen werden).
+2. Archiv entpacken (z.B. nach `D:\elasticsearch\`)
+3. Navigation in den Ordner `elasticsearch\bin`
 4. `elasticsearch.bat` ausführen, um die Installation zu starten.
 5. `localhost:9200` im Browser eingeben, um erfolgreiche Installation zu testen. &rarr; Folgender Text sollte im Browser lesbar sein: "You know you search."
 
@@ -60,30 +61,8 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 ![alle Sprachen](Abbildungen/installtesse.jpg)
 
 - Installationspfad wählen.
-- Installationspfad zu Systemumgebungsvariable `PATH` hinzufügen.
-
-![Sysvars](Abbildungen/systemumgebungsvariablen.png)
-
-![Pfad hinzufügen](Abbildungen/zupathadd.jpg)
-
-- Neue Systemvariable erstellen:
-  - Variablename: `TESSDATA_PREFIX`
-  - Variablenwert ist Installationspfad, z.B. `C:/Program Files/Tesseract-OCR/tessdata`
-
-![neue Systemvaiable](Abbildungen/tesserdata.jpg)
-
-### Installation von *pytorch* 
-
-- Command for Installation von Pytorch wird hier bekommen: [Get Started of Pytorch](https://pytorch.org/get-started/locally/) -->
-
-- Ihre Einstellungen auswählen und den Installationscommand durchführen.
-
-![pytorch_command](Abbildungen/pytorch.jpg)
-
-- den Command in Terminal kopieren und durchführen.
-
-wie zum Beispiel: 
-`pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113`
+- Pfad von `tesseract.exe` zu der Codezeile 22 von [functions.py](Development/functions.py) hinzufügen.
+`pytesseract.pytesseract.tesseract_cmd = 'Installationspfad'`
 
 ## Programmablauf
 

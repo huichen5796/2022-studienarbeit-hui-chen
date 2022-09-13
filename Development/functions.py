@@ -19,6 +19,7 @@ import copy
 import pytesseract
 import time
 es = Elasticsearch()
+pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
 
 #---------------------------------------------------------------------------------------------------------------#
 '''
@@ -967,7 +968,6 @@ def Extrakt_Tesseract(image_cell):
 
     '''
 
-    # pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
     result = pytesseract.image_to_string(
         image_cell, lang='deu', config='--psm 7')
     # print(result)
