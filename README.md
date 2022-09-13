@@ -15,8 +15,10 @@ Die ist ein Tool zur...
 Es basiert auf:
 
 - Python
+- Opencv und Pillow
 - Tesseract
-- ... vervollständigen!!!
+- Pytorch
+- Elasticsearch
 
 Es wurde für *Windows* entwickelt, lässt sich aber auch auf anderen Betriebssystemen zum Laufen bringen.
 Das Tool besteht aus zwei wesentlichen Teilen:
@@ -31,7 +33,8 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 
 - Installation von *Python*
 - Installation von *Python*-Paketen
-- ...
+- Installation von *Elasticsearch*
+- Installation von *Tesseract*
 
 ### Installation von *Python* und Paketen
 
@@ -55,14 +58,14 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 ### Installation von *Tesseract* (für Windows)
 
 - Anleitung zur Installation: [*Installing and using Tesseract 4 on windows 10*](https://medium.com/quantrium-tech/installing-and-using-tesseract-4-on-windows-10-4f7930313f82)
-- Installationsdateien [hier](https://github.com/UB-Mannheim/tesseract/wiki) runterladen (`tesseract-ocr-w64-setup-$VERSION$.exe`) und ausführen.
+- Installationsdateien [hier](https://github.com/UB-Mannheim/tesseract/wiki) runterladen (getestete Version: `tesseract-ocr-w64-setup-v5.1.0.20220510.exe`) und ausführen.
 - "Additional script data (doiwnload)" und "Additional language data (download)" auswählen.
 
 ![alle Sprachen](Abbildungen/installtesse.jpg)
 
 - Installationspfad wählen.
 - Pfad von `tesseract.exe` zu der Codezeile 22 von [functions.py](Development/functions.py) hinzufügen.
-`pytesseract.pytesseract.tesseract_cmd = 'Installationspfad'`
+`pytesseract.pytesseract.tesseract_cmd = '/*Installationspfad*/'`
 
 ## Programmablauf
 
