@@ -6,8 +6,6 @@ import cv2
 import numpy as np
 import time
 
-from torch import long
-
 def LSD(bina_image, long_size):
     start = time.time()
     white = np.ones((bina_image.shape[0], bina_image.shape[1]))
