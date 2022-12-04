@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision
+import numpy
 
 #---------------------------------------------------------------------------------------------------------------#
 #model DenseNet
@@ -57,10 +58,10 @@ class TableDecoder(nn.Module):
 
     def forward(self, x, pool_3_out, pool_4_out):
         x = self.conv_7_table(x)  #[1, 256, 32, 32]
-        out = self.upsample_1_table(x) #[1, 128, 64, 64]
-        out = torch.cat((out, pool_4_out), dim=1) #[1, 640, 64, 64]
-        out = self.upsample_2_table(out) #[1, 256, 128, 128]
-        out = torch.cat((out, pool_3_out), dim=1) #[1, 512, 128, 128]
+        out = self.upsample_1_table(x) #[1, 128, 32, 32]
+        out = torch.cat((out, pool_4_out), dim=1) #[1, 640, 32, 32]
+        out = self.upsample_2_table(out) #[1, 256, 64, 64]
+        out = torch.cat((out, pool_3_out), dim=1) #[1, 512, 64, 64]
         out = self.upsample_3_table(out) #[1, 1, 1024, 1024]
         return out
 
@@ -90,7 +91,7 @@ class TableNet(nn.Module):
 
         pool_3_out, pool_4_out, pool_5_out = self.base_model(x)
         conv_out = self.conv6(pool_5_out) #[1, 256, 32, 32]
-        table_out = self.table_decoder(conv_out, pool_3_out, pool_4_out) #torch.Size([1, 3, 1024, 1024])
+        table_out = self.table_decoder(conv_out, pool_3_out, pool_4_out) #torch.Size([1, 1, 1024, 1024])
         return table_out
 
 #---------------------------------------------------------------------------------------------------------------#
