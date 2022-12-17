@@ -7,7 +7,12 @@ Fügen dann entsprechende Zeilen hinzu.
 
 '''
 
-def FLDGetLines(img, minLong):
+import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+
+
+def LSDGetLines(img, minLong):
     '''
     lines be marked by FLD
 
@@ -45,16 +50,17 @@ def FLDGetLines(img, minLong):
 
         plt.imshow(img, cmap='gray')
         plt.axis('off')
-        plt.savefig("47.svg", bbox_inches='tight',pad_inches = 0)
+        plt.savefig("47.svg", bbox_inches='tight', pad_inches=0)
         plt.axis('off')
         plt.show()
         plt.imshow(copy_image, cmap="gray")
         plt.axis('off')
-        plt.savefig("50.svg", bbox_inches='tight',pad_inches = 0)
+        plt.savefig("50.svg", bbox_inches='tight', pad_inches=0)
         plt.axis('off')
         plt.show()
 
     return copy_image, longLines
+
 
 def DeletLines(img):
     '''
@@ -68,11 +74,12 @@ def DeletLines(img):
     img1 = cv2.adaptiveThreshold(
         img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 15)
     # _, img1 = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY|cv2.THRESH_OTSU)
-    img2 = FLDGetLines(img1, minLong=18)[0]
+    img2 = LSDGetLines(img1, minLong=18)[0]
 
     img_deletline = OrImage(img1, img2)
 
     return img_deletline
+
 
 def OrImage(img1, img2):
     '''
@@ -91,24 +98,23 @@ def OrImage(img1, img2):
     return image
 
 
-### table line fix
+# table line fix
 ### Die Funktionalität ist hier vollständig, aber noch nicht als Funktion gekapselt. ###
- 
 
-import cv2
-import matplotlib.pyplot as plt
-import numpy as np
 
 gray_image = cv2.imread('Development\\imageTest\\filter.png', 0)
+gray_image = cv2.resize(
+    gray_image, (gray_image.shape[1]//2, gray_image.shape[0]//2))
 
 plt.imshow(gray_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
 plt.axis('off')
-plt.savefig("100.svg", bbox_inches='tight',pad_inches = 0)
+plt.savefig("100.svg", bbox_inches='tight', pad_inches=0)
 plt.show()
 
 
-bina_image = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+bina_image = cv2.adaptiveThreshold(
+    gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
 
 # bina_image = DeletLines(bina_image)
 # plt.imshow(bina_image, cmap='gray')
@@ -116,13 +122,16 @@ bina_image = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN
 # plt.savefig("107.svg", bbox_inches='tight',pad_inches = 0)
 # plt.show()
 
-def ZeroOrOne(x): ## Hier ist eine einfache Binärisierungsfunktion
-    x[x<127] = 0 # schwarz
-    x[x>127] = 1 # weiss
+
+def ZeroOrOne(x):  # Hier ist eine einfache Binärisierungsfunktion
+    x[x < 127] = 0  # schwarz
+    x[x > 127] = 1  # weiss
 
     # so the spalt or row without text has the biggest sum
 
     return x
+
+
 bina_image = ZeroOrOne(bina_image)
 
 
@@ -131,40 +140,40 @@ sum_row = bina_image.sum(axis=1)
 print(sum_col)
 print(sum_row)
 print(bina_image.shape)
-h,w = bina_image.shape
+h, w = bina_image.shape
 
 
-
-plt.plot(range(w),sum_col)
+plt.plot(range(w), sum_col)
 plt.axis('off')
-plt.savefig("129.svg", bbox_inches='tight',pad_inches = 0)
+plt.savefig("129.svg", bbox_inches='tight', pad_inches=0)
 plt.show()
 
 
 plt.plot(sum_row, range(h))
 plt.axis('off')
-plt.savefig("134.svg", bbox_inches='tight',pad_inches = 0)
+plt.savefig("134.svg", bbox_inches='tight', pad_inches=0)
 plt.show()
 
-ax = plt.gca()                               
+ax = plt.gca()
 ax.xaxis.set_ticks_position('top')
-ax.invert_yaxis()  
+ax.invert_yaxis()
 
 
 max_col = max(sum_col)
 en = enumerate(sum_col)
 list_maxcol = [i for i, n in en if n == max_col]
-#print(list_maxcol)
+# print(list_maxcol)
 
 copy_image1 = np.zeros((h, w))
 for col in list_maxcol:
-    copy_image1[:,col] = 1
+    copy_image1[:, col] = 1
 
-kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
-copy_image1 = cv2.erode(copy_image1,kernel,iterations = 1)
-copy_image1 = cv2.dilate(copy_image1,kernel,iterations = 1)
-copy_image1 = np.array(copy_image1,np.uint8)
-contours, hen = cv2.findContours(copy_image1, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+copy_image1 = cv2.erode(copy_image1, kernel, iterations=1)
+copy_image1 = cv2.dilate(copy_image1, kernel, iterations=1)
+copy_image1 = np.array(copy_image1, np.uint8)
+contours, hen = cv2.findContours(
+    copy_image1, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 for i in range(len(contours)):
     cnt = contours[i]
     x = int(np.average(cnt, axis=0)[0][0])
@@ -172,29 +181,28 @@ for i in range(len(contours)):
     bina_image[:, x] = 0
 
 
-
 plt.imshow(copy_image1, cmap='gray')
 plt.xticks([]), plt.yticks([])
 plt.axis('off')
-plt.savefig("164.svg", bbox_inches='tight',pad_inches = 0)
+plt.savefig("164.svg", bbox_inches='tight', pad_inches=0)
 plt.show()
 
 
 max_row = max(sum_row)
 en = enumerate(sum_row)
 list_maxrow = [i for i, n in en if n == max_row]
-#print(list_maxrow)
+# print(list_maxrow)
 
 copy_image2 = np.zeros((h, w))
 for row in list_maxrow:
-    copy_image2[row,:] = 1
+    copy_image2[row, :] = 1
 
 
-
-copy_image2 = cv2.erode(copy_image2,kernel,iterations = 1)
-copy_image2 = cv2.dilate(copy_image2,kernel,iterations = 1)
-copy_image2 = np.array(copy_image2,np.uint8)
-contours, hen = cv2.findContours(copy_image2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+copy_image2 = cv2.erode(copy_image2, kernel, iterations=1)
+copy_image2 = cv2.dilate(copy_image2, kernel, iterations=1)
+copy_image2 = np.array(copy_image2, np.uint8)
+contours, hen = cv2.findContours(
+    copy_image2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 for i in range(len(contours)):
     cnt = contours[i]
     y = int(np.average(cnt, axis=0)[0][1])
@@ -207,14 +215,12 @@ for i in range(len(contours)):
 plt.imshow(copy_image2, cmap='gray')
 plt.xticks([]), plt.yticks([])
 plt.axis('off')
-plt.savefig("193.svg", bbox_inches='tight',pad_inches = 0)
+plt.savefig("193.svg", bbox_inches='tight', pad_inches=0)
 plt.show()
-
-
 
 
 plt.imshow(bina_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
 plt.axis('off')
-plt.savefig("201.svg", bbox_inches='tight',pad_inches = 0)
+plt.savefig("201.svg", bbox_inches='tight', pad_inches=0)
 plt.show()
