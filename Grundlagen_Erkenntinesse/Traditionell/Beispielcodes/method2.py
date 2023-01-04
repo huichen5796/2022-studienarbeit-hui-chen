@@ -92,7 +92,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-gray_image = cv2.imread('Development\\imageTest\\table41.png', 0)
+gray_image = cv2.imread('Development\\imageTest\\testkmeans.jpg', 0)
 
 plt.imshow(gray_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
@@ -100,7 +100,7 @@ plt.axis('off')
 plt.savefig("100.svg", bbox_inches='tight',pad_inches = 0)
 plt.show()
 
-bina_image = DeletLines(gray_image)
+bina_image = (gray_image)
 
 plt.imshow(bina_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
@@ -134,47 +134,56 @@ plt.show()
 
 contours, h = cv2.findContours(bina_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
+color_image = cv2.cvtColor(bina_image, cv2.COLOR_GRAY2BGR)
+
 list_contours = []
 for cnt in contours:
-    print(cnt)
     x,y,w,h = cv2.boundingRect(cnt)
     if w>10 and h>10:
         
         list_contours.append((x,y,w,h))
-        cv2.rectangle(gray_image, (x,y), (x+w,y+h), 0, 2)
+        cv2.rectangle(color_image, (x,y), (x+w,y+h), color=(255, 0, 0), thickness=2)
+        print((x,y,w,h))
 
-arr_contours = np.array(list_contours)
-
-def HorizonalAlignment(location):
-    
-
-    location = sorted(location, key=lambda x: x[1])
-
-    for i in range(len(location)-1):
-        if location[i+1][1] == location[i][1]:
-            continue
-        else:
-            # suppose there are no cells with height less than 10
-            if abs(location[i+1][1]-location[i][1]) < 10:
-                location[i+1][1] = location[i][1]
-            else:
-                continue
-
-
-    location = sorted(location, key=lambda x: (x[1], x[0]))
-
-    return location
-
-arr_contours = HorizonalAlignment(arr_contours)
-
-for cnt in arr_contours:
-    x,y,w,h = cnt
-    
-    cv2.rectangle(gray_image, (x,y), (x+w,y+h), 0, 2)
-
-plt.imshow(gray_image, cmap='gray')
+plt.imshow(color_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
+plt.axis('off')
+plt.savefig("130.svg", bbox_inches='tight',pad_inches = 0)
 plt.show()
+
+# arr_contours = np.array(list_contours)
+
+# def HorizonalAlignment(location):
+    
+
+#     location = sorted(location, key=lambda x: x[1])
+
+#     for i in range(len(location)-1):
+#         if location[i+1][1] == location[i][1]:
+#             continue
+#         else:
+#             # suppose there are no cells with height less than 10
+#             if abs(location[i+1][1]-location[i][1]) < 10:
+#                 location[i+1][1] = location[i][1]
+#             else:
+#                 continue
+
+
+#     location = sorted(location, key=lambda x: (x[1], x[0]))
+
+#     return location
+
+# arr_contours = HorizonalAlignment(arr_contours)
+
+# for cnt in arr_contours:
+#     x,y,w,h = cnt
+    
+#     cv2.rectangle(gray_image, (x,y), (x+w,y+h), 0, 2)
+
+
+# plt.imshow(gray_image, cmap='gray')
+# plt.xticks([]), plt.yticks([])
+# plt.show()
 
 
 

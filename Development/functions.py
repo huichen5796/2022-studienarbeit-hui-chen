@@ -483,7 +483,7 @@ def PositionTable(img_1024, img_path, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = 'Development\\models\\densetable_210.pkl'
+        path = r'C:\Users\chen1\Documents\GitHub\2022-studienarbeit-hui-chen\Development\models\densetable_210.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
@@ -749,7 +749,7 @@ def GetColumn(table, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = 'Development\\models\\densecol_140.pkl'
+        path = r'C:\Users\chen1\Documents\GitHub\2022-studienarbeit-hui-chen\Development\models\densecol_140.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
@@ -1435,6 +1435,7 @@ def WriteData(df, img_path, nummer, error_info):
         '''
         # einschreibung in elasticsearch mit form in 17.08.2022.md
         df = pd.DataFrame(df_dict)
+        print(df)
         df_json = df.to_json(
             orient='index')  # str like {index -> {column -> value}}。
         df = eval(df_json)  # chance str to dict
@@ -1611,7 +1612,7 @@ def Main(img_path, model, error_info, list_output):
 
 
 if __name__ == '__main__':
-    img_path = 'Development\\imageTest\\test12.png'
+    img_path = r'C:\Users\chen1\Documents\GitHub\2022-studienarbeit-hui-chen\Development\imageTest\testkmeans.jpg'
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
@@ -1621,7 +1622,7 @@ if __name__ == '__main__':
     # model: 'densenet'
     print(error_info)
     
-    time.sleep(2)
-    results = Search('table', 'all')
-    print(results)
+    # time.sleep(2)
+    # results = Search('table', 'all')
+    # print(results)
     
