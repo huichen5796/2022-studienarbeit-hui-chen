@@ -92,7 +92,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-gray_image = cv2.imread('Development\\imageTest\\testkmeans.jpg', 0)
+gray_image = cv2.imread('Development\\imageTest\\ttt.jpg', 0)
 
 plt.imshow(gray_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
@@ -100,7 +100,7 @@ plt.axis('off')
 plt.savefig("100.svg", bbox_inches='tight',pad_inches = 0)
 plt.show()
 
-bina_image = (gray_image)
+bina_image = DeletLines(gray_image)
 
 plt.imshow(bina_image, cmap='gray')
 plt.xticks([]), plt.yticks([])
