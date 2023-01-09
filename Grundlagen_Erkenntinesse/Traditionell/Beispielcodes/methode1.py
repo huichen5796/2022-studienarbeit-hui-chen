@@ -12,6 +12,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import pandas as pd
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = 'D:\\for_tesseract\\tesseract.exe'
 
 class DenseNet(nn.Module):
     def __init__(self, pretrained=True, requires_grad=True):
@@ -105,6 +107,411 @@ class TableNet(nn.Module):
         # torch.Size([1, 1, 1024, 1024])
         table_out = self.table_decoder(conv_out, pool_3_out, pool_4_out)
         return table_out
+
+def TableType(df_dict):
+    '''
+    Beurteilen: Überschrift, Zeilenüberschrift, Subüberschrift, Value
+
+    - input: dict
+
+    - output 1: dict
+    - output 2: table_type -- einfach oder nicht
+
+    '''
+
+    header_rN = len(df_dict)//2
+    predict_header = [list(dict(pp).values())
+                      for pp in list(df_dict.values())[0:header_rN]]
+    # hier z.B.
+    # [['Project', '2019.12.31', '2020.9.30'],
+    #  ['Total Assets', '10,991,903,55', '12,049,642,76']
+
+    if predict_header[0][0] == '(empty_cell)':
+        predict_header[0][0] = '#col0row0#'
+
+    # in list will store the index of row who has empty cell, col0 row0 is voll now
+    judge_list = []
+    for i, row in enumerate(predict_header):
+        if '(empty_cell)' in row:
+            judge_list.append(i)
+
+    if len(judge_list) == 0:  # die Tabelle ist einfache Tabelle
+
+        table_type = 'einfach'
+
+    else:  # die Tabelle ist komplexe Tabelle
+        table_type = 'komplex'
+
+    return table_type
+
+
+def Einfachverarbeitung(df_dict):
+    newDictKeys = list(dict(list(df_dict.values())[0]).values())
+    newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
+
+    if newDictKeys[0][0] == '(empty_cell)':
+        newDictKeys[0][0] = '#col0row0#'
+
+    newDictValues = [None]*len(newDictKeys)
+    for n, v in enumerate(newDictValues):
+        newDictValues[n] = [None]*(len(df_dict)-1)
+        # kann hier nicht newDictValues = [[None]*(len(df_dict)-1)]*len(newDictKeys) schreiben, weil shallow copy gibt es bug
+
+    for i, (key, value) in enumerate(list(df_dict.items())[1:]):
+        for ii, (col, info) in enumerate(list(dict(value).items())):
+            newDictValues[int(col[3:])][int(key)-1] = info
+
+    newDict = dict(zip(newDictKeys, newDictValues))
+
+    return newDict
+
+
+def Transform(df_dict):
+    '''
+    transform dict (infos in row form) to list (infos in columen form)
+
+    '''
+
+    df_list = [None]*len(list(dict(list(df_dict.values())[0]).values()))
+
+    for n, v in enumerate(df_list):
+        df_list[n] = [None]*(len(df_dict))
+        # kann hier nicht newDictValues = [[None]*(len(df_dict)-1)]*len(newDictKeys) schreiben, weil shallow copy gibt es bug
+
+    for i, (key, value) in enumerate(list(df_dict.items())):
+        for ii, (col, info) in enumerate(list(dict(value).items())):
+            df_list[int(col[3:])][int(key)] = info
+
+    if df_list[0][0] == '(empty_cell)':
+        df_list[0][0] = '#col0row0#'
+
+    return df_list
+
+
+def VertikalSchmelzen(df_list):
+
+    row_list = []
+    number = len(df_list[0])
+
+    for i in range(number):
+        row_i = []
+
+        for row in df_list:
+            row_i.append(row[i])
+        row_list.append(row_i)
+
+    sch_row = []
+
+    for i in range(len(row_list)-1):
+        zwei_rows = [row_list[i][m]+row_list[i+1][m] for m in range(len(row_list[i]))]
+        result = all(['(empty_cell)' in cell for cell in zwei_rows[2:]])
+        if result == True:
+            if i-1 not in sch_row:
+                sch_row.append(i)
+
+    if len(sch_row) != 0:
+
+        for n in sch_row:
+
+            for spalt in df_list:
+                spalt[n] = (spalt[n] + '_' + spalt[n+1]
+                              ).replace('_(empty_cell)', '').replace('(empty_cell)_', '').replace('-_', '-')
+
+        df_list_new = [None]*len(df_list)
+        for i in range(len(df_list_new)):
+            df_list_new[i] = [cell for ii, cell in enumerate(df_list[i]) if ii-1 not in sch_row]
+ 
+        return df_list_new
+    else:
+        return df_list
+
+
+def ZeilenIndexSchmelzen(df_list):
+
+    halb_rN = len(df_list[0])//3 + 1
+
+    if '(empty_cell)' in df_list[0][halb_rN:] + df_list[1][halb_rN:]:
+        for i, ind in enumerate(df_list[0]):
+            df_list[0][i] = (df_list[0][i] + '_' + df_list[1][i]
+                             ).replace('_(empty_cell)', '').replace('(empty_cell)_', '')
+        del df_list[1]
+
+    return df_list
+
+
+def BestimmenZeilNummer(df_list):
+    '''
+    in der Zukunft könnte die Function von ML modell ersetzt werden.
+
+    '''
+
+    row_list = []
+    number = len(df_list[0])
+
+    for i in range(number):
+        row_i = []
+
+        for row in df_list:
+            row_i.append(row[i])
+        row_list.append(row_i)
+
+    str_set = ['(empty_cell)']
+    voll_row = []
+    empty_row = []
+    for i, row in enumerate(row_list):
+        # if any cell is empty, result = True, d.h. empty row
+        result = any([cell in str_set for cell in row])
+        if result == True:
+            empty_row.append(i)
+        else:
+            if i != 0 and i != 1:  # Die ersten beiden Zeilen nehmen nicht am Urteil teil
+                voll_row.append(i)
+
+    if len(voll_row) != 0:
+        zeile_nummer = voll_row[0]
+    else:
+        zeile_nummer = number//3 + 1
+
+    return zeile_nummer, empty_row, row_list
+
+
+def HeaderSchmelzen(df_list, zeile_nummer, empty_row, row_list):
+
+    if 0 in empty_row:
+
+        empty_cell = []
+        # hier sind die indexs von der Zellen, die aufgefüllt werden muss.
+        first_header = []
+        # hier sind die indexs von primär header, die coppiert werden muss.
+
+        for col, value_row0 in enumerate(row_list[0][1:]):
+            if value_row0 == '(empty_cell)':
+                empty_cell.append(col+1)
+            else:
+                first_header.append(col+1)
+
+        header_zeile = row_list[:zeile_nummer]
+
+        headercol_list = []
+        for i in range(len(row_list[0])):
+            col_i = []
+
+            for row in header_zeile:
+                col_i.append(row[i])
+            headercol_list.append(col_i)
+
+        str_set = ['(empty_cell)']
+        no_quali = []
+        for i, col in enumerate(headercol_list):
+            # if all cell are empty, result = True
+            result = all([cell in str_set for cell in col[1:]])
+            if result == True:
+                no_quali.append(i)
+
+        for col in first_header:
+            if col+1 not in empty_cell:
+                no_quali.append(col)
+
+        first_header = [pri for pri in first_header if pri not in no_quali]
+        empty_cell = [emp for emp in empty_cell if emp not in no_quali]
+
+        # The first-level title will dilate to the left and right
+        # If a empty cell receives an update request from both the left and the right, the left takes precedence.
+
+        b = 1
+        while len(first_header) != 0:
+            delete = []
+
+            for col in first_header:
+                # expand to the right
+                if col+b in empty_cell:
+                    headercol_list[col+b][0] = headercol_list[col][0]
+                    del empty_cell[empty_cell.index(col+b)]
+                else:
+                    # basierend auf PositionCorrection ist die rechte Seite unbedingt leer, falls nicht leer ist es ein Fehler.
+                    delete.append(col)
+
+            for col in first_header:    
+                if col-b in empty_cell:
+                    headercol_list[col-b][0] = headercol_list[col][0]
+                    del empty_cell[empty_cell.index(col-b)]
+                else:
+                    # In der vorherigen for-Schleife wurde die leere Zelle auf der rechten Seite der Titelzelle gefüllt.
+                    # Wenn die linke Seite zu diesem Zeitpunkt nicht gefüllt werden kann, sollte die Titelzelle deaktiviert werden.
+                    delete.append(col)
+
+            delete = list(set(delete))
+            for col in delete:
+                del first_header[first_header.index(col)]
+
+            b += 1
+
+            if b >= 20:
+                break
+
+    else:
+        header_zeile = row_list[:zeile_nummer]
+
+        headercol_list = []
+        for i in range(len(row_list[0])):
+            col_i = []
+
+            for row in header_zeile:
+                col_i.append(row[i])
+            headercol_list.append(col_i)
+
+    newDictKeys = ['_'.join(item) for item in headercol_list]
+    newDictKeys = [pp.replace('(empty_cell)_', '') for pp in newDictKeys]
+    newDictKeys = [pp.replace('_(empty_cell)', '') for pp in newDictKeys]
+    newDictKeys = [pp.replace('#col0row0#_', '') for pp in newDictKeys]
+    newDictKeys = [pp.replace(' ', '_') for pp in newDictKeys]
+    newDictKeys = [pp.replace('-', '_') for pp in newDictKeys]
+    # in keys should not have  ' ', '-' etc.
+    newDictKeys = [pp.replace('.', '_') for pp in newDictKeys]
+    newDictKeys = [pp.replace('__', '_') for pp in newDictKeys]
+    
+
+    newDictValues = [col[zeile_nummer:] for col in df_list]
+
+    newDict = dict(zip(newDictKeys, newDictValues))
+
+    return newDict
+
+
+def Umform(df_dict, label, error_info):
+    '''
+        see issue: instraction to funciton Umform()
+
+        - input 1: df_dict is a dict, in it is detected table
+        - input 2: label is the quelle of the table
+
+        - output: processed table information, key is header, value is value in columen form
+
+    '''
+    try:
+        table_type = TableType(df_dict)
+
+        if table_type == 'einfach':
+            df_dict_done = Einfachverarbeitung(df_dict)
+
+            return df_dict_done
+
+        else:
+            df_list = Transform(df_dict)
+            
+            i = 0
+            while i < 3:
+                df_list = VertikalSchmelzen(df_list)
+                i += 1
+            
+            m = 0
+            while m < 2:
+                df_list = ZeilenIndexSchmelzen(df_list)
+                m += 1
+
+            zeile_nummer, empty_row, row_list = BestimmenZeilNummer(df_list)
+            df_dict_done = HeaderSchmelzen(
+                df_list, zeile_nummer, empty_row, row_list)
+
+            return df_dict_done
+
+    except Exception as e:
+        error_info.append((label, 'Umform', str(e)))
+
+def Extrakt_Tesseract(image_cell):
+    '''
+    OCR of a image
+
+    - input: image
+
+    - output: str
+
+    '''
+
+    result = pytesseract.image_to_string(
+        image_cell, lang='deu', config='--psm 7')
+    # print(result)
+
+    if '\n' in result:
+        result = result.replace('\n', '').replace('|', '').replace('/', '')
+    if result == '':
+        result = '(unknown)'
+    return result
+
+def ReadCell(center_list, image):
+    '''
+    ORI of each cell and OCR by tesseract
+
+    - input 1: center_list of the table
+    - input 2: the image with table for OCR
+
+    - output: infos in each cell
+
+    '''
+
+    size = 0
+
+    list_info = []
+
+    for c_x, c_y, w, h, x, y in center_list:
+
+        cell_zone = np.ones((h+2*size, w+2*size, 1))
+        cell_zone = image[(y-size):(y+h+size), (x-size):(x+w+size)]
+        cell_zone = cv2.resize(
+            cell_zone, (cell_zone.shape[1]*4, cell_zone.shape[0]*4))
+
+        value = [None, None, None]
+        for cha in range(3):
+            value[cha] = (np.mean(cell_zone[cha], axis=0)[0]
+                          + np.mean(cell_zone[cha], axis=0)[-1]
+                          + np.mean(cell_zone[cha], axis=1)[0]
+                          + np.mean(cell_zone[cha], axis=1)[-1]) // 4
+
+        cell = cv2.copyMakeBorder(
+            cell_zone, 40, 40, 40, 40, cv2.BORDER_CONSTANT, value=value)
+
+        result = Extrakt_Tesseract(cell)
+        # result = StrToNr(result)
+
+        # cv2.imshow('',cell)
+        # cv2.waitKey()
+        # print(result)
+        list_info.append(result)
+
+    return list_info
+
+
+def GetDataframe(list_info, label_list, tablesize):
+    '''
+    Rebuild the table in a Dataframe
+
+    - input 1: list_info
+    - input 2: label_list
+    - input 3: tablesize
+
+    - output: Dataframe
+
+    '''
+    keys = ['col%s' % s for s in range(tablesize[1])]
+
+    values = [None]*len(keys)
+    for i, key in enumerate(keys):
+        col_info = []
+        index = []
+        for m in range(len(label_list)):
+            if key in label_list[m]:
+                col_info.append(list_info[m])
+                index.append(label_list[m][0])
+
+        values[i] = pd.Series(col_info, index=index)
+        values[i] = values[i].to_dict()  # Deduplizierung
+        values[i] = pd.Series(values[i])
+
+    dict_info = dict(zip(keys, values))
+    # print(dict_info)
+    df = pd.DataFrame(dict_info)
+    df = df.fillna('(empty_cell)')
+    return df
 
 def GetColumn(table, model_used):
     '''
@@ -231,7 +638,7 @@ def GetColumn(table, model_used):
     # print(col_contours)
     return col_contours
 
-image_path = 'Development\\imageTest\\deepcol.jpg'
+image_path = 'Development\\imageTest\\json.jpg'
 image = cv2.imread(image_path, 0)
 
 img_3channel = cv2.cvtColor(
@@ -248,3 +655,46 @@ for col, w in col_contours:
                 thickness=1, lineType=cv2.LINE_AA)  # draw the white line on black image
 cv2.imwrite('.\\Development\\imageSave\\{}'.format(
     'table_' + str(1) + '_of_' + str(os.path.basename(image_path))), img_3channel)
+
+
+list_info = ReadCell(center_list, table)
+
+df = GetDataframe(list_info, label_list, tablesize)
+
+df_json = df.to_json(
+            orient='index')  # str like {index -> {column -> value}}。
+df_dict = eval(df_json)  # chance str to dict
+
+df_dict = Umform(df_dict, label_, error_info)
+''' 
+# Das Konvertieren von Zeichenfolgen in Zahlen kann beim Speichern zu Verwirrung 
+# führen, da manchmal Ganzzahlen aufgrund der automatischen Zuordnung fälschlicherweise 
+# als Floats gespeichert werden.
+
+for i, (key, value) in enumerate(df_dict.items()):
+    if i != 0:
+        for ii, cell in enumerate(value):
+            df_dict[key][ii] = StrToNr(cell)
+print(df_dict)
+'''
+# einschreibung in elasticsearch mit form in 17.08.2022.md
+df = pd.DataFrame(df_dict)
+print(df)
+df_json = df.to_json(
+    orient='index')  # str like {index -> {column -> value}}。
+df = eval(df_json)  # chance str to dict
+
+values = []
+# actions = []
+for key, value in list(df.items()):
+    value = dict(value)
+
+    values.append(value)
+for bulk in values:
+    actions = []
+    bulk["uniqueId"] = label_.lower()
+    bulk["fileName"] = os.path.basename(img_path)
+
+    
+    actions.append(bulk)
+    print(actions)

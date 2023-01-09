@@ -1,0 +1,35 @@
+[
+    {
+        "#colirow1#": "row1",
+        "pri.header1_sek._header1.1": "value111",
+        "pri.header1_sek._headeri.2": "Value112",
+        "pri.header1_sek._header1.3": "value113",
+        "pri.header1_sek._header1.4": "value114",
+        "header2": "value12",
+        "uniqueId": "table_2_of_json.jpg",
+        "fileName": "json.jpg"
+    },
+    {
+        "#colirow1#": "long row2",
+        "pri.header1_sek._header1.1": "value211",
+        "pri.header1_sek._headeri.2": "value212",
+        "pri.header1_sek._header1.3": "value213",
+        "pri.header1_sek._header1.4": "value214",
+        "header2": "value22",
+        "uniqueId": "table_2_of_json.jpg",
+        "fileName": "json.jpg"
+    },
+    {
+        "#colirow1#": "row3",
+        "pri.header1_sek._header1.1": "value311",
+        "pri.header1_sek._headeri.2": "value312",
+        "pri.header1_sek._header1.3": "value313",
+        "pri.header1_sek._header1.4": "value314",
+        "header2": "value32",
+        "uniqueId": "table_2_of_json.jpg",
+        "fileName": "json.jpg"
+    }
+]
+
+
+
