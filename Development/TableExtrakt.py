@@ -16,7 +16,6 @@ es = Elasticsearch()
 
 # densenet- tablenet
 
-
 class DenseNet(nn.Module):
     def __init__(self, pretrained=True, requires_grad=True):
         super(DenseNet, self).__init__()
@@ -135,11 +134,11 @@ def GetImageList(dir_name):
 
 def PDFRemover(dir_name):
     '''
-        remove the PDFs unter dir_name to 'Development\\PDF'
+    remove the PDFs unter dir_name to 'PDF'
 
-        - input: the path of directory
+    - input: the path of directory
 
-        - output: None
+    - output: None
 
     '''
     try:
@@ -153,11 +152,11 @@ def PDFRemover(dir_name):
                 save_path = dir_name
                 PdfToPng(pdf_path, save_path)
 
-                shutil.copy(dir_name + '\\' + file, 'Development\\PDF')
+                shutil.copy(dir_name + '\\' + file, 'pdf')
                 os.remove(dir_name + '\\' + file)
                 n += 1
 
-        print("%s PDFs, removed to 'Development\\PDF'" % n)
+        print("%s PDFs, removed to 'pdf'" % n)
 
     except Exception as e:
         print('ERROR BY PDFRemover: ' + str(e))
@@ -165,12 +164,12 @@ def PDFRemover(dir_name):
 
 def PdfToPng(pdf_path, save_path):
     '''
-        change all PDFs unter dir to PNG
+    change all PDFs unter dir to PNG
 
-        - input 1: the path of pdf
-        - input 2: the path to save the pdf
+    - input 1: the path of pdf
+    - input 2: the path to save the pdf
 
-        - output: None
+    - output: None
 
     '''
     try:
@@ -213,8 +212,8 @@ def ImageReformat(dir):
     - output: image_list
 
     hier kann alle Images unter a dir vorverarbeitet werden ----- durch ImageReformat() --- in 'image_list'
-    dabei wird alle PDFs in 'Development\PDF' umgezogen, 
-    Jede Seite der PDF-Datei wird in ein PNG-Bild konvertiert und hier gespeichert ----- 'Development\imageTest'
+    dabei wird alle PDFs in 'PDF' umgezogen, 
+    Jede Seite der PDF-Datei wird in ein PNG-Bild konvertiert und hier gespeichert ----- 'imageTest'
     '''
     try:
         PDFRemover(dir)
@@ -263,7 +262,7 @@ if __name__ == '__main__':
 
     es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
-    dir_paths= ['Development\\successControl', 'Development\\imageTest']
+    dir_paths= ['successControl', 'imageTest']
     model = 'densenet'
 
     for dir_path in dir_paths:

@@ -483,11 +483,11 @@ def PositionTable(img_1024, img_path, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = r'C:\Users\chen1\Documents\GitHub\2022-studienarbeit-hui-chen\Development\models\densetable_210.pkl'
+        path = 'models\\densetable_210.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
-        path = "Development\\models\\unet100_180spe.pkl"
+        path = "models\\unettable_145.pkl"
 
         model = torch.load(path, map_location=torch.device(device))
 
@@ -749,11 +749,11 @@ def GetColumn(table, model_used):
     device = 'cpu'
 
     if model_used == 'densenet':
-        path = r'C:\Users\chen1\Documents\GitHub\2022-studienarbeit-hui-chen\Development\models\densecol_140.pkl'
+        path = 'models\\densecol_140.pkl'
         model = torch.load(path, map_location=torch.device(device))
 
     elif model_used == 'unet':
-        path = "Development\\models\\unetcol_300.pkl"
+        path = "models\\unetcol_300.pkl"
         model = torch.load(path, map_location=torch.device(device))
 
     shape_list = list(table.shape)
@@ -1203,8 +1203,9 @@ def BestimmenZeilNummer(df_list):
         row_list.append(row_i)
 
     str_set = ['(empty_cell)']
-    voll_row = []
+    voll_row_pre = []
     empty_row = []
+    voll_row = []
     for i, row in enumerate(row_list):
         # if any cell is empty, result = True, d.h. empty row
         result = any([cell in str_set for cell in row])
@@ -1212,10 +1213,19 @@ def BestimmenZeilNummer(df_list):
             empty_row.append(i)
         else:
             if i != 0 and i != 1:  # Die ersten beiden Zeilen nehmen nicht am Urteil teil
-                voll_row.append(i)
+                voll_row_pre.append(i)
 
-    if len(voll_row) != 0:
-        zeile_nummer = voll_row[0]
+    if len(voll_row_pre) != 0:
+        # print(voll_row_pre)
+        for i,n in enumerate(voll_row_pre):
+            if i!=len(voll_row_pre)-1:
+                if voll_row_pre[i] == voll_row_pre[i+1]-1:
+                    voll_row.append(n)
+        # print(voll_row)
+        if len(voll_row) != 0:
+            zeile_nummer = voll_row[0]
+        else:
+            zeile_nummer = voll_row_pre[0]
     else:
         zeile_nummer = number//3 + 1
 
@@ -1497,7 +1507,7 @@ def SaveTable(nummer, table, img_path, error_info, model, list_output):
                      thickness=1, lineType=cv2.LINE_AA)  # draw the white line on black image
             cv2.line(image_add, (col+w//2, 0), (col+w//2, 1100), color=(0, 255, 0),
                      thickness=1, lineType=cv2.LINE_AA)  # draw the white line on black image
-        cv2.imwrite('.\\Development\\imageSave\\{}'.format(
+        cv2.imwrite('.\\analyseShow\\{}'.format(
             'table_' + str(nummer+1) + '_of_' + str(os.path.basename(img_path))), image_add)
 
         center_list, label_list, tablesize = GetLabel(
@@ -1612,9 +1622,9 @@ def Main(img_path, model, error_info, list_output):
 
 
 if __name__ == '__main__':
-    img_path = r'C:\Users\chen1\Documents\GitHub\2022-studienarbeit-hui-chen\Development\imageTest\testkmeans.jpg'
+    img_path = 'bewertung/2023-01-02-de_2.png'
 
-    es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
+    # es.indices.delete(index='table', ignore=[400, 404])  # deletes whole index
 
     error_info = []
     list_output = []
