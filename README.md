@@ -1,5 +1,11 @@
 # Automatische Erkennung und Konvertierung von Tabellen in Bilddokumenten mit Hilfe von Machine Learning
 
+## TODOS
+
+- [ ] clean up the repo
+- [ ] refactoring the code
+- [ ] user interface with Angular
+
 ## Eine grobe User Interface wurde fertiggestellt.
 
 Klicken hier auszuprobieren:
