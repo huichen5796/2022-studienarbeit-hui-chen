@@ -4,7 +4,8 @@
 
 - [ ] clean up the repo
 - [ ] refactoring the code
-- [ ] user interface with Angular
+- [ ] refactoring user interface with Angular
+- [ ] put UI in server
 
 ## Eine grobe User Interface wurde fertiggestellt.
 
