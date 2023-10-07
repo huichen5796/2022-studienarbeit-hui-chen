@@ -9,11 +9,11 @@
 
 ## Eine grobe User Interface wurde fertiggestellt.
 
-Klicken hier auszuprobieren:
-
 -> https://github.com/huichen5796/website_for_tabelextrakt
 
 ## About this
+
+For detailed implementation process, please see the [presentation](presentation.pptx) and [studienarbeit](studienarbeit_hui.pdf).
 
 Die ist ein Tool zur...
 
@@ -112,7 +112,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
   - Rekonstruktion
     - Columen Detection mittels ML Modell, somit werden Labels von Columen erstellt.
 
-    ![ml for cols](Development/analyseShow/table_1_of_test3.png)
+    ![ml for cols](Abbildungen/table_1_of_test3.png)
 
       (Die rote Linie ist die Mittellinie der durch maschinelles Lernen erkannten Tabellenspalte, und die Zellen, die sich auf beiden Seiten der roten Linie innerhalb der grünen Linien befinden, werden in einer Spalte gruppiert.)
 
