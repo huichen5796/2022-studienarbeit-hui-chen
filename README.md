@@ -148,7 +148,7 @@ Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
 
 - Leistung bei komplexer Tabelle
 
-![1](Development/imageTest/test2.PNG)
+![1](Abbildungen/test2.PNG)
 
 ![2](Abbildungen/komplexbild.jpg)
 
