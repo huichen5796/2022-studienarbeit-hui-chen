@@ -12,3 +12,5 @@ torchvision==0.12.0
 opencv-contrib-python==4.6.0.66
 xlsxwriter==3.0.3
 scikit-learn==1.2.0
+fastapi==0.97.0
+uvicorn==0.22.0
