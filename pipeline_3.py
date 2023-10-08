@@ -2,7 +2,6 @@ import cv2
 import os
 
 from lib import *
-from conf import *
 
 def pipeline_3(file_path):
     image = cv2.imread(file_path, 0)
@@ -21,9 +20,3 @@ if __name__ == '__main__':
     FILE_PATH = 'Abbildungen/test2.PNG'
     pipeline_3(FILE_PATH)
 
-### for test:
-    # print(ElasticUntils('table').save_excel(saveRoot='', tableId='all'))
-    # print(ElasticUntils('table').save_excel(saveRoot='', imageId="test2.PNG"))
-    # print(ElasticUntils('table', os.path.basename(FILE_PATH), 0).search())
-    # print(ElasticUntils('table').search(search_all=True))
-    # ElasticUntils('table', os.path.basename(FILE_PATH), 0).detele()
