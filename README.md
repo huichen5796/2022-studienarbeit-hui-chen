@@ -2,10 +2,9 @@
 
 ## TODOS
 
-- [ ] clean up the repo
-- [ ] refactoring the code
-- [ ] refactoring user interface with Angular
-- [ ] put UI on AWS
+- [x] refactor this repo
+- [ ] refactor frontend with Angular
+- [ ] deploy on Amazon Web Server
 
 ## Eine grobe User Interface wurde fertiggestellt.
 
