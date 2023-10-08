@@ -15,7 +15,9 @@ def open_all(dir_name):
             pdf_path = dir_name + '/' + file
             save_path = dir_name
             pdf_to_png(pdf_path, save_path)
-            shutil.copy(dir_name + '/' + file, 'pdf')
+            if not os.path.exists('PDFs'):
+                os.makedirs('PDFs')
+            shutil.copy(dir_name + '/' + file, 'PDFs')
             os.remove(dir_name + '/' + file)
     return get_image_list(dir_name)
 
