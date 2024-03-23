@@ -22,16 +22,19 @@ def get_all_images_in_folder(folder_path):
     return image_paths
 
 def open_all(dir_name = FROM, result_dir = DOING):
-    file_list = get_file_list(dir_name)
-    for file in file_list:
-        if os.path.splitext(file)[1] in ['.pdf', '.PDF']:
-            pdf_path = dir_name + '/' + file
-            save_path = result_dir + '/' + file[0:-4]
-            os.makedirs(save_path)
-            pdf_to_png(pdf_path, save_path)
-        else:
-            shutil.copy(dir_name + '/' + file, result_dir)
-    return get_all_images_in_folder(result_dir)
+    if os.path.isdir(dir_name):
+        file_list = get_file_list(dir_name)
+        for file in file_list:
+            if os.path.splitext(file)[1] in ['.pdf', '.PDF']:
+                pdf_path = dir_name + '/' + file
+                save_path = result_dir + '/' + file[0:-4]
+                os.makedirs(save_path)
+                pdf_to_png(pdf_path, save_path)
+            else:
+                shutil.copy(dir_name + '/' + file, result_dir)
+        return get_all_images_in_folder(result_dir)
+    else:
+        return [shutil.copy(dir_name, result_dir)]
 
 def pdf_to_png(pdf_path, save_path):
     doc = fitz.open(pdf_path)
