@@ -7,6 +7,8 @@ import os
 import time
 import shutil
 
+log_writer = LogWriter()
+
 def main(path = 'store_image_finder'):
     if os.path.isdir(path):
         path_images = open_all(path)
@@ -15,7 +17,9 @@ def main(path = 'store_image_finder'):
         for i, image_path in enumerate(path_images):
             try:
                 pipeline_3(image_path)
-            except:
+                log_writer.writeSuccess(f'DONE: {image_path}')
+            except Exception as e:
+                log_writer.writeError(str(e))
                 n += 1
 
             finish = '▓' * int((i+1)*(50/len(path_images)))
@@ -33,8 +37,10 @@ def main(path = 'store_image_finder'):
         start = time.perf_counter()
         try:
             pipeline_3(path)
-        except:
+            log_writer.writeSuccess(f'DONE: {image_path}')
+        except Exception as e:
             n = 1
+            log_writer.writeError(str(e))
         finish = '▓' * 50
         need_do = '-' * 0
         dur = time.perf_counter() - start
