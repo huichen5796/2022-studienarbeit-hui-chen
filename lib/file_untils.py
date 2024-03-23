@@ -26,11 +26,9 @@ def open_all(dir_name = FROM, result_dir = DOING):
     for file in file_list:
         if os.path.splitext(file)[1] in ['.pdf', '.PDF']:
             pdf_path = dir_name + '/' + file
-            save_path = dir_name + '/' + file[0:-4]
+            save_path = result_dir + '/' + file[0:-4]
             os.makedirs(save_path)
             pdf_to_png(pdf_path, save_path)
-            shutil.copy(dir_name + '/' + file, 'PDFs')
-            os.remove(dir_name + '/' + file)
         else:
             shutil.copy(dir_name + '/' + file, result_dir)
     return get_all_images_in_folder(result_dir)
@@ -59,8 +57,3 @@ def pdf_to_png(pdf_path, save_path):
         #     print("\r{}/{}|{}{}|{:.2f}s".format((pg+1),
         #             doc.page_count, finish, need_do, dur), end='')
             
-
-def save_image(image, file_path):
-
-    cv2.imwrite(file_path, image)
-    print(f"Image saved to {file_path}")

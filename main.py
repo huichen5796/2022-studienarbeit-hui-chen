@@ -9,8 +9,7 @@ import shutil
 
 def main(path = 'store_image_finder'):
     if os.path.isdir(path):
-        images = open_all(path)
-        path_images = [os.path.normpath(os.path.join(path, fn)) for fn in images]
+        path_images = open_all(path)
         start = time.perf_counter()
         n = 0
         for i, image_path in enumerate(path_images):
