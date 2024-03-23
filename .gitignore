@@ -128,3 +128,5 @@ dmypy.json
 .pyre/
 
 /Development\successControl
+
+tablefinder/
