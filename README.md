@@ -81,7 +81,7 @@ Um beide Programmbausteine lauffähig zu machen, müssen folgende Schritte ausgr
 
 ## Programmablauf
 
-Der Ablauf des Programmes kann anhand den Folgenden  nachvollzogen werden:
+Der Ablauf des Programmes kann anhand den Folgenden nachvollzogen werden:
 
 - Die Verarbeitung einzeles Bilds
 

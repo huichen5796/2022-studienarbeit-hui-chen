@@ -7,7 +7,7 @@ import os
 import time
 import shutil
 
-def main(path):
+def main(path = 'store_image_finder'):
     if os.path.isdir(path):
         images = open_all(path)
         path_images = [os.path.normpath(os.path.join(path, fn)) for fn in images]
