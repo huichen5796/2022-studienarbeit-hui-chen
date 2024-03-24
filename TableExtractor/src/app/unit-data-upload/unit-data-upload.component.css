@@ -1,0 +1,32 @@
+.hidden-upload {
+    position: absolute;
+    clip: rect(0 0 0 0);
+}
+
+.label-up, .label-up-cpa {
+    display: inline-block;
+    padding: 10px;
+    background-color: #eeeded;
+    border:dashed;
+    border-width: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    width: 100px;
+    line-height: 20px;
+    height: 20px;
+    margin: 20px;
+}
+
+.label-up-cpa{
+    height: 80px;
+    width: 160px;
+    line-height: 20px;
+}
+
+.label-up:hover, .label-up-cpa:hover {
+    opacity: 0.5;
+}
+

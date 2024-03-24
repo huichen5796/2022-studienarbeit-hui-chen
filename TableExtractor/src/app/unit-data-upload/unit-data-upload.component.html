@@ -1,0 +1,15 @@
+<div class="box">
+    <mat-divider></mat-divider>
+    <label class="label-up" [attr.for]='"xFile"' *ngIf="!onlyDir">
+        Select File<span *ngIf="allowMultiple">s</span>
+    </label>
+    <label class="label-up" [attr.for]='"xFolder"'>
+        Select Folder
+    </label>
+
+    <input type="file" [id]='"xFile"' class="hidden-upload" (change)="onFileSelected($event)" [multiple]="allowMultiple"
+        #fileInput1>
+    <input type="file" [id]='"xFolder"' class="hidden-upload" (change)="onFileSelected($event)" webkitdirectory
+        #fileInput2>
+    <mat-divider></mat-divider>
+</div>

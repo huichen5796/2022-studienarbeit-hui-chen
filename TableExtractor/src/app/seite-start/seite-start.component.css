@@ -1,0 +1,46 @@
+.example-container {
+    width: 100%;
+    height: calc(100% - 60px);
+    display: block;
+    position: relative;
+}
+
+.example-sidenav-content {
+    overflow: auto;
+    width: 100%;
+    /* display: flex;
+    justify-content: space-between; */
+}
+
+.example-sidenav {
+    width: 300px;
+    height: 100%;
+}
+
+.close {
+    cursor: pointer;
+    position: relative;
+    margin: 16px;
+    width: 28px;
+}
+
+.close:hover {
+    opacity: 0.7;
+}
+
+::ng-deep .mat-drawer-inner-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+::ng-deep .mat-drawer-inner-container::-webkit-scrollbar-thumb {
+    background-color: #afafaf;
+    border-radius: 5px;
+}
+
+::ng-deep .mat-drawer-inner-container::-webkit-scrollbar-thumb:hover {
+    background-color: #b5b5b5;
+}
+
+::ng-deep .mat-drawer-inner-container::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}
