@@ -7,6 +7,7 @@ import datetime
 
 FROM = 'store_ori_file'
 DOING = 'store_image_finder'
+DONE = 'store_done_history'
 
 def get_file_list(dir_name):
     file_list = os.listdir(dir_name)
@@ -21,14 +22,22 @@ def get_all_images_in_folder(folder_path):
                 image_paths.append(file_path)
     return image_paths
 
-def open_all(dir_name = FROM, result_dir = DOING):
+def open_all(dir_name = FROM, result_dir = DOING, done_dir = DONE, user = None):
+    if user:
+        dir_name = user + '/' + dir_name
+        result_dir = user + '/' + result_dir
+        done_dir = user + '/' + done_dir
     if os.path.isdir(dir_name):
         file_list = get_file_list(dir_name)
         for file in file_list:
             if os.path.splitext(file)[1] in ['.pdf', '.PDF']:
                 pdf_path = dir_name + '/' + file
                 save_path = result_dir + '/' + file[0:-4]
-                os.makedirs(save_path)
+                done_path = done_dir + '/' + file[0:-4]
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                if not os.path.exists(done_path):
+                    os.makedirs(done_path)
                 pdf_to_png(pdf_path, save_path)
             else:
                 shutil.copy(dir_name + '/' + file, result_dir)
