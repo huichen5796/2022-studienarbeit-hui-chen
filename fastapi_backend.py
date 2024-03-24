@@ -30,14 +30,30 @@ app.add_middleware(
 def read_root():
     return 'success'
 
+@app.post("/fileUpload/")
+async def fileUpload(files: list[UploadFile], user:str):
+    save_dir = 'store_ori_file' if not user else 'user/store_ori_file'
+    res = {}
+    for file in files:
+        try:
+            file_name = os.path.basename(file.filename)
+            contents = await file.read()
+            with open(f"{save_dir}/{file_name}", "wb") as f:
+                f.write(contents)
+            res[file_name] = True
+        except:
+            res[file_name] = False
+
+    return res
+
 websocket_connections = []
 
 @app.websocket("/start")
-async def start(websocket: WebSocket):
+async def start(websocket: WebSocket, user = None):
     await websocket.accept()
     websocket_connections.append(websocket)
 
-    path_images = open_all()
+    path_images = open_all(user=user)
     start = time.perf_counter()
     for i, image_path in enumerate(path_images):
         error = ''
