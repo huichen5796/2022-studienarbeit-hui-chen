@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from fastapi import FastAPI, Request, UploadFile, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import json
@@ -58,7 +59,8 @@ async def fileUpload(files: list[UploadFile], user:str = None):
     return res
 
 @app.post("/openAll")
-def openAll(user = None):
+def openAll(data: Dict[Any, Any] = None):
+    user = data['user']
     return open_all(user=user)
 
 websocket_connections = []

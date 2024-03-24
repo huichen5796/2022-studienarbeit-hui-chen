@@ -26,4 +26,19 @@ export class FileTransferService {
     })
     return promise
   }
+
+  openAll():Promise<any> {
+    var promise = new Promise<any>((resolve, reject) => {
+      const headers = { 'content-type': 'application/json'}  
+      const body = JSON.stringify({
+        'user': user
+      });
+      this.http.post(`${backendUrl}/openAll`, body, {'headers':headers})
+        .subscribe((rep: any) => {
+          resolve(rep)
+        })
+
+    })
+    return promise
+  }
 }

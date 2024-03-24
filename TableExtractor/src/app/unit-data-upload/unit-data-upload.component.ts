@@ -41,7 +41,9 @@ export class UnitDataUploadComponent implements OnChanges {
     if (files.length > 0) {
       this.fileTransferService.fileUpload(files).then((res) => {
         console.log(res)
-
+        this.fileTransferService.openAll().then((res)=>{
+          console.log(res)
+        })
       })
     }
   }
