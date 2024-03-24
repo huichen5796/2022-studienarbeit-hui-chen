@@ -43,7 +43,7 @@ def read_root():
 
 @app.post("/fileUpload/")
 async def fileUpload(files: list[UploadFile], user:str = None):
-    save_dir = 'store_ori_file' if not user else 'user/store_ori_file'
+    save_dir = 'store_ori_file' if not user else f'{user}/store_ori_file'
     res = {}
     for file in files:
         try:

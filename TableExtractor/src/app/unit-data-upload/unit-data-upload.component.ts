@@ -6,7 +6,7 @@ import { FileTransferService } from '../app-services';
   templateUrl: './unit-data-upload.component.html',
   styleUrls: ['./unit-data-upload.component.css']
 })
-export class UnitDataUploadComponent implements AfterViewInit, OnChanges {
+export class UnitDataUploadComponent implements OnChanges {
   @ViewChild('fileInput1') fileInput1!: ElementRef;
   @ViewChild('fileInput2') fileInput2!: ElementRef;
 
@@ -24,9 +24,7 @@ export class UnitDataUploadComponent implements AfterViewInit, OnChanges {
 
   }
   ngOnChanges(changes: SimpleChanges): void {
-    if (!changes['data_type'].isFirstChange()) {
-      this.ngAfterViewInit()
-    }
+    this.clearFileInput()
   }
 
   clearFileInput() {
@@ -36,16 +34,6 @@ export class UnitDataUploadComponent implements AfterViewInit, OnChanges {
     if (this.fileInput2 && this.fileInput2.nativeElement) {
       this.fileInput2.nativeElement.value = '';
     }
-  }
-
-  ngAfterViewInit() {
-    // this.connectTestService.cleanDataStoreFile(this.data_type).then((rep) => {
-    //   this.dataStoreStatus = rep
-    //   this.uploadedFiles = []
-    //   this.selectedFiles = {};
-    //   this.clearFileInput()
-    // })
-    this.clearFileInput()
   }
 
   onFileSelected(event: any) {
